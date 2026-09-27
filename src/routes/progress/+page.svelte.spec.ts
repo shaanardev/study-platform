@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 import ProgressPage from './+page.svelte';
+import type { PageData } from './$types';
 
-const emptyData = { recentAttempts: [], domainScores: [], missedQuestions: [] };
+const emptyData = { recentAttempts: [], domainScores: [], missedQuestions: [] } satisfies PageData;
 
 describe('progress page', () => {
   it('explains the empty state to a new learner', async () => {
     render(ProgressPage, { data: emptyData, form: null });
 
+    await expect
+      .element(page.getByRole('main'))
+      .toHaveCSS('background-color', 'rgb(244, 245, 242)');
     await expect
       .element(page.getByRole('heading', { name: 'No attempts yet' }))
       .toBeInTheDocument();
@@ -80,7 +84,12 @@ describe('progress page', () => {
     await expect.element(page.getByRole('heading', { name: 'Practice quiz' })).toBeInTheDocument();
     await expect.element(page.getByText('Cloud foundations · pack 1.0')).toBeInTheDocument();
     await expect.element(page.getByRole('heading', { name: 'Compute' })).toBeInTheDocument();
-    await expect.element(page.getByLabelText(/What runs the workload/)).toBeInTheDocument();
+    const missedQuestion = page.getByLabelText(/What runs the workload/);
+    await expect.element(missedQuestion).toBeInTheDocument();
+    await missedQuestion.check();
+    await expect.element(missedQuestion).toBeChecked();
+    await expect.element(page.locator('form')).toHaveAttribute('method', 'POST');
+    await expect.element(page.locator('form')).toHaveAttribute('action', '?/practiceMissed');
     await expect
       .element(page.getByRole('button', { name: 'Practice selected missed questions' }))
       .toBeInTheDocument();
