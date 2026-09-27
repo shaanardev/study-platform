@@ -12,7 +12,7 @@
   >
 </svelte:head>
 
-<main class="-m-2 min-h-screen bg-surface-100-900 font-sans text-surface-900-50">
+<main class="min-h-screen bg-surface-100-900 font-sans text-surface-900-50">
   <div class="mx-auto w-[min(100%-2rem,960px)] py-8 sm:py-14 sm:pb-20">
     <header class="mb-10 max-w-[660px]">
       <p class="mb-2 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">

@@ -6,6 +6,7 @@ import PracticePage from './+page.svelte';
 describe('practice page', () => {
   it('updates the available domain choices when a learner switches exam pack versions', async () => {
     render(PracticePage, {
+      params: {},
       data: {
         packs: [
           {
@@ -43,7 +44,7 @@ describe('practice page', () => {
     await expect
       .element(page.getByRole('group', { name: /Domains/ }).getByText('Storage'))
       .toBeInTheDocument();
-    await page.getByRole('checkbox', { name: /Storage/ }).check();
+    await page.getByRole('checkbox', { name: /Storage/ }).click();
     await expect.element(page.getByLabelText('Number of questions')).toHaveAttribute('max', '2');
     await page.getByLabelText('Exam pack version').selectOptions('exam-b|pack-b|2.0');
     await expect.element(page.getByText('Jobs')).toBeInTheDocument();
@@ -53,6 +54,7 @@ describe('practice page', () => {
 
   it('offers a saved session again after the practice page is loaded', async () => {
     render(PracticePage, {
+      params: {},
       data: {
         packs: [],
         session: {

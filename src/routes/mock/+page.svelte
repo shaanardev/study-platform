@@ -137,14 +137,19 @@
               </h3>
               <ul class="grid gap-2 pl-5">
                 {#each selectedPack?.domains ?? [] as domain (domain.id)}
-                  {@const allocation = selectedCoverage.allocations[domain.id] ?? 0}
-                  {@const gap = selectedCoverage.gaps.find((item) => item.id === domain.id)}
                   <li class="flex flex-col justify-between gap-1 sm:flex-row sm:gap-4">
                     <span>{domain.title} · {domain.weight}%</span
                     ><span
-                      class={['text-left text-[#536153] sm:text-right', gap && 'text-[#9d3028]']}
+                      class={[
+    'text-left text-[#536153] sm:text-right',
+    selectedCoverage.gaps.some((item) => item.id === domain.id) && 'text-[#9d3028]',
+  ]}
                       >{domain.questionCount}
-                      available / {allocation} needed{gap ? ` · short by ${gap.missing}` : ''}</span
+                      available /
+                      {selectedCoverage.allocations[domain.id] ?? 0}
+                      needed{selectedCoverage.gaps.find((item) => item.id === domain.id)
+    ? ` · short by ${selectedCoverage.gaps.find((item) => item.id === domain.id)?.missing}`
+    : ''}</span
                     >
                   </li>
                 {/each}
@@ -242,7 +247,6 @@
           </div>
         {/if}
         {#each data.attempt.questions as question, index (question.id)}
-          {@const answer = data.attempt.answers.find((item) => item.questionId === question.id)}
           <article class="mt-6 border-t border-[#e2e6df] pt-5">
             <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">
               {index + 1}
@@ -285,7 +289,9 @@
                     class={[
     'rounded-md p-2',
     question.answerIds?.includes(option.id) && 'bg-[#edf7ef]',
-    answer?.answerIds.includes(option.id) &&
+    data.attempt.answers
+      .find((item) => item.questionId === question.id)
+      ?.answerIds.includes(option.id) &&
       !question.answerIds?.includes(option.id) &&
       'text-[#9d3028]',
   ]}
@@ -294,7 +300,9 @@
                     {#if question.answerIds?.includes(option.id)}
                       <strong>Correct answer</strong>
                     {/if}
-                    {#if answer?.answerIds.includes(option.id)}
+                    {#if data.attempt.answers
+    .find((item) => item.questionId === question.id)
+    ?.answerIds.includes(option.id)}
                       <span>(your answer)</span>
                     {/if}
                   </li>
