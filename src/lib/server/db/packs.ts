@@ -63,6 +63,26 @@ export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlit
       answered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (session_id, question_id)
     );
+    CREATE TABLE IF NOT EXISTS mock_attempts (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      pack_id TEXT NOT NULL,
+      pack_version TEXT NOT NULL,
+      question_ids_json TEXT NOT NULL,
+      duration_minutes INTEGER NOT NULL,
+      deadline INTEGER NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('in_progress', 'submitted', 'expired')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (exam_id, pack_id, pack_version)
+        REFERENCES imported_packs (exam_id, pack_id, pack_version)
+    );
+    CREATE TABLE IF NOT EXISTS mock_answers (
+      attempt_id TEXT NOT NULL REFERENCES mock_attempts(id) ON DELETE CASCADE,
+      question_id TEXT NOT NULL,
+      answer_ids_json TEXT NOT NULL,
+      answered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (attempt_id, question_id)
+    );
     CREATE TABLE IF NOT EXISTS saved_source_assets (
       exam_id TEXT NOT NULL,
       pack_id TEXT NOT NULL,
