@@ -40,6 +40,7 @@ export type MockAttempt = {
 };
 
 const dbPath = (path?: string) => resolve(path ?? '.local/exam-packs.sqlite');
+const column = (row: Record<string, unknown>, key: string) => row[key];
 
 export function getMockCoverage(
   databasePath: string,
@@ -81,21 +82,25 @@ function readMockAttempt(
       .get(id);
     if (!row) return undefined;
     const pack = getImportedPack(
-      String(row.examId),
-      String(row.packId),
-      String(row.packVersion),
+      String(column(row, 'examId')),
+      String(column(row, 'packId')),
+      String(column(row, 'packVersion')),
       databasePath,
     );
     if (!pack) return undefined;
-    let status = String(row.status) as MockAttempt['status'];
-    const deadline = Number(row.deadline);
+    const rawStatus = String(column(row, 'status'));
+    if (rawStatus !== 'in_progress' && rawStatus !== 'submitted' && rawStatus !== 'expired') {
+      return undefined;
+    }
+    let status: MockAttempt['status'] = rawStatus;
+    const deadline = Number(column(row, 'deadline'));
     if (status === 'in_progress' && isExpired(deadline, now)) {
       status = 'expired';
       database.prepare("UPDATE mock_attempts SET status = 'expired' WHERE id = ?").run(id);
     }
-    const questionIds = JSON.parse(String(row.questionIds)) as string[];
-    const attemptQuestions = row['questionSnapshot']
-      ? (JSON.parse(String(row['questionSnapshot'])) as PackQuestion[])
+    const questionIds = JSON.parse(String(column(row, 'questionIds'))) as string[];
+    const attemptQuestions = column(row, 'questionSnapshot')
+      ? (JSON.parse(String(column(row, 'questionSnapshot'))) as PackQuestion[])
       : pack.questions;
     const answers = database
       .prepare(
@@ -103,8 +108,8 @@ function readMockAttempt(
       )
       .all(id)
       .map((answer) => ({
-        questionId: String(answer.questionId),
-        answerIds: JSON.parse(String(answer.answerIds)) as string[],
+        questionId: String(column(answer, 'questionId')),
+        answerIds: JSON.parse(String(column(answer, 'answerIds'))) as string[],
       }));
     const reveal = status !== 'in_progress';
     const questions: SafeQuestion[] = questionIds.flatMap((questionId) => {
@@ -125,12 +130,12 @@ function readMockAttempt(
       return [safe];
     });
     const attempt: MockAttempt = {
-      id: String(row.id),
-      examId: String(row.examId),
-      packId: String(row.packId),
-      packVersion: String(row.packVersion),
+      id: String(column(row, 'id')),
+      examId: String(column(row, 'examId')),
+      packId: String(column(row, 'packId')),
+      packVersion: String(column(row, 'packVersion')),
       questionIds,
-      durationMinutes: Number(row.durationMinutes),
+      durationMinutes: Number(column(row, 'durationMinutes')),
       deadline,
       remainingMilliseconds: remainingMilliseconds(deadline, now),
       status,
@@ -178,7 +183,9 @@ function readMockAttempt(
           correct:
             correctAnswer.length === answer.answerIds.length &&
             correctAnswer.every((id) => answer.answerIds.includes(id)),
-          explanation: question?.explanation,
+          ...(question && question.explanation !== undefined
+            ? { explanation: question.explanation }
+            : {}),
         };
       });
     }
@@ -231,7 +238,11 @@ export function createMockAttempt(options: {
     const questions = pack.questions.filter((question) => question.domainId === domain.id);
     for (let index = questions.length - 1; index > 0; index -= 1) {
       const target = Math.floor(random() * (index + 1));
-      [questions[index], questions[target]] = [questions[target]!, questions[index]!];
+      const current = questions[index];
+      const selected = questions[target];
+      if (!current || !selected) continue;
+      questions[index] = selected;
+      questions[target] = current;
     }
     return questions.slice(0, count).map((question) => question.id);
   });
@@ -298,7 +309,9 @@ export function saveMockAnswer(
   } finally {
     database.close();
   }
-  return readMockAttempt(path, attemptId, now)!;
+  const saved = readMockAttempt(path, attemptId, now);
+  if (!saved) error(404, 'Mock attempt not found.');
+  return saved;
 }
 
 export function submitMockAttempt(
@@ -321,7 +334,9 @@ export function submitMockAttempt(
       database.close();
     }
   }
-  return readMockAttempt(path, attemptId, now)!;
+  const submitted = readMockAttempt(path, attemptId, now);
+  if (!submitted) error(404, 'Mock attempt not found.');
+  return submitted;
 }
 
 export function getResumableMockAttempt(
@@ -337,7 +352,7 @@ export function getResumableMockAttempt(
       ORDER BY created_at DESC, rowid DESC LIMIT 1
     `)
       .get();
-    return row ? readMockAttempt(path, String(row.id), now) : undefined;
+    return row ? readMockAttempt(path, String(column(row, 'id')), now) : undefined;
   } finally {
     database.close();
   }
