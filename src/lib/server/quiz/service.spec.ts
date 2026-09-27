@@ -79,6 +79,20 @@ describe('practice sessions', () => {
     expect(retry.questionIds).toEqual(['pipeline-validation-basics']);
   });
 
+  it('starts a practice session with the exact missed questions selected from progress', async () => {
+    const { databasePath, pack } = await setup();
+    const selected = createPracticeSession({
+      databasePath,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 1,
+      questionIds: ['pipeline-validation-basics'],
+    });
+
+    expect(selected.questionIds).toEqual(['pipeline-validation-basics']);
+  });
+
   it('keeps a citation excerpt available from the imported snapshot', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'ordewell-quiz-source-'));
     directories.push(directory);

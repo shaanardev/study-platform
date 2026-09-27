@@ -37,6 +37,7 @@ export type StartPracticeOptions = {
   packVersion: string;
   domainIds?: string[];
   questionCount: number;
+  questionIds?: string[];
   random?: () => number;
 };
 
@@ -115,8 +116,16 @@ export function createPracticeSession(options: StartPracticeOptions): PracticeSe
   if (!Number.isInteger(options.questionCount) || options.questionCount < 1 || options.questionCount > 100) {
     error(400, 'Question count must be between 1 and 100.');
   }
-  const candidates = pack.questions.filter((question) => domainIds.length === 0 || domainIds.includes(question.domainId));
-  if (options.questionCount > candidates.length) error(400, 'There are not that many questions in the selected domains.');
+  const selectedQuestionIds = options.questionIds ? [...new Set(options.questionIds)] : undefined;
+  if (selectedQuestionIds?.some((id) => !pack.questions.some((question) => question.id === id))) {
+    error(400, 'Choose questions from this exam pack version.');
+  }
+  const candidates = pack.questions.filter((question) =>
+    selectedQuestionIds ? selectedQuestionIds.includes(question.id) : domainIds.length === 0 || domainIds.includes(question.domainId),
+  );
+  if (options.questionCount > candidates.length || (selectedQuestionIds && options.questionCount !== selectedQuestionIds.length)) {
+    error(400, 'There are not that many questions in the selected domains.');
+  }
 
   const database = openPackDatabase(databasePath);
   try {

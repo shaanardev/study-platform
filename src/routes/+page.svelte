@@ -22,7 +22,7 @@
     </p>
   </header>
 
-  <p><a class="practice-link" href="/practice">Start or resume a practice quiz →</a></p>
+  <p class="study-links"><a class="practice-link" href="/practice">Start or resume a practice quiz →</a> <a href="/progress">Review progress and mistakes →</a></p>
 
   <section class="import-panel" aria-labelledby="import-heading">
     <div>
@@ -170,6 +170,13 @@
   a {
     color: #28553a;
     font-weight: 650;
+  }
+
+  .study-links {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 
   .practice-link {
