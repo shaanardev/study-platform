@@ -1,7 +1,30 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
-import type { ExamPack } from '../packs/validate';
+import { DatabaseSync, type SQLOutputValue } from 'node:sqlite';
+import { type ExamPack, validateExamPack } from '../packs/validate';
+
+type DatabaseRow = Record<string, SQLOutputValue>;
+
+function readTextColumn(row: DatabaseRow, column: string): string {
+  const value = row[column];
+  if (typeof value !== 'string') throw new Error(`Database column "${column}" is not text.`);
+  return value;
+}
+
+function readNumberColumn(row: DatabaseRow, column: string): number {
+  const value = row[column];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Database column "${column}" is not a finite number.`);
+  }
+  return value;
+}
+
+function parseStoredPack(content: string): ExamPack {
+  const parsed: unknown = JSON.parse(content);
+  const result = validateExamPack(parsed);
+  if (!result.valid) throw new Error('Stored exam pack is invalid.');
+  return result.pack;
+}
 
 export type PackIndexItem = {
   examId: string;
@@ -114,7 +137,7 @@ export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlit
     const columns = database
       .prepare(`PRAGMA table_info(${table})`)
       .all()
-      .map((row) => String(row['name']));
+      .map((row) => readTextColumn(row, 'name'));
     if (!columns.includes(column)) database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} TEXT`);
   }
   return database;
@@ -184,26 +207,26 @@ export function listImportedPacks(
         content_json AS contentJson, imported_at AS importedAt
       FROM imported_packs
       ORDER BY exam_title, pack_title, pack_version DESC
-    `)
+      `)
       .all()
       .map((row) => {
-        const pack = JSON.parse(String(row.contentJson)) as ExamPack;
+        const pack = parseStoredPack(readTextColumn(row, 'contentJson'));
         return {
-          examId: String(row.examId),
-          examTitle: String(row.examTitle),
-          examVersion: String(row.examVersion),
-          packId: String(row.packId),
-          packTitle: String(row.packTitle),
-          packVersion: String(row.packVersion),
-          synthetic: Boolean(row.synthetic),
-          questionCount: Number(row.questionCount),
-          domainCount: Number(row.domainCount),
+          examId: readTextColumn(row, 'examId'),
+          examTitle: readTextColumn(row, 'examTitle'),
+          examVersion: readTextColumn(row, 'examVersion'),
+          packId: readTextColumn(row, 'packId'),
+          packTitle: readTextColumn(row, 'packTitle'),
+          packVersion: readTextColumn(row, 'packVersion'),
+          synthetic: readNumberColumn(row, 'synthetic') === 1,
+          questionCount: readNumberColumn(row, 'questionCount'),
+          domainCount: readNumberColumn(row, 'domainCount'),
           domains: pack.domains.map((domain) => ({
             ...domain,
             questionCount: pack.questions.filter((question) => question.domainId === domain.id)
               .length,
           })),
-          importedAt: String(row.importedAt),
+          importedAt: readTextColumn(row, 'importedAt'),
         };
       });
   } finally {
@@ -225,7 +248,7 @@ export function getImportedPack(
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
     `)
       .get(examId, packId, packVersion);
-    return row ? (JSON.parse(String(row.contentJson)) as ExamPack) : undefined;
+    return row ? parseStoredPack(readTextColumn(row, 'contentJson')) : undefined;
   } finally {
     database.close();
   }
@@ -275,7 +298,12 @@ export function getImportedSourceAsset(
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ? AND question_id = ? AND source_path = ?
     `)
       .get(examId, packId, packVersion, questionId, sourcePath);
-    return row ? { label: String(row.label), excerpt: String(row.excerpt) } : undefined;
+    return row
+      ? {
+          label: readTextColumn(row, 'label'),
+          excerpt: readTextColumn(row, 'excerpt'),
+        }
+      : undefined;
   } finally {
     database.close();
   }
