@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
+import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
 import { getImportedPack, getImportedSourceAsset, openPackDatabase } from '../db/packs';
 import { getEffectivePack } from '../feedback/service';
-import type { PackQuestion } from '../packs/validate';
+import { type ExamPack, type PackQuestion, validateExamPack } from '../packs/validate';
 
 export type QuizAnswer = {
   questionId: string;
@@ -42,6 +43,32 @@ export type StartPracticeOptions = {
   random?: () => number;
 };
 
+type DatabaseRow = Record<string, SQLOutputValue>;
+
+function column(row: DatabaseRow, name: string): SQLOutputValue | undefined {
+  return row[name];
+}
+
+function parseStringArray(value: unknown): string[] {
+  const parsed: unknown = JSON.parse(String(value));
+  if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === 'string')) {
+    throw new Error('Stored practice session data is invalid.');
+  }
+  return parsed;
+}
+
+function parsePracticeStatus(value: unknown): PracticeSession['status'] {
+  if (value === 'in_progress' || value === 'completed') return value;
+  throw new Error('Stored practice session status is invalid.');
+}
+
+function parseQuestionSnapshot(value: unknown, basePack: ExamPack): PackQuestion[] {
+  const questions: unknown = JSON.parse(String(value));
+  const result = validateExamPack({ ...basePack, questions });
+  if (!result.valid) throw new Error('Stored practice session questions are invalid.');
+  return result.pack.questions;
+}
+
 function dbPath(path?: string) {
   return resolve(path ?? '.local/exam-packs.sqlite');
 }
@@ -59,14 +86,14 @@ function readSession(databasePath: string, id: string): PracticeSession | undefi
       .get(id);
     if (!row) return undefined;
     const pack = getImportedPack(
-      String(row.examId),
-      String(row.packId),
-      String(row.packVersion),
+      String(column(row, 'examId')),
+      String(column(row, 'packId')),
+      String(column(row, 'packVersion')),
       databasePath,
     );
     if (!pack) return undefined;
-    const sessionQuestions = row['questionSnapshot']
-      ? (JSON.parse(String(row['questionSnapshot'])) as PackQuestion[])
+    const sessionQuestions = column(row, 'questionSnapshot')
+      ? parseQuestionSnapshot(column(row, 'questionSnapshot'), pack)
       : pack.questions;
     const answers = database
       .prepare(`
@@ -76,28 +103,28 @@ function readSession(databasePath: string, id: string): PracticeSession | undefi
     `)
       .all(id)
       .map((answer) => {
-        const questionId = String(answer.questionId);
+        const questionId = String(column(answer, 'questionId'));
         const question = sessionQuestions.find((item) => item.id === questionId);
         return {
           questionId,
-          answerIds: JSON.parse(String(answer.answerIds)) as string[],
-          correct: Boolean(answer.correct),
-          answeredAt: String(answer.answeredAt),
+          answerIds: parseStringArray(column(answer, 'answerIds')),
+          correct: Boolean(column(answer, 'correct')),
+          answeredAt: String(column(answer, 'answeredAt')),
           answerIdsCorrect: question?.answerIds ?? [],
           explanation: question?.explanation ?? '',
           sources: question?.sources ?? [],
         };
       });
     const session: Omit<PracticeSession, 'questions'> = {
-      id: String(row.id),
-      examId: String(row.examId),
-      packId: String(row.packId),
-      packVersion: String(row.packVersion),
-      domainIds: JSON.parse(String(row.domainIds)) as string[],
-      questionIds: JSON.parse(String(row.questionIds)) as string[],
-      status: String(row.status) as PracticeSession['status'],
-      createdAt: String(row.createdAt),
-      updatedAt: String(row.updatedAt),
+      id: String(column(row, 'id')),
+      examId: String(column(row, 'examId')),
+      packId: String(column(row, 'packId')),
+      packVersion: String(column(row, 'packVersion')),
+      domainIds: parseStringArray(column(row, 'domainIds')),
+      questionIds: parseStringArray(column(row, 'questionIds')),
+      status: parsePracticeStatus(column(row, 'status')),
+      createdAt: String(column(row, 'createdAt')),
+      updatedAt: String(column(row, 'updatedAt')),
       answers,
     };
     return {
@@ -172,8 +199,8 @@ export function createPracticeSession(options: StartPracticeOptions): PracticeSe
       .all(options.examId, options.packId, options.packVersion);
     const states = new Map(
       history.map((row) => [
-        String(row.questionId),
-        { missed: Boolean(row.missed), seen: Number(row.seen) > 0 },
+        String(column(row, 'questionId')),
+        { missed: Boolean(column(row, 'missed')), seen: Number(column(row, 'seen')) > 0 },
       ]),
     );
     const random = options.random ?? Math.random;
@@ -234,7 +261,7 @@ export function getResumablePracticeSession(databasePath: string): PracticeSessi
         `SELECT id FROM practice_sessions WHERE status = 'in_progress' ORDER BY updated_at DESC, rowid DESC LIMIT 1`,
       )
       .get();
-    return row ? readSession(dbPath(databasePath), String(row.id)) : undefined;
+    return row ? readSession(dbPath(databasePath), String(column(row, 'id'))) : undefined;
   } finally {
     database.close();
   }
@@ -247,31 +274,32 @@ export function answerQuestion(
   answerIds: string[],
 ): QuizAnswer {
   const session = getPracticeSession(databasePath, sessionId);
-  if (!session || session.status !== 'in_progress')
+  if (session?.status !== 'in_progress')
     error(404, 'This practice session is no longer in progress.');
   const question = session.questions.find((item) => item.id === questionId);
   if (!question || session.answers.some((answer) => answer.questionId === questionId))
     error(400, 'That question cannot be answered in this session.');
+  const importedPack = getImportedPack(
+    session.examId,
+    session.packId,
+    session.packVersion,
+    dbPath(databasePath),
+  );
   const database = openPackDatabase(dbPath(databasePath));
-  let questionSnapshot: PackQuestion[] = [];
+  let questionSnapshot = importedPack?.questions ?? [];
   try {
     const row = database
       .prepare('SELECT question_snapshot_json AS snapshot FROM practice_sessions WHERE id = ?')
       .get(sessionId);
-    questionSnapshot = row?.['snapshot']
-      ? (JSON.parse(String(row['snapshot'])) as PackQuestion[])
-      : [];
+    if (row && column(row, 'snapshot') && importedPack) {
+      questionSnapshot = parseQuestionSnapshot(column(row, 'snapshot'), importedPack);
+    }
   } finally {
     database.close();
   }
   const correctQuestion =
     questionSnapshot.find((item) => item.id === questionId) ??
-    getImportedPack(
-      session.examId,
-      session.packId,
-      session.packVersion,
-      dbPath(databasePath),
-    )?.questions.find((item) => item.id === questionId);
+    importedPack?.questions.find((item) => item.id === questionId);
   if (!correctQuestion) error(404, 'Question not found in the imported pack version.');
   const submitted = [...new Set(answerIds)];
   if (
@@ -290,11 +318,10 @@ export function answerQuestion(
         `INSERT INTO practice_answers (session_id, question_id, answer_ids_json, correct) VALUES (?, ?, ?, ?) `,
       )
       .run(sessionId, questionId, JSON.stringify(submitted), Number(correct));
-    const answerCount = Number(
-      answerDatabase
-        .prepare('SELECT COUNT(*) AS count FROM practice_answers WHERE session_id = ?')
-        .get(sessionId)?.count ?? 0,
-    );
+    const answerCountRow = answerDatabase
+      .prepare('SELECT COUNT(*) AS count FROM practice_answers WHERE session_id = ?')
+      .get(sessionId);
+    const answerCount = Number(answerCountRow ? column(answerCountRow, 'count') : 0);
     answerDatabase
       .prepare(
         `UPDATE practice_sessions SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,

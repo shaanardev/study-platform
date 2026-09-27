@@ -1,5 +1,5 @@
 import { text } from '@sveltejs/kit';
-import { readQuestionSource } from '$lib/server/quiz/service';
+import { readQuestionSource } from '../../../lib/server/quiz/service';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url }) => {

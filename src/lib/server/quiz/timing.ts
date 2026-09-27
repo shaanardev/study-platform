@@ -2,7 +2,11 @@ export function createDeadline(startedAt: number, durationMinutes: number): numb
   if (!Number.isFinite(startedAt) || !Number.isInteger(durationMinutes) || durationMinutes < 1) {
     throw new Error('A valid start time and duration are required.');
   }
-  return startedAt + durationMinutes * 60_000;
+  const deadline = startedAt + durationMinutes * 60_000;
+  if (!Number.isFinite(deadline)) {
+    throw new Error('A valid start time and duration are required.');
+  }
+  return deadline;
 }
 
 export function remainingMilliseconds(deadline: number, now: number): number {
