@@ -1,7 +1,7 @@
 import type { Dirent } from 'node:fs';
 import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { listImportedPacks, saveImportedPack } from '../db/packs';
+import { listImportedPacks, saveImportedPack, saveImportedSourceAsset } from '../db/packs';
 import { validateExamPack } from './validate';
 
 export type ImportResult = { imported: string[]; errors: string[] };
@@ -83,6 +83,12 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
 
     try {
       saveImportedPack(databasePath, validation.pack);
+      for (const question of validation.pack.questions) {
+        for (const source of question.sources) {
+          const sourceFile = resolve(dirname(filePath), source.path);
+          saveImportedSourceAsset(databasePath, validation.pack, question.id, source, await readFile(sourceFile, 'utf8'));
+        }
+      }
       imported.push(
         `${validation.pack.exam.id}/${validation.pack.pack.id}@${validation.pack.pack.version}`,
       );
