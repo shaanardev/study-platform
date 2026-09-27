@@ -22,9 +22,7 @@
     </p>
   </header>
 
-  <p class="study-links"><a class="practice-link" href="/practice">Start or resume a practice quiz →</a> <a href="/progress">Review progress and mistakes →</a></p>
-  <p><a class="practice-link" href="/practice">Start or resume a practice quiz →</a> · <a class="practice-link" href="/mock">Take a timed mock exam →</a></p>
-
+  <p class="study-links"><a class="practice-link" href="/practice">Start or resume a practice quiz →</a> <a href="/progress">Review progress and mistakes →</a> <a href="/mock">Take a timed mock exam →</a></p>
   <section class="import-panel" aria-labelledby="import-heading">
     <div>
       <p class="eyebrow">Local import</p>
