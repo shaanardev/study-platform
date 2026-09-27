@@ -43,9 +43,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/*.svelte"
-      ],
+      "includes": ["**/*.svelte"],
       "formatter": {
         "enabled": true
       },

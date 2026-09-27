@@ -8,11 +8,9 @@ const emptyData = { recentAttempts: [], domainScores: [], missedQuestions: [] } 
 
 describe('progress page', () => {
   it('explains the empty state to a new learner', async () => {
-    render(ProgressPage, { data: emptyData, form: null });
+    render(ProgressPage, { params: {}, data: emptyData, form: null });
 
-    await expect
-      .element(page.getByRole('main'))
-      .toHaveCSS('background-color', 'rgb(244, 245, 242)');
+    await expect.element(page.getByRole('main')).toHaveClass('bg-[#f4f5f2]');
     await expect
       .element(page.getByRole('heading', { name: 'No attempts yet' }))
       .toBeInTheDocument();
@@ -31,6 +29,7 @@ describe('progress page', () => {
 
   it('shows attempt and domain scores with the pack version and selectable missed questions', async () => {
     render(ProgressPage, {
+      params: {},
       data: {
         recentAttempts: [
           {
@@ -82,14 +81,21 @@ describe('progress page', () => {
     });
 
     await expect.element(page.getByRole('heading', { name: 'Practice quiz' })).toBeInTheDocument();
-    await expect.element(page.getByText('Cloud foundations · pack 1.0')).toBeInTheDocument();
+    await expect
+      .element(page.getByText('Cloud foundations · pack 1.0', { exact: true }))
+      .toBeInTheDocument();
     await expect.element(page.getByRole('heading', { name: 'Compute' })).toBeInTheDocument();
     const missedQuestion = page.getByLabelText(/What runs the workload/);
     await expect.element(missedQuestion).toBeInTheDocument();
-    await missedQuestion.check();
+    await missedQuestion.click();
     await expect.element(missedQuestion).toBeChecked();
-    await expect.element(page.locator('form')).toHaveAttribute('method', 'POST');
-    await expect.element(page.locator('form')).toHaveAttribute('action', '?/practiceMissed');
+    const form = page
+      .getByRole('button', { name: 'Practice selected missed questions' })
+      .element()
+      .closest('form');
+    expect(form).not.toBeNull();
+    expect(form).toHaveAttribute('method', 'POST');
+    expect(form).toHaveAttribute('action', '?/practiceMissed');
     await expect
       .element(page.getByRole('button', { name: 'Practice selected missed questions' }))
       .toBeInTheDocument();

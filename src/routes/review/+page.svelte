@@ -33,7 +33,7 @@
   >
 </svelte:head>
 
-<main class="-m-2 min-h-screen bg-surface-100-900 font-sans text-surface-900-50">
+<main class="min-h-screen bg-surface-100-900 font-sans text-surface-900-50">
   <div class="mx-auto w-[min(100%-2rem,980px)] py-8 pb-20">
     <a
       class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-warning-500"
