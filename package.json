@@ -23,7 +23,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@skeletonlabs/skeleton": "^5.0.1",
-    "@skeletonlabs/tw-plugin": "^0.4.1",
+    "@skeletonlabs/skeleton-svelte": "^5.0.1",
     "@sveltejs/adapter-auto": "next",
     "@sveltejs/kit": "next",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
