@@ -15,32 +15,29 @@ afterEach(async () => {
 });
 
 describe('importPacksFromFolder', () => {
-  it(
-    'imports the tracked synthetic sample into SQLite and exposes it in the pack index',
-    async () => {
-      const directory = await mkdtemp(join(tmpdir(), 'ordewell-packs-'));
-      temporaryDirectories.push(directory);
-      const incoming = join(directory, 'incoming');
-      const databasePath = join(directory, 'state', 'packs.sqlite');
-      await cp(resolve('packs/incoming'), incoming, { recursive: true });
+  it('imports the tracked synthetic sample into SQLite and exposes it in the pack index', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ordewell-packs-'));
+    temporaryDirectories.push(directory);
+    const incoming = join(directory, 'incoming');
+    const databasePath = join(directory, 'state', 'packs.sqlite');
+    await cp(resolve('packs/incoming'), incoming, { recursive: true });
 
-      const result = await importPacksFromFolder({ folder: incoming, databasePath });
+    const result = await importPacksFromFolder({ folder: incoming, databasePath });
 
-      expect(result).toEqual({
-        imported: ['databricks-data-engineer-associate/synthetic-foundations@1.0.0'],
-        errors: [],
-      });
-      expect(getPackIndex(databasePath)).toEqual([
-        expect.objectContaining({
-          examId: 'databricks-data-engineer-associate',
-          packId: 'synthetic-foundations',
-          packVersion: '1.0.0',
-          questionCount: 2,
-          synthetic: true,
-        }),
-      ]);
-    },
-  );
+    expect(result).toEqual({
+      imported: ['databricks-data-engineer-associate/synthetic-foundations@1.0.0'],
+      errors: [],
+    });
+    expect(getPackIndex(databasePath)).toEqual([
+      expect.objectContaining({
+        examId: 'databricks-data-engineer-associate',
+        packId: 'synthetic-foundations',
+        packVersion: '1.0.0',
+        questionCount: 2,
+        synthetic: true,
+      }),
+    ]);
+  });
 
   it('rejects importing the same exam, pack, and version twice', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'ordewell-packs-'));

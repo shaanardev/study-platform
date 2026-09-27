@@ -9,7 +9,7 @@
   <meta
     name="description"
     content="Browse locally imported exam question packs and their versions."
-  />
+  >
 </svelte:head>
 
 <main class="library">
@@ -17,12 +17,16 @@
     <p class="eyebrow">Ordewell · local study library</p>
     <h1>Exam pack library</h1>
     <p class="intro">
-      Browse question packs stored on this device. Packs are imported only when you choose to
-      import them.
+      Browse question packs stored on this device. Packs are imported only when you choose to import
+      them.
     </p>
   </header>
 
-  <p class="study-links"><a class="practice-link" href="/practice">Start or resume a practice quiz →</a> <a href="/progress">Review progress and mistakes →</a> <a href="/mock">Take a timed mock exam →</a></p>
+  <p class="study-links">
+    <a class="practice-link" href="/practice">Start or resume a practice quiz →</a>
+    <a href="/progress">Review progress and mistakes →</a>
+    <a href="/mock">Take a timed mock exam →</a> <a href="/review">Flag or correct questions →</a>
+  </p>
   <section class="import-panel" aria-labelledby="import-heading">
     <div>
       <p class="eyebrow">Local import</p>
@@ -70,7 +74,9 @@
           <article class="pack-card">
             <div class="card-topline">
               <p class="eyebrow">{pack.examTitle} · exam {pack.examVersion}</p>
-              {#if pack.synthetic}<span class="badge">Synthetic sample</span>{/if}
+              {#if pack.synthetic}
+                <span class="badge">Synthetic sample</span>
+              {/if}
             </div>
             <h3>{pack.packTitle}</h3>
             <p class="version">Pack version {pack.packVersion}</p>

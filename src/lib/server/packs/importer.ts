@@ -43,9 +43,7 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
       input = JSON.parse(await readFile(filePath, 'utf8')) as unknown;
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'unknown error';
-      errors.push(
-        `${entry.name}: could not read valid JSON (${reason}).`,
-      );
+      errors.push(`${entry.name}: could not read valid JSON (${reason}).`);
       continue;
     }
     const validation = validateExamPack(input);
@@ -86,7 +84,13 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
       for (const question of validation.pack.questions) {
         for (const source of question.sources) {
           const sourceFile = resolve(dirname(filePath), source.path);
-          saveImportedSourceAsset(databasePath, validation.pack, question.id, source, await readFile(sourceFile, 'utf8'));
+          saveImportedSourceAsset(
+            databasePath,
+            validation.pack,
+            question.id,
+            source,
+            await readFile(sourceFile, 'utf8'),
+          );
         }
       }
       imported.push(

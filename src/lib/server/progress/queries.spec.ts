@@ -9,7 +9,8 @@ import { getProgress } from './queries';
 const directories: string[] = [];
 
 afterEach(() => {
-  for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
+  for (const directory of directories.splice(0))
+    rmSync(directory, { recursive: true, force: true });
 });
 
 function fixture() {
@@ -25,8 +26,32 @@ function fixture() {
       { id: 'compute', title: 'Compute', weight: 40 },
     ],
     questions: [
-      { id: 'q-storage', type: 'single_choice' as const, domainId: 'storage', prompt: 'Storage?', options: [{ id: 'yes', text: 'Yes' }, { id: 'no', text: 'No' }], answerIds: ['yes'], explanation: 'Yes.', sources: [{ path: 'notes.md', label: 'Notes' }] },
-      { id: 'q-compute', type: 'single_choice' as const, domainId: 'compute', prompt: 'Compute?', options: [{ id: 'yes', text: 'Yes' }, { id: 'no', text: 'No' }], answerIds: ['yes'], explanation: 'Yes.', sources: [{ path: 'notes.md', label: 'Notes' }] },
+      {
+        id: 'q-storage',
+        type: 'single_choice' as const,
+        domainId: 'storage',
+        prompt: 'Storage?',
+        options: [
+          { id: 'yes', text: 'Yes' },
+          { id: 'no', text: 'No' },
+        ],
+        answerIds: ['yes'],
+        explanation: 'Yes.',
+        sources: [{ path: 'notes.md', label: 'Notes' }],
+      },
+      {
+        id: 'q-compute',
+        type: 'single_choice' as const,
+        domainId: 'compute',
+        prompt: 'Compute?',
+        options: [
+          { id: 'yes', text: 'Yes' },
+          { id: 'no', text: 'No' },
+        ],
+        answerIds: ['yes'],
+        explanation: 'Yes.',
+        sources: [{ path: 'notes.md', label: 'Notes' }],
+      },
     ],
   };
   saveImportedPack(databasePath, pack);
@@ -36,7 +61,14 @@ function fixture() {
 describe('progress queries', () => {
   it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', () => {
     const { databasePath, pack } = fixture();
-    const session = createPracticeSession({ databasePath, examId: pack.exam.id, packId: pack.pack.id, packVersion: pack.pack.version, questionCount: 2, random: () => 0 });
+    const session = createPracticeSession({
+      databasePath,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    });
     answerQuestion(databasePath, session.id, 'q-storage', ['yes']);
     answerQuestion(databasePath, session.id, 'q-compute', ['no']);
 
@@ -53,11 +85,44 @@ describe('progress queries', () => {
       questionCount: 2,
     });
     expect(progress.domainScores).toEqual([
-      { examId: 'exam-a', examTitle: 'Cloud exam', packId: 'pack-a', packTitle: 'Cloud foundations', packVersion: '1.0', domainId: 'storage', domainTitle: 'Storage', correctCount: 1, answeredCount: 1, percent: 100 },
-      { examId: 'exam-a', examTitle: 'Cloud exam', packId: 'pack-a', packTitle: 'Cloud foundations', packVersion: '1.0', domainId: 'compute', domainTitle: 'Compute', correctCount: 0, answeredCount: 1, percent: 0 },
+      {
+        examId: 'exam-a',
+        examTitle: 'Cloud exam',
+        packId: 'pack-a',
+        packTitle: 'Cloud foundations',
+        packVersion: '1.0',
+        domainId: 'storage',
+        domainTitle: 'Storage',
+        correctCount: 1,
+        answeredCount: 1,
+        percent: 100,
+      },
+      {
+        examId: 'exam-a',
+        examTitle: 'Cloud exam',
+        packId: 'pack-a',
+        packTitle: 'Cloud foundations',
+        packVersion: '1.0',
+        domainId: 'compute',
+        domainTitle: 'Compute',
+        correctCount: 0,
+        answeredCount: 1,
+        percent: 0,
+      },
     ]);
     expect(progress.missedQuestions).toEqual([
-      { examId: 'exam-a', packId: 'pack-a', packVersion: '1.0', examTitle: 'Cloud exam', packTitle: 'Cloud foundations', questionId: 'q-compute', prompt: 'Compute?', domainId: 'compute', domainTitle: 'Compute', missCount: 1 },
+      {
+        examId: 'exam-a',
+        packId: 'pack-a',
+        packVersion: '1.0',
+        examTitle: 'Cloud exam',
+        packTitle: 'Cloud foundations',
+        questionId: 'q-compute',
+        prompt: 'Compute?',
+        domainId: 'compute',
+        domainTitle: 'Compute',
+        missCount: 1,
+      },
     ]);
   });
 });
