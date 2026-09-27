@@ -81,7 +81,8 @@ type SessionRow = {
 export function getProgress(databasePath = resolve('.local/exam-packs.sqlite')): ProgressData {
   const database = openPackDatabase(databasePath);
   try {
-    const sessions = database.prepare(`
+    const sessions = database
+      .prepare(`
       SELECT s.id, s.exam_id AS examId, p.exam_title AS examTitle, p.exam_version AS examVersion,
         s.pack_id AS packId, p.pack_title AS packTitle, s.pack_version AS packVersion,
         s.status, s.created_at AS createdAt, s.updated_at AS updatedAt,
@@ -93,9 +94,11 @@ export function getProgress(databasePath = resolve('.local/exam-packs.sqlite')):
       LEFT JOIN practice_answers a ON a.session_id = s.id
       GROUP BY s.id
       ORDER BY s.updated_at DESC, s.rowid DESC
-    `).all() as unknown as SessionRow[];
+    `)
+      .all() as unknown as SessionRow[];
 
-    const answers = database.prepare(`
+    const answers = database
+      .prepare(`
       SELECT a.session_id AS sessionId, s.exam_id AS examId, p.exam_title AS examTitle,
         s.pack_id AS packId, p.pack_title AS packTitle, s.pack_version AS packVersion,
         p.content_json AS contentJson, a.question_id AS questionId, a.correct
@@ -103,7 +106,8 @@ export function getProgress(databasePath = resolve('.local/exam-packs.sqlite')):
       JOIN practice_sessions s ON s.id = a.session_id
       JOIN imported_packs p ON p.exam_id = s.exam_id AND p.pack_id = s.pack_id AND p.pack_version = s.pack_version
       ORDER BY a.answered_at, a.rowid
-    `).all() as unknown as AnswerRow[];
+    `)
+      .all() as unknown as AnswerRow[];
 
     const recentAttempts: ProgressAttempt[] = sessions.map((row) => ({
       id: String(row.id),
@@ -131,10 +135,16 @@ export function getProgress(databasePath = resolve('.local/exam-packs.sqlite')):
       const versionKey = [answer.examId, answer.packId, answer.packVersion].join('\0');
       const scoreKey = [versionKey, domain.id].join('\0');
       const score = domainTotals.get(scoreKey) ?? {
-        examId: String(answer.examId), examTitle: String(answer.examTitle),
-        packId: String(answer.packId), packTitle: String(answer.packTitle),
-        packVersion: String(answer.packVersion), domainId: domain.id, domainTitle: domain.title,
-        correctCount: 0, answeredCount: 0, percent: 0,
+        examId: String(answer.examId),
+        examTitle: String(answer.examTitle),
+        packId: String(answer.packId),
+        packTitle: String(answer.packTitle),
+        packVersion: String(answer.packVersion),
+        domainId: domain.id,
+        domainTitle: domain.title,
+        correctCount: 0,
+        answeredCount: 0,
+        percent: 0,
       };
       score.answeredCount += 1;
       score.correctCount += Number(answer.correct);
@@ -144,9 +154,16 @@ export function getProgress(databasePath = resolve('.local/exam-packs.sqlite')):
       if (!Number(answer.correct)) {
         const missKey = [versionKey, question.id].join('\0');
         const missed = missedTotals.get(missKey) ?? {
-          examId: String(answer.examId), packId: String(answer.packId), packVersion: String(answer.packVersion),
-          examTitle: String(answer.examTitle), packTitle: String(answer.packTitle), questionId: question.id,
-          prompt: question.prompt, domainId: domain.id, domainTitle: domain.title, missCount: 0,
+          examId: String(answer.examId),
+          packId: String(answer.packId),
+          packVersion: String(answer.packVersion),
+          examTitle: String(answer.examTitle),
+          packTitle: String(answer.packTitle),
+          questionId: question.id,
+          prompt: question.prompt,
+          domainId: domain.id,
+          domainTitle: domain.title,
+          missCount: 0,
         };
         missed.missCount += 1;
         missedTotals.set(missKey, missed);
@@ -155,8 +172,19 @@ export function getProgress(databasePath = resolve('.local/exam-packs.sqlite')):
 
     return {
       recentAttempts: recentAttempts.slice(0, 20),
-      domainScores: [...domainTotals.values()].sort((a, b) => a.examTitle.localeCompare(b.examTitle) || a.packTitle.localeCompare(b.packTitle) || a.packVersion.localeCompare(b.packVersion) || a.domainTitle.localeCompare(b.domainTitle)),
-      missedQuestions: [...missedTotals.values()].sort((a, b) => b.missCount - a.missCount || a.examTitle.localeCompare(b.examTitle) || a.questionId.localeCompare(b.questionId)),
+      domainScores: [...domainTotals.values()].sort(
+        (a, b) =>
+          a.examTitle.localeCompare(b.examTitle) ||
+          a.packTitle.localeCompare(b.packTitle) ||
+          a.packVersion.localeCompare(b.packVersion) ||
+          a.domainTitle.localeCompare(b.domainTitle),
+      ),
+      missedQuestions: [...missedTotals.values()].sort(
+        (a, b) =>
+          b.missCount - a.missCount ||
+          a.examTitle.localeCompare(b.examTitle) ||
+          a.questionId.localeCompare(b.questionId),
+      ),
     };
   } finally {
     database.close();

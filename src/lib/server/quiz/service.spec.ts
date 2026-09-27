@@ -3,21 +3,30 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { saveImportedPack } from '../db/packs';
-import { validateExamPack } from '../packs/validate';
 import { importPacksFromFolder } from '../packs/importer';
-import { answerQuestion, createPracticeSession, getPracticeSession, readQuestionSource } from './service';
+import { validateExamPack } from '../packs/validate';
+import {
+  answerQuestion,
+  createPracticeSession,
+  getPracticeSession,
+  readQuestionSource,
+} from './service';
 
 const directories: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+  await Promise.all(
+    directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });
 
 async function setup() {
   const directory = await mkdtemp(join(tmpdir(), 'ordewell-quiz-'));
   directories.push(directory);
   const databasePath = join(directory, 'practice.sqlite');
-  const pack = validateExamPack(JSON.parse(await readFile(resolve('packs/incoming/sample-databricks-associate.json'), 'utf8')));
+  const pack = validateExamPack(
+    JSON.parse(await readFile(resolve('packs/incoming/sample-databricks-associate.json'), 'utf8')),
+  );
   if (!pack.valid) throw new Error(pack.errors.join(' '));
   saveImportedPack(databasePath, pack.pack);
   return { databasePath, pack: pack.pack };

@@ -1,4 +1,4 @@
-import { importPacksFromFolder, getPackIndex } from '$lib/server/packs/importer';
+import { getPackIndex, importPacksFromFolder } from '$lib/server/packs/importer';
 
 export const load = () => ({ packs: getPackIndex() });
 
