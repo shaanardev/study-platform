@@ -37,368 +37,237 @@
   <meta name="description" content="Choose an exam pack and resume a saved practice quiz.">
 </svelte:head>
 
-<main class="practice">
-  <a class="back-link" href="/">← Exam pack library</a>
-  <header>
-    <p class="eyebrow">Practice</p>
-    <h1>Build your exam confidence</h1>
-    <p>Choose an imported exam pack, focus on domains, and your answers will be saved as you go.</p>
-  </header>
+<main class="min-h-screen bg-[#f4f5f2] px-4 py-8 pb-20 font-sans text-[#20251f] sm:px-6">
+  <div class="mx-auto w-full max-w-[820px]">
+    <a class="inline-block font-semibold text-[#28553a] underline-offset-4 hover:underline" href="/"
+      >← Exam pack library</a
+    >
+    <header class="my-8 max-w-[650px]">
+      <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">Practice</p>
+      <h1 class="mb-3 text-[clamp(2.2rem,6vw,3.3rem)] leading-[1.05] font-bold tracking-[-0.045em]">
+        Build your exam confidence
+      </h1>
+      <p class="leading-relaxed text-[#5e665e]">
+        Choose an imported exam pack, focus on domains, and your answers will be saved as you go.
+      </p>
+    </header>
 
-  {#if data.session?.status === 'in_progress'}
-    <section class="resume" aria-label="Saved practice session">
-      <div>
-        <p class="eyebrow">Saved session</p>
-        <h2>
-          {data.packs.find(
+    {#if data.session?.status === 'in_progress'}
+      <section
+        class="my-5 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#dce1d9] bg-[#edf3eb] p-5 sm:flex-row sm:items-center"
+        aria-label="Saved practice session"
+      >
+        <div>
+          <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">
+            Saved session
+          </p>
+          <h2 class="mb-2 text-xl font-semibold">
+            {data.packs.find(
     (pack) =>
       pack.examId === data.session?.examId &&
       pack.packId === data.session?.packId &&
       pack.packVersion === data.session?.packVersion,
   )?.packTitle ?? 'Practice quiz'}
-        </h2>
-        <p>
-          {data.session.answers.length}
-          of {data.session.questionIds.length} answered · Pack version {data.session.packVersion}
-        </p>
-      </div>
-      <a class="button-link" href={`/practice?session=${encodeURIComponent(data.session.id)}`}
-        >Resume quiz</a
-      >
-    </section>
-  {/if}
-
-  {#if data.packs.length === 0}
-    <section class="empty">
-      <h2>No exam packs are available yet</h2>
-      <p>Import a pack from the exam pack library to begin a practice quiz.</p>
-      <a href="/">Open exam pack library</a>
-    </section>
-  {:else}
-    <section class="setup" aria-labelledby="setup-heading">
-      <h2 id="setup-heading">Start a practice quiz</h2>
-      <form method="POST" action="?/start">
-        <label for="pack">Exam pack version</label>
-        <select
-          id="pack"
-          name="packChoice"
-          bind:value={selectedPackKey}
-          onchange={() => (selectedDomainIds = [])}
-        >
-          {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
-            <option value={`${pack.examId}|${pack.packId}|${pack.packVersion}`}>
-              {pack.examTitle}
-              · {pack.packTitle} · v{pack.packVersion}{pack.synthetic ? ' · synthetic' : ''}
-            </option>
-          {/each}
-        </select>
-        <input type="hidden" name="examId" value={selectedPack?.examId ?? ''}>
-        <input type="hidden" name="packId" value={selectedPack?.packId ?? ''}>
-        <input type="hidden" name="packVersion" value={selectedPack?.packVersion ?? ''}>
-
-        {#if selectedPack}
-          <fieldset>
-            <legend>Domains <span>(leave all unchecked to include every domain)</span></legend>
-            {#each selectedPack.domains as domain (domain.id)}
-              <label class="check-option">
-                <input
-                  type="checkbox"
-                  name="domainIds"
-                  value={domain.id}
-                  bind:group={selectedDomainIds}
-                >
-                <span>{domain.title}</span><small>{domain.weight}%</small>
-              </label>
-            {/each}
-          </fieldset>
-          <label for="question-count">Number of questions</label>
-          <input
-            id="question-count"
-            name="questionCount"
-            type="number"
-            min="1"
-            max={availableQuestionCount}
-            value={Math.min(10, availableQuestionCount)}
-            required
-          >
-          <button type="submit">Start quiz</button>
-        {/if}
-      </form>
-      {#if form?.message}
-        <p class="error" role="alert">{form.message}</p>
-      {/if}
-    </section>
-  {/if}
-
-  {#if data.session}
-    <section class="quiz" aria-labelledby="quiz-heading">
-      <p class="eyebrow">
-        {data.session.answers.length}
-        / {data.session.questionIds.length} answered ·
-        {data.session.packId}
-        v{data.session.packVersion}
-      </p>
-      {#if latestAnswer && latestQuestion}
-        <div class:correct={latestAnswer.correct} class="feedback" role="status" aria-live="polite">
-          <h2>{latestAnswer.correct ? 'Correct' : 'Not quite'}</h2>
-          <p>
-            <strong>Correct answer:</strong>
-            {latestQuestion.options
-    .filter((option) => latestAnswer.answerIdsCorrect.includes(option.id))
-    .map((option) => option.text)
-    .join('; ')}
+          </h2>
+          <p class="mb-0.5 leading-relaxed text-[#5e665e]">
+            {data.session.answers.length}
+            of {data.session.questionIds.length} answered · Pack version {data.session.packVersion}
           </p>
-          <p>{latestAnswer.explanation}</p>
-          <div class="sources">
-            {#each latestAnswer.sources as source (source.path)}
-              <a
-                href={`/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`}
-                target="_blank"
-                rel="noopener"
-                >{source.label} <span aria-hidden="true">↗</span></a
-              >
-            {/each}
-          </div>
         </div>
-      {/if}
+        <a
+          class="btn min-h-11 rounded-lg bg-[#28553a] px-4 font-bold text-white hover:bg-[#1e432d] focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
+          href={`/practice?session=${encodeURIComponent(data.session.id)}`}
+          >Resume quiz</a
+        >
+      </section>
+    {/if}
 
-      {#if activeQuestion}
-        <article>
-          <p class="eyebrow">
-            {data.session.answers.length + 1}
-            of {data.session.questionIds.length} ·
-            {data.session.questions.find((question) => question.id === activeQuestion.id)?.domainId}
-          </p>
-          <h2 id="quiz-heading">{activeQuestion.prompt}</h2>
-          <form method="POST" action="?/answer">
-            <input type="hidden" name="sessionId" value={data.session.id}>
-            <input type="hidden" name="questionId" value={activeQuestion.id}>
-            <fieldset class="options">
-              <legend>
-                {activeQuestion.type === 'multiple_choice' ? 'Select all that apply' : 'Select one answer'}
+    {#if data.packs.length === 0}
+      <section class="my-5 rounded-2xl border border-[#dce1d9] bg-white p-5 sm:p-6">
+        <h2 class="mb-3 text-xl font-semibold">No exam packs are available yet</h2>
+        <p class="mb-4 text-[#5e665e]">
+          Import a pack from the exam pack library to begin a practice quiz.
+        </p>
+        <a class="font-semibold text-[#28553a] underline-offset-4 hover:underline" href="/"
+          >Open exam pack library</a
+        >
+      </section>
+    {:else}
+      <section
+        class="my-5 rounded-2xl border border-[#dce1d9] bg-white p-5 sm:p-6"
+        aria-labelledby="setup-heading"
+      >
+        <h2 id="setup-heading" class="mb-5 text-xl font-semibold">Start a practice quiz</h2>
+        <form class="grid gap-3" method="POST" action="?/start">
+          <label class="font-bold" for="pack">Exam pack version</label>
+          <select
+            class="select min-h-11 w-full focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
+            id="pack"
+            name="packChoice"
+            bind:value={selectedPackKey}
+            onchange={() => (selectedDomainIds = [])}
+          >
+            {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
+              <option value={`${pack.examId}|${pack.packId}|${pack.packVersion}`}>
+                {pack.examTitle}
+                · {pack.packTitle} · v{pack.packVersion}{pack.synthetic ? ' · synthetic' : ''}
+              </option>
+            {/each}
+          </select>
+          <input type="hidden" name="examId" value={selectedPack?.examId ?? ''}>
+          <input type="hidden" name="packId" value={selectedPack?.packId ?? ''}>
+          <input type="hidden" name="packVersion" value={selectedPack?.packVersion ?? ''}>
+
+          {#if selectedPack}
+            <fieldset class="my-2 min-w-0 rounded-xl border border-[#dce1d9] p-4">
+              <legend class="px-1 font-bold">
+                Domains
+                <span class="font-normal text-[#687168]"
+                  >(leave all unchecked to include every domain)</span
+                >
               </legend>
-              {#each activeQuestion.options as option (option.id)}
-                <label class="option">
+              {#each selectedPack.domains as domain (domain.id)}
+                <label
+                  class="flex items-start gap-3 rounded-lg px-1 py-3 font-medium hover:bg-[#f4f6f2]"
+                >
                   <input
-                    type={activeQuestion.type === 'multiple_choice' ? 'checkbox' : 'radio'}
-                    name="answerIds"
-                    value={option.id}
-                    required={activeQuestion.type === 'single_choice'}
+                    class="mt-0.5 size-4 accent-[#28553a]"
+                    type="checkbox"
+                    name="domainIds"
+                    value={domain.id}
+                    bind:group={selectedDomainIds}
                   >
-                  <span>{option.text}</span>
+                  <span>{domain.title}</span
+                  ><small class="ml-auto text-[#687168]">{domain.weight}%</small>
                 </label>
               {/each}
             </fieldset>
-            <button type="submit">Submit answer</button>
-          </form>
-        </article>
-      {:else if data.session.status === 'completed'}
-        <div class="complete" role="status">
-          <h2>Quiz complete</h2>
-          <p>
-            You answered {data.session.answers.filter((answer) => answer.correct).length} of
-            {data.session.questionIds.length}
-            correctly.
-          </p>
-          <p>Your completed attempt is saved with pack version {data.session.packVersion}.</p>
-        </div>
-      {/if}
-    </section>
-  {/if}
-</main>
+            <label class="font-bold" for="question-count">Number of questions</label>
+            <input
+              class="input min-h-11 w-full focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
+              id="question-count"
+              name="questionCount"
+              type="number"
+              min="1"
+              max={availableQuestionCount}
+              value={Math.min(10, availableQuestionCount)}
+              required
+            >
+            <button
+              class="btn min-h-11 rounded-lg bg-[#28553a] px-4 font-bold text-white hover:bg-[#1e432d] focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
+              type="submit"
+            >
+              Start quiz
+            </button>
+          {/if}
+        </form>
+        {#if form?.message}
+          <p class="text-[#9d3028]" role="alert">{form.message}</p>
+        {/if}
+      </section>
+    {/if}
 
-<style>
-  :global(body) {
-    margin: 0;
-    background: #f4f5f2;
-    color: #20251f;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  }
-  .practice {
-    width: min(100% - 2rem, 820px);
-    margin: 0 auto;
-    padding: 2rem 0 5rem;
-  }
-  header {
-    max-width: 650px;
-    margin: 2rem 0;
-  }
-  h1 {
-    margin: 0 0 0.7rem;
-    font-size: clamp(2.2rem, 6vw, 3.3rem);
-    letter-spacing: -0.045em;
-    line-height: 1.05;
-  }
-  h2,
-  p {
-    margin-top: 0;
-  }
-  header > p:last-child,
-  .resume p:last-child {
-    color: #5e665e;
-    line-height: 1.55;
-  }
-  .eyebrow {
-    margin-bottom: 0.55rem;
-    color: #536c57;
-    font-size: 0.75rem;
-    font-weight: 750;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-  }
-  a {
-    color: #28553a;
-    font-weight: 650;
-  }
-  .back-link {
-    display: inline-block;
-  }
-  .setup,
-  .resume,
-  .quiz,
-  .empty {
-    margin: 1.2rem 0;
-    border: 1px solid #dce1d9;
-    border-radius: 16px;
-    background: #fff;
-    padding: 1.4rem;
-  }
-  .resume {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    background: #edf3eb;
-  }
-  .resume h2,
-  .resume p {
-    margin-bottom: 0.35rem;
-  }
-  form {
-    display: grid;
-    gap: 0.8rem;
-  }
-  label,
-  legend {
-    font-weight: 700;
-  }
-  select,
-  input[type="number"] {
-    width: 100%;
-    min-height: 46px;
-    border: 1px solid #aeb9ad;
-    border-radius: 8px;
-    background: #fff;
-    padding: 0.6rem 0.7rem;
-    color: inherit;
-    font: inherit;
-  }
-  fieldset {
-    min-width: 0;
-    margin: 0.5rem 0;
-    border: 1px solid #dce1d9;
-    border-radius: 10px;
-    padding: 1rem;
-  }
-  legend span {
-    color: #687168;
-    font-size: 0.88rem;
-    font-weight: 400;
-  }
-  .check-option,
-  .option {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.7rem;
-    padding: 0.7rem 0.3rem;
-    font-weight: 500;
-  }
-  .check-option small {
-    margin-left: auto;
-    color: #687168;
-  }
-  input[type="checkbox"],
-  input[type="radio"] {
-    width: 1.1rem;
-    height: 1.1rem;
-    accent-color: #28553a;
-  }
-  button,
-  .button-link {
-    display: inline-flex;
-    min-height: 46px;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 9px;
-    background: #28553a;
-    padding: 0.75rem 1rem;
-    color: #fff;
-    font: inherit;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  button:hover,
-  .button-link:hover {
-    background: #1e432d;
-  }
-  :is(button, a, select, input):focus-visible {
-    outline: 3px solid #d29537;
-    outline-offset: 3px;
-  }
-  .quiz article {
-    margin-top: 1.5rem;
-    border-top: 1px solid #e2e6df;
-    padding-top: 1.4rem;
-  }
-  .quiz article h2 {
-    line-height: 1.4;
-  }
-  .options {
-    display: grid;
-    gap: 0.3rem;
-  }
-  .option {
-    border-radius: 8px;
-  }
-  .option:hover {
-    background: #f4f6f2;
-  }
-  .feedback,
-  .complete {
-    margin: 1rem 0;
-    border-left: 5px solid #ad7726;
-    border-radius: 8px;
-    background: #fff7e8;
-    padding: 1rem 1.1rem;
-  }
-  .feedback.correct {
-    border-color: #34734b;
-    background: #edf7ef;
-  }
-  .feedback h2,
-  .complete h2 {
-    margin-bottom: 0.6rem;
-  }
-  .sources {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem 1.2rem;
-  }
-  .error {
-    color: #9d3028;
-  }
-  @media (max-width: 560px) {
-    .resume {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-    .setup,
-    .resume,
-    .quiz,
-    .empty {
-      padding: 1rem;
-    }
-  }
-</style>
+    {#if data.session}
+      <section
+        class="my-5 rounded-2xl border border-[#dce1d9] bg-white p-5 sm:p-6"
+        aria-labelledby="quiz-heading"
+      >
+        <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">
+          {data.session.answers.length}
+          / {data.session.questionIds.length} answered ·
+          {data.session.packId}
+          v{data.session.packVersion}
+        </p>
+        {#if latestAnswer && latestQuestion}
+          <div
+            class:border-[#34734b]={latestAnswer.correct}
+            class:bg-[#edf7ef]={latestAnswer.correct}
+            class="my-4 rounded-lg border-l-[5px] border-[#ad7726] bg-[#fff7e8] px-4 py-4"
+            role="status"
+            aria-live="polite"
+          >
+            <h2 class="mb-2 text-xl font-semibold">
+              {latestAnswer.correct ? 'Correct' : 'Not quite'}
+            </h2>
+            <p class="mb-3">
+              <strong>Correct answer:</strong>
+              {latestQuestion.options
+    .filter((option) => latestAnswer.answerIdsCorrect.includes(option.id))
+    .map((option) => option.text)
+    .join('; ')}
+            </p>
+            <p class="mb-4">{latestAnswer.explanation}</p>
+            <div class="flex flex-wrap gap-x-5 gap-y-3">
+              {#each latestAnswer.sources as source (source.path)}
+                <a
+                  href={`/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`}
+                  target="_blank"
+                  rel="noopener"
+                  class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
+                  >{source.label} <span aria-hidden="true">↗</span></a
+                >
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        {#if activeQuestion}
+          <article class="mt-6 border-t border-[#e2e6df] pt-5">
+            <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">
+              {data.session.answers.length + 1}
+              of {data.session.questionIds.length} ·
+              {data.session.questions.find((question) => question.id === activeQuestion.id)?.domainId}
+            </p>
+            <h2 id="quiz-heading" class="mb-5 text-xl leading-relaxed font-semibold">
+              {activeQuestion.prompt}
+            </h2>
+            <form class="grid gap-3" method="POST" action="?/answer">
+              <input type="hidden" name="sessionId" value={data.session.id}>
+              <input type="hidden" name="questionId" value={activeQuestion.id}>
+              <fieldset class="grid gap-1">
+                <legend class="mb-2 font-bold">
+                  {activeQuestion.type === 'multiple_choice' ? 'Select all that apply' : 'Select one answer'}
+                </legend>
+                {#each activeQuestion.options as option (option.id)}
+                  <label
+                    class="flex items-start gap-3 rounded-lg px-2 py-3 font-medium hover:bg-[#f4f6f2]"
+                  >
+                    <input
+                      class="mt-0.5 size-4 accent-[#28553a]"
+                      type={activeQuestion.type === 'multiple_choice' ? 'checkbox' : 'radio'}
+                      name="answerIds"
+                      value={option.id}
+                      required={activeQuestion.type === 'single_choice'}
+                    >
+                    <span>{option.text}</span>
+                  </label>
+                {/each}
+              </fieldset>
+              <button
+                class="btn min-h-11 rounded-lg bg-[#28553a] px-4 font-bold text-white hover:bg-[#1e432d] focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
+                type="submit"
+              >
+                Submit answer
+              </button>
+            </form>
+          </article>
+        {:else if data.session.status === 'completed'}
+          <div
+            class="my-4 rounded-lg border-l-[5px] border-[#34734b] bg-[#edf7ef] px-4 py-4"
+            role="status"
+          >
+            <h2 class="mb-2 text-xl font-semibold">Quiz complete</h2>
+            <p class="mb-3">
+              You answered {data.session.answers.filter((answer) => answer.correct).length} of
+              {data.session.questionIds.length}
+              correctly.
+            </p>
+            <p class="mb-0">
+              Your completed attempt is saved with pack version {data.session.packVersion}.
+            </p>
+          </div>
+        {/if}
+      </section>
+    {/if}
+  </div>
+</main>
