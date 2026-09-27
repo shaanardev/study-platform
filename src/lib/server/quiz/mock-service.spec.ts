@@ -44,7 +44,8 @@ describe('timed mock attempts', () => {
         missing: 1,
       },
     ]);
-    expect(() =>
+    let thrown: unknown;
+    try {
       createMockAttempt({
         databasePath,
         examId: pack.exam.id,
@@ -52,8 +53,13 @@ describe('timed mock attempts', () => {
         packVersion: pack.pack.version,
         questionCount: 5,
         durationMinutes: 30,
-      }),
-    ).toThrow('Insufficient weighted mock coverage');
+      });
+    } catch (cause) {
+      thrown = cause;
+    }
+    expect(thrown).toMatchObject({
+      body: { message: expect.stringContaining('Insufficient weighted mock coverage') },
+    });
   });
 
   it('persists answers and deadline across resume, then reveals scoring only after submit', async () => {
@@ -68,7 +74,8 @@ describe('timed mock attempts', () => {
       random: () => 0,
       now: 10_000,
     });
-    const first = attempt.questions[0]!;
+    const first = attempt.questions[0];
+    if (!first) throw new Error('The mock attempt should include a question.');
     const saved = saveMockAnswer(
       databasePath,
       attempt.id,
@@ -80,7 +87,8 @@ describe('timed mock attempts', () => {
     expect(saved.questions[0]).not.toHaveProperty('explanation');
     expect(saved.answers[0]).not.toHaveProperty('correct');
     expect(saved.answers[0]).not.toHaveProperty('explanation');
-    const resumed = getMockAttempt(databasePath, attempt.id, 40_000)!;
+    const resumed = getMockAttempt(databasePath, attempt.id, 40_000);
+    if (!resumed) throw new Error('The mock attempt should remain available.');
     expect(resumed.remainingMilliseconds).toBe(90_000);
     expect(resumed.answers).toHaveLength(1);
     expect(resumed).not.toHaveProperty('score');
@@ -115,7 +123,8 @@ describe('timed mock attempts', () => {
       now: 5_000,
     });
     saveMockAnswer(databasePath, attempt.id, 'delta-transaction-basics', ['a'], 6_000);
-    const expired = getMockAttempt(databasePath, attempt.id, 65_000)!;
+    const expired = getMockAttempt(databasePath, attempt.id, 65_000);
+    if (!expired) throw new Error('The expired mock attempt should remain available.');
     expect(expired.status).toBe('expired');
     expect(expired.score?.correct).toBe(1);
     expect(expired.questions[0]).toHaveProperty('explanation');
