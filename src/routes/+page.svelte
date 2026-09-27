@@ -12,331 +12,156 @@
   >
 </svelte:head>
 
-<main class="library">
-  <header class="masthead">
-    <p class="eyebrow">Ordewell · local study library</p>
-    <h1>Exam pack library</h1>
-    <p class="intro">
-      Browse question packs stored on this device. Packs are imported only when you choose to import
-      them.
-    </p>
-  </header>
+<main class="-m-2 min-h-screen bg-surface-100-900 font-sans text-surface-900-50">
+  <div class="mx-auto w-[min(100%-2rem,960px)] py-8 sm:py-14 sm:pb-20">
+    <header class="mb-10 max-w-[660px]">
+      <p class="mb-2 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">
+        Ordewell · local study library
+      </p>
+      <h1
+        class="mb-3 text-[clamp(2.25rem,6vw,3.5rem)] leading-[1.05] font-bold tracking-[-0.045em]"
+      >
+        Exam pack library
+      </h1>
+      <p class="mb-0 max-w-[54ch] text-base leading-relaxed text-surface-600-400 sm:text-lg">
+        Browse question packs stored on this device. Packs are imported only when you choose to
+        import them.
+      </p>
+    </header>
 
-  <p class="study-links">
-    <a class="practice-link" href="/practice">Start or resume a practice quiz →</a>
-    <a href="/progress">Review progress and mistakes →</a>
-    <a href="/mock">Take a timed mock exam →</a> <a href="/review">Flag or correct questions →</a>
-  </p>
-  <section class="import-panel" aria-labelledby="import-heading">
-    <div>
-      <p class="eyebrow">Local import</p>
-      <h2 id="import-heading">Add exam packs</h2>
-      <p>Place versioned JSON packs in <code>packs/incoming/</code>, then import them here.</p>
-      <a href="/exam-pack.schema.json">Read the exam pack JSON schema</a>
-    </div>
-    <form method="POST" action="?/import">
-      <button type="submit">Import packs from local folder</button>
-    </form>
-  </section>
+    <nav class="mb-8 flex flex-wrap items-center gap-x-4 gap-y-3" aria-label="Study tools">
+      <a
+        class="btn preset-filled-primary-700-300 min-h-11 no-underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
+        href="/practice"
+        >Start or resume a practice quiz →</a
+      >
+      <a
+        class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
+        href="/progress"
+        >Review progress and mistakes →</a
+      >
+      <a
+        class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
+        href="/mock"
+        >Take a timed mock exam →</a
+      >
+      <a
+        class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
+        href="/review"
+        >Flag or correct questions →</a
+      >
+    </nav>
 
-  {#if form?.importResult}
-    <div class="notice" role="status" aria-live="polite">
-      {#if form.importResult.imported.length > 0}
-        <p>Imported {form.importResult.imported.length} pack version(s).</p>
-      {/if}
-      {#each form.importResult.errors as message (message)}
-        <p class="error">{message}</p>
-      {/each}
-      {#if form.importResult.imported.length === 0 && form.importResult.errors.length === 0}
-        <p>No new pack versions were imported.</p>
-      {/if}
-    </div>
-  {/if}
-
-  <section aria-labelledby="catalog-heading">
-    <div class="section-heading">
+    <section
+      class="card mb-12 flex flex-col items-start justify-between gap-6 rounded-2xl border border-surface-200-800 bg-surface-50-950 p-6 sm:flex-row sm:items-center"
+      aria-labelledby="import-heading"
+    >
       <div>
-        <p class="eyebrow">Your local catalog</p>
-        <h2 id="catalog-heading">Imported exam packs</h2>
+        <p class="mb-2 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">
+          Local import
+        </p>
+        <h2 id="import-heading" class="mb-2 text-xl font-semibold tracking-tight">
+          Add exam packs
+        </h2>
+        <p class="mb-2 text-surface-600-400">
+          Place versioned JSON packs in
+          <code class="rounded bg-surface-200-800 px-1 py-0.5 text-[0.9em]">packs/incoming/</code>,
+          then import them here.
+        </p>
+        <a
+          class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
+          href="/exam-pack.schema.json"
+          >Read the exam pack JSON schema</a
+        >
       </div>
-      <p class="count">{data.packs.length} version{data.packs.length === 1 ? '' : 's'}</p>
-    </div>
+      <form method="POST" action="?/import" class="w-full sm:w-auto">
+        <button
+          class="btn preset-filled-primary-700-300 min-h-11 w-full whitespace-nowrap focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3 sm:w-auto"
+          type="submit"
+        >
+          Import packs from local folder
+        </button>
+      </form>
+    </section>
 
-    {#if data.packs.length === 0}
-      <div class="empty-state">
-        <h3>No imported packs yet</h3>
-        <p>The clearly labelled synthetic sample is ready in <code>packs/incoming/</code>.</p>
-        <p>Use the import button above to add it to this catalog.</p>
-      </div>
-    {:else}
-      <div class="pack-list">
-        {#each data.packs as pack (`${pack.examId}:${pack.packId}:${pack.packVersion}`)}
-          <article class="pack-card">
-            <div class="card-topline">
-              <p class="eyebrow">{pack.examTitle} · exam {pack.examVersion}</p>
-              {#if pack.synthetic}
-                <span class="badge">Synthetic sample</span>
-              {/if}
-            </div>
-            <h3>{pack.packTitle}</h3>
-            <p class="version">Pack version {pack.packVersion}</p>
-            <p class="stats">{pack.questionCount} questions · {pack.domainCount} domains</p>
-            <ul class="domains" aria-label="Exam domains and weights">
-              {#each pack.domains as domain (domain.id)}
-                <li><span>{domain.title}</span><strong>{domain.weight}%</strong></li>
-              {/each}
-            </ul>
-          </article>
+    {#if form?.importResult}
+      <div
+        class="card -mt-6 mb-10 rounded-2xl border border-surface-200-800 bg-surface-50-950 px-4 py-3"
+        role="status"
+        aria-live="polite"
+      >
+        {#if form.importResult.imported.length > 0}
+          <p class="my-1">Imported {form.importResult.imported.length} pack version(s).</p>
+        {/if}
+        {#each form.importResult.errors as message (message)}
+          <p class="my-1 text-error-700-300">{message}</p>
         {/each}
+        {#if form.importResult.imported.length === 0 && form.importResult.errors.length === 0}
+          <p class="my-1">No new pack versions were imported.</p>
+        {/if}
       </div>
     {/if}
-  </section>
+
+    <section aria-labelledby="catalog-heading">
+      <div class="mb-4 flex items-center justify-between gap-4">
+        <div>
+          <p class="mb-2 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">
+            Your local catalog
+          </p>
+          <h2 id="catalog-heading" class="mb-0 text-xl font-semibold tracking-tight">
+            Imported exam packs
+          </h2>
+        </div>
+        <p class="m-0 text-sm text-surface-600-400">
+          {data.packs.length}
+          version{data.packs.length === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      {#if data.packs.length === 0}
+        <div class="card rounded-2xl border border-surface-200-800 bg-surface-50-950 p-8">
+          <h3 class="mb-2 text-lg font-semibold">No imported packs yet</h3>
+          <p>
+            The clearly labelled synthetic sample is ready in
+            <code class="rounded bg-surface-200-800 px-1 py-0.5 text-[0.9em]">packs/incoming/</code
+            >.
+          </p>
+          <p class="mb-0">Use the import button above to add it to this catalog.</p>
+        </div>
+      {:else}
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] gap-4">
+          {#each data.packs as pack (`${pack.examId}:${pack.packId}:${pack.packVersion}`)}
+            <article class="card rounded-2xl border border-surface-200-800 bg-surface-50-950 p-5">
+              <div class="mb-3 flex items-center justify-between gap-4">
+                <p class="mb-0 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">
+                  {pack.examTitle}
+                  · exam {pack.examVersion}
+                </p>
+                {#if pack.synthetic}
+                  <span class="badge preset-tonal-primary whitespace-nowrap">Synthetic sample</span>
+                {/if}
+              </div>
+              <h3 class="mb-1 text-xl font-semibold">{pack.packTitle}</h3>
+              <p class="mb-2 text-sm text-surface-600-400">Pack version {pack.packVersion}</p>
+              <p class="mb-2 text-sm text-surface-600-400">
+                {pack.questionCount}
+                questions · {pack.domainCount} domains
+              </p>
+              <ul
+                class="mt-4 mb-0 list-none border-t border-surface-200-800 p-0 pt-2"
+                aria-label="Exam domains and weights"
+              >
+                {#each pack.domains as domain (domain.id)}
+                  <li class="flex justify-between gap-4 py-1 text-sm">
+                    <span>{domain.title}</span
+                    ><strong class="text-primary-700-300">{domain.weight}%</strong>
+                  </li>
+                {/each}
+              </ul>
+            </article>
+          {/each}
+        </div>
+      {/if}
+    </section>
+  </div>
 </main>
-
-<style>
-  :global(body) {
-    margin: 0;
-    background: #f4f5f2;
-    color: #20251f;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  }
-
-  .library {
-    width: min(100% - 2rem, 960px);
-    margin: 0 auto;
-    padding: 3.5rem 0 5rem;
-  }
-
-  .masthead {
-    max-width: 660px;
-    margin-bottom: 2.5rem;
-  }
-
-  .eyebrow {
-    margin: 0 0 0.65rem;
-    color: #536c57;
-    font-size: 0.75rem;
-    font-weight: 750;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-  }
-
-  h1,
-  h2,
-  h3,
-  p {
-    margin-top: 0;
-  }
-
-  h1 {
-    margin-bottom: 0.65rem;
-    font-size: clamp(2.25rem, 6vw, 3.5rem);
-    letter-spacing: -0.045em;
-    line-height: 1.05;
-  }
-
-  h2 {
-    margin-bottom: 0.45rem;
-    font-size: 1.3rem;
-    letter-spacing: -0.02em;
-  }
-
-  .intro {
-    max-width: 54ch;
-    margin-bottom: 0;
-    color: #5e665e;
-    font-size: 1.05rem;
-    line-height: 1.65;
-  }
-
-  .import-panel,
-  .empty-state,
-  .pack-card,
-  .notice {
-    border: 1px solid #dce1d9;
-    border-radius: 16px;
-    background: #fff;
-  }
-
-  .import-panel {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-    padding: 1.5rem;
-  }
-
-  .import-panel p:not(.eyebrow) {
-    margin-bottom: 0.55rem;
-    color: #5e665e;
-  }
-
-  a {
-    color: #28553a;
-    font-weight: 650;
-  }
-
-  .study-links {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .practice-link {
-    display: inline-flex;
-    border-radius: 8px;
-    background: #28553a;
-    padding: 0.8rem 1rem;
-    color: #fff;
-    text-decoration: none;
-  }
-
-  code {
-    border-radius: 4px;
-    background: #eef2eb;
-    padding: 0.12rem 0.32rem;
-    font-size: 0.9em;
-  }
-
-  button {
-    min-height: 46px;
-    border: 0;
-    border-radius: 9px;
-    background: #28553a;
-    padding: 0.75rem 1rem;
-    color: #fff;
-    font: inherit;
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: #1e432d;
-  }
-
-  button:focus-visible,
-  a:focus-visible {
-    outline: 3px solid #d29537;
-    outline-offset: 3px;
-  }
-
-  .notice {
-    margin: -1.5rem 0 2.5rem;
-    padding: 0.8rem 1.1rem;
-  }
-
-  .notice p {
-    margin: 0.3rem 0;
-  }
-
-  .error {
-    color: #9d3028;
-  }
-
-  .section-heading,
-  .card-topline {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .section-heading {
-    margin-bottom: 1.1rem;
-  }
-
-  .section-heading .eyebrow,
-  .card-topline .eyebrow {
-    margin-bottom: 0.45rem;
-  }
-
-  .count,
-  .version,
-  .stats {
-    color: #687168;
-    font-size: 0.9rem;
-  }
-
-  .count {
-    margin: 0;
-  }
-
-  .empty-state {
-    padding: 2rem;
-  }
-
-  .empty-state h3 {
-    margin-bottom: 0.5rem;
-  }
-
-  .empty-state p:last-child {
-    margin-bottom: 0;
-  }
-
-  .pack-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-    gap: 1rem;
-  }
-
-  .pack-card {
-    padding: 1.35rem;
-  }
-
-  .pack-card h3 {
-    margin-bottom: 0.25rem;
-    font-size: 1.2rem;
-  }
-
-  .version,
-  .stats {
-    margin-bottom: 0.45rem;
-  }
-
-  .badge {
-    border-radius: 99px;
-    background: #edf4e9;
-    padding: 0.35rem 0.6rem;
-    color: #315a3e;
-    font-size: 0.74rem;
-    font-weight: 750;
-    white-space: nowrap;
-  }
-
-  .domains {
-    margin: 1rem 0 0;
-    border-top: 1px solid #e7eae5;
-    padding: 0.55rem 0 0;
-    list-style: none;
-  }
-
-  .domains li {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.35rem 0;
-    font-size: 0.9rem;
-  }
-
-  .domains strong {
-    color: #405747;
-  }
-
-  @media (max-width: 680px) {
-    .library {
-      padding-top: 2rem;
-    }
-
-    .import-panel {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    button {
-      width: 100%;
-    }
-  }
-</style>
