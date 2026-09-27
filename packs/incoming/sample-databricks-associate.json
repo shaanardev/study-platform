@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "exam": {
+    "id": "databricks-data-engineer-associate",
+    "title": "Databricks Data Engineer Associate (synthetic practice)",
+    "version": "2025.1"
+  },
+  "pack": {
+    "id": "synthetic-foundations",
+    "title": "Synthetic foundations sample",
+    "version": "1.0.0",
+    "synthetic": true
+  },
+  "domains": [
+    { "id": "delta-lake", "title": "Delta Lake foundations", "weight": 60 },
+    { "id": "pipelines", "title": "Data pipeline foundations", "weight": 40 }
+  ],
+  "passingThreshold": 70,
+  "questions": [
+    {
+      "id": "delta-transaction-basics",
+      "type": "single_choice",
+      "domainId": "delta-lake",
+      "prompt": "What does a Delta Lake transaction log help a table provide?",
+      "options": [
+        { "id": "a", "text": "A record of table changes and transaction state" },
+        { "id": "b", "text": "A guarantee that every query runs on a GPU" },
+        { "id": "c", "text": "An automatic backup to a public website" }
+      ],
+      "answerIds": ["a"],
+      "explanation": "A transaction log records table changes and supports consistent table state.",
+      "sources": [
+        { "path": "assets/synthetic-notes.md", "label": "Synthetic study notes, section 1" }
+      ]
+    },
+    {
+      "id": "pipeline-validation-basics",
+      "type": "multiple_choice",
+      "domainId": "pipelines",
+      "prompt": "Which two practices can help make a data pipeline easier to operate?",
+      "options": [
+        { "id": "a", "text": "Validate data quality expectations" },
+        { "id": "b", "text": "Track pipeline failures and execution status" },
+        { "id": "c", "text": "Delete all run history after each task" }
+      ],
+      "answerIds": ["a", "b"],
+      "explanation": "Quality checks and run status help operators detect and diagnose issues.",
+      "sources": [
+        { "path": "assets/synthetic-notes.md", "label": "Synthetic study notes, section 2" }
+      ]
+    }
+  ]
+}

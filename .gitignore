@@ -1,5 +1,9 @@
 node_modules
 .pnpm-store
+.local/
+*.sqlite
+*.sqlite3
+*.db
 
 # Output
 .output
@@ -22,3 +26,8 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+/packs/incoming/*
+!/packs/incoming/assets/
+/packs/incoming/assets/*
+!/packs/incoming/assets/synthetic-notes.md
+!/packs/incoming/sample-databricks-associate.json
