@@ -35,8 +35,12 @@ describe('validateExamPack', () => {
 
   it('reports unsafe source paths and domain weights that do not total 100', () => {
     const invalidPack = structuredClone(validPack);
-    invalidPack.domains[0].weight = 90;
-    invalidPack.questions[0].sources[0].path = '../private/notes.md';
+    const domain = invalidPack.domains[0];
+    const source = invalidPack.questions[0]?.sources[0];
+    if (!domain || !source)
+      throw new Error('Expected the valid pack to contain domain and source data.');
+    domain.weight = 90;
+    source.path = '../private/notes.md';
 
     const result = validateExamPack(invalidPack);
 
@@ -60,6 +64,20 @@ describe('validateExamPack', () => {
     expect(result.valid).toBe(false);
     if (!result.valid) {
       expect(result.errors).toContain('Question IDs must be unique within a pack.');
+    }
+  });
+
+  it('rejects unknown question fields', () => {
+    const invalidPack = structuredClone(validPack);
+    const question = invalidPack.questions[0];
+    if (!question) throw new Error('Expected the valid pack to contain a question.');
+    Object.assign(question, { internalNote: 'not part of the pack schema' });
+
+    const result = validateExamPack(invalidPack);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.errors).toContain('questions[0] contains unknown field "internalNote".');
     }
   });
 });
