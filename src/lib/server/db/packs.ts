@@ -13,7 +13,7 @@ export type PackIndexItem = {
   synthetic: boolean;
   questionCount: number;
   domainCount: number;
-  domains: { id: string; title: string; weight: number }[];
+  domains: { id: string; title: string; weight: number; questionCount: number }[];
   importedAt: string;
 };
 
@@ -41,6 +41,39 @@ export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlit
       content_json TEXT NOT NULL,
       imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (exam_id, pack_id, pack_version)
+    );
+    CREATE TABLE IF NOT EXISTS practice_sessions (
+      id TEXT PRIMARY KEY,
+      exam_id TEXT NOT NULL,
+      pack_id TEXT NOT NULL,
+      pack_version TEXT NOT NULL,
+      domain_ids_json TEXT NOT NULL,
+      question_ids_json TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('in_progress', 'completed')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (exam_id, pack_id, pack_version)
+        REFERENCES imported_packs (exam_id, pack_id, pack_version)
+    );
+    CREATE TABLE IF NOT EXISTS practice_answers (
+      session_id TEXT NOT NULL REFERENCES practice_sessions(id) ON DELETE CASCADE,
+      question_id TEXT NOT NULL,
+      answer_ids_json TEXT NOT NULL,
+      correct INTEGER NOT NULL,
+      answered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (session_id, question_id)
+    );
+    CREATE TABLE IF NOT EXISTS saved_source_assets (
+      exam_id TEXT NOT NULL,
+      pack_id TEXT NOT NULL,
+      pack_version TEXT NOT NULL,
+      question_id TEXT NOT NULL,
+      source_path TEXT NOT NULL,
+      label TEXT NOT NULL,
+      excerpt TEXT NOT NULL,
+      PRIMARY KEY (exam_id, pack_id, pack_version, question_id, source_path),
+      FOREIGN KEY (exam_id, pack_id, pack_version)
+        REFERENCES imported_packs (exam_id, pack_id, pack_version)
     );
   `);
   return database;
@@ -103,19 +136,25 @@ export function listImportedPacks(
         content_json AS contentJson, imported_at AS importedAt
       FROM imported_packs
       ORDER BY exam_title, pack_title, pack_version DESC
-    `).all().map((row) => ({
-      examId: String(row.examId),
-      examTitle: String(row.examTitle),
-      examVersion: String(row.examVersion),
-      packId: String(row.packId),
-      packTitle: String(row.packTitle),
-      packVersion: String(row.packVersion),
-      synthetic: Boolean(row.synthetic),
-      questionCount: Number(row.questionCount),
-      domainCount: Number(row.domainCount),
-      domains: (JSON.parse(String(row.contentJson)) as ExamPack).domains,
-      importedAt: String(row.importedAt),
-    }));
+    `).all().map((row) => {
+      const pack = JSON.parse(String(row.contentJson)) as ExamPack;
+      return {
+        examId: String(row.examId),
+        examTitle: String(row.examTitle),
+        examVersion: String(row.examVersion),
+        packId: String(row.packId),
+        packTitle: String(row.packTitle),
+        packVersion: String(row.packVersion),
+        synthetic: Boolean(row.synthetic),
+        questionCount: Number(row.questionCount),
+        domainCount: Number(row.domainCount),
+        domains: pack.domains.map((domain) => ({
+          ...domain,
+          questionCount: pack.questions.filter((question) => question.domainId === domain.id).length,
+        })),
+        importedAt: String(row.importedAt),
+      };
+    });
   } finally {
     database.close();
   }
@@ -134,6 +173,44 @@ export function getImportedPack(
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
     `).get(examId, packId, packVersion);
     return row ? JSON.parse(String(row.contentJson)) as ExamPack : undefined;
+  } finally {
+    database.close();
+  }
+}
+
+export function saveImportedSourceAsset(
+  databasePath: string,
+  pack: ExamPack,
+  questionId: string,
+  source: { path: string; label: string },
+  excerpt: string,
+): void {
+  const database = openPackDatabase(databasePath);
+  try {
+    database.prepare(`
+      INSERT OR IGNORE INTO saved_source_assets (exam_id, pack_id, pack_version, question_id, source_path, label, excerpt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(pack.exam.id, pack.pack.id, pack.pack.version, questionId, source.path, source.label, excerpt);
+  } finally {
+    database.close();
+  }
+}
+
+export function getImportedSourceAsset(
+  databasePath: string,
+  examId: string,
+  packId: string,
+  packVersion: string,
+  questionId: string,
+  sourcePath: string,
+): { label: string; excerpt: string } | undefined {
+  const database = openPackDatabase(databasePath);
+  try {
+    const row = database.prepare(`
+      SELECT label, excerpt FROM saved_source_assets
+      WHERE exam_id = ? AND pack_id = ? AND pack_version = ? AND question_id = ? AND source_path = ?
+    `).get(examId, packId, packVersion, questionId, sourcePath);
+    return row ? { label: String(row.label), excerpt: String(row.excerpt) } : undefined;
   } finally {
     database.close();
   }

@@ -22,6 +22,8 @@
     </p>
   </header>
 
+  <p><a class="practice-link" href="/practice">Start or resume a practice quiz →</a></p>
+
   <section class="import-panel" aria-labelledby="import-heading">
     <div>
       <p class="eyebrow">Local import</p>
@@ -168,6 +170,15 @@
   a {
     color: #28553a;
     font-weight: 650;
+  }
+
+  .practice-link {
+    display: inline-flex;
+    border-radius: 8px;
+    background: #28553a;
+    padding: 0.8rem 1rem;
+    color: #fff;
+    text-decoration: none;
   }
 
   code {
