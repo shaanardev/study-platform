@@ -1,4 +1,38 @@
 #:schema https://developers.openai.com/codex/config-schema.json
+# https://kapadiya.net/blog/codex-subagent-model-config/
+# https://kapadiya.net/blog/codex-auto-compact-token-savings/
+
+model_context_window = 272000
+model_auto_compact_token_limit = 240000
+
+[agents]
+enabled = true
+
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "high"
+
+[features.multi_agent_v2]
+enabled = true
+max_concurrent_threads_per_session = 10
+hide_spawn_agent_metadata = false
+tool_namespace = "agents"
+
+[tui]
+status_line = [
+    "model-with-reasoning",
+    "current-dir",
+    "context-usage",
+    "used-tokens",
+    "five-hour-limit",
+    "weekly-limit"
+]
+terminal_title = [
+    "project",
+    "git-branch",
+    "status",
+    "thread",
+    "task-progress"
+]
 
 [mcp_servers.svelte]
 url = "https://mcp.svelte.dev/mcp"
