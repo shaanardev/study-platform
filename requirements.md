@@ -1,0 +1,27 @@
+- Build a simple local-only learning platform that runs through `localhost`.
+- Avoid cloud hosting, user accounts, social features, payments, and external integrations.
+- Prioritize practical functionality over visual design, animations, branding, and polished user interfaces.
+- Keep the system technically simple, easy to install, easy to run, and easy to modify.
+- Use the Databricks Data Engineer Associate certification as the first supported certification.
+- Allow study notes and learning-plan documents to be imported from local files.
+- Store imported documents, generated questions, quiz results, and progress locally.
+- Organize study material by certification, exam domain, topic, and source document.
+- Generate practice questions only from the imported study material and selected exam topics.
+- Create adaptive quizzes that focus more heavily on topics where the learner performs poorly.
+- Support simple question types such as multiple choice, multiple response, true or false, and short answer.
+- Provide an answer explanation and source reference after each submitted response.
+- Include a basic AI grilling mode that asks one question at a time and responds to the learner’s answer.
+- Allow the learner to request a hint, explanation, simpler wording, or follow-up question during a grilling session.
+- Track correct answers, incorrect answers, skipped questions, confidence ratings, and recently reviewed topics.
+- Identify basic knowledge gaps using incorrect answers, repeated mistakes, low confidence, and slow responses.
+- Provide simple quiz modes for weak topics, mixed practice, review of mistakes, and timed mock exams.
+- Allow the learner to choose the number of questions, selected topics, difficulty, and time limit.
+- Use spaced repetition to bring missed or poorly remembered questions back into later sessions.
+- Display a basic progress view showing weak topics, recent scores, completed quizzes, and recommended next topics.
+- Keep the learner’s learning style unspecified initially and adapt only from observed quiz behavior.
+- Prevent questions from going beyond the selected certification content unless explicitly requested.
+- Avoid using real or leaked certification exam questions.
+- Include a simple way to flag inaccurate questions, unclear explanations, or incorrect grading.
+- Make generated questions traceable to the local note or document section that informed them.
+- Avoid unnecessary architecture such as microservices, distributed systems, complex databases, mobile apps, or real-time collaboration.
+- Make the first version a minimum viable product focused on importing notes, generating quizzes, adapting practice, tracking gaps, and running grilling sessions.
