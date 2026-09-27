@@ -60,7 +60,7 @@ export const actions: Actions = {
     const values = key(form);
     let correction: unknown;
     try {
-      correction = JSON.parse(String(form.get('correction') ?? '{}')) as unknown;
+      correction = JSON.parse(String(form.get('correction') ?? '{}'));
     } catch {
       return fail(400, { message: 'Correction must be valid JSON.' });
     }
