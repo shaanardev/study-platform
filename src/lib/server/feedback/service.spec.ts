@@ -35,10 +35,22 @@ async function setup() {
   return { databasePath, pack: validation.pack };
 }
 
+function questionAt(pack: Awaited<ReturnType<typeof setup>>['pack'], index: number) {
+  const question = pack.questions[index];
+  if (!question) throw new Error(`Test pack is missing question ${index}.`);
+  return question;
+}
+
+function findQuestion(pack: Awaited<ReturnType<typeof setup>>['pack'], id: string) {
+  const question = pack.questions.find((item) => item.id === id);
+  if (!question) throw new Error(`Test pack is missing question "${id}".`);
+  return question;
+}
+
 describe('question feedback', () => {
   it('exports flags and schema-validated corrections in a stable JSON format', async () => {
     const { databasePath, pack } = await setup();
-    const question = pack.questions[0]!;
+    const question = questionAt(pack, 0);
     flagQuestion(databasePath, {
       examId: pack.exam.id,
       packId: pack.pack.id,
@@ -83,7 +95,7 @@ describe('question feedback', () => {
 
   it('rejects missing citations, inconsistent answers, and identity changes deterministically', async () => {
     const { databasePath, pack } = await setup();
-    const question = pack.questions[0]!;
+    const question = questionAt(pack, 0);
     const key = {
       examId: pack.exam.id,
       packId: pack.pack.id,
@@ -113,7 +125,7 @@ describe('question feedback', () => {
 
   it('keeps the imported pack and prior results unchanged while corrections apply to new sessions and versions', async () => {
     const { databasePath, pack } = await setup();
-    const original = pack.questions[0]!;
+    const original = questionAt(pack, 0);
     const key = {
       examId: pack.exam.id,
       packId: pack.pack.id,
@@ -164,7 +176,7 @@ describe('question feedback', () => {
 
   it('omits retired questions from new sessions while retaining their imported version', async () => {
     const { databasePath, pack } = await setup();
-    const question = pack.questions[0]!;
+    const question = questionAt(pack, 0);
     retireQuestion(
       databasePath,
       {
@@ -182,9 +194,9 @@ describe('question feedback', () => {
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionCount: 1,
-      questionIds: [pack.questions[1]!.id],
+      questionIds: [questionAt(pack, 1).id],
     });
-    expect(session.questionIds).toEqual([pack.questions[1]!.id]);
+    expect(session.questionIds).toEqual([questionAt(pack, 1).id]);
     expect(
       listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version)[0]?.retired,
     ).toBe(true);
@@ -192,7 +204,7 @@ describe('question feedback', () => {
 
   it('snapshots corrections into new timed attempts', async () => {
     const { databasePath, pack } = await setup();
-    const question = pack.questions.find((item) => item.id === 'delta-transaction-basics')!;
+    const question = findQuestion(pack, 'delta-transaction-basics');
     const key = {
       examId: pack.exam.id,
       packId: pack.pack.id,
