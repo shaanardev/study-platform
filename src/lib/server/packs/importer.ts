@@ -40,7 +40,7 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
     const filePath = join(folder, entry.name);
     let input: unknown;
     try {
-      input = JSON.parse(await readFile(filePath, 'utf8')) as unknown;
+      input = JSON.parse(await readFile(filePath, 'utf8'));
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'unknown error';
       errors.push(`${entry.name}: could not read valid JSON (${reason}).`);

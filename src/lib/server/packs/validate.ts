@@ -25,11 +25,14 @@ export type PackValidation =
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+const getProperty = (value: Record<string, unknown>, key: string): unknown => value[key];
 
 const isText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 const isId = (value: unknown): value is string =>
   typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(value);
+const isQuestionType = (value: unknown): value is PackQuestion['type'] =>
+  value === 'single_choice' || value === 'multiple_choice';
 const hasUniqueIds = (items: { id: string }[]) =>
   new Set(items.map((item) => item.id)).size === items.length;
 
@@ -53,65 +56,70 @@ export function validateExamPack(input: unknown): PackValidation {
     'Pack',
     errors,
   );
-  if (input.schemaVersion !== 1) errors.push('schemaVersion must be 1.');
+  if (getProperty(input, 'schemaVersion') !== 1) errors.push('schemaVersion must be 1.');
 
-  const exam = input.exam;
+  const exam = getProperty(input, 'exam');
+  const examId = isRecord(exam) ? getProperty(exam, 'id') : undefined;
+  const examTitle = isRecord(exam) ? getProperty(exam, 'title') : undefined;
+  const examVersion = isRecord(exam) ? getProperty(exam, 'version') : undefined;
   if (isRecord(exam)) rejectUnknownKeys(exam, ['id', 'title', 'version'], 'exam', errors);
-  if (!isRecord(exam) || !isId(exam.id) || !isText(exam.title) || !isText(exam.version)) {
+  if (!isId(examId) || !isText(examTitle) || !isText(examVersion)) {
     errors.push('exam must include non-empty id, title, and version values.');
   }
-  const pack = input.pack;
+  const pack = getProperty(input, 'pack');
+  const packId = isRecord(pack) ? getProperty(pack, 'id') : undefined;
+  const packTitle = isRecord(pack) ? getProperty(pack, 'title') : undefined;
+  const packVersion = isRecord(pack) ? getProperty(pack, 'version') : undefined;
+  const synthetic = isRecord(pack) ? getProperty(pack, 'synthetic') : undefined;
   if (isRecord(pack)) {
     rejectUnknownKeys(pack, ['id', 'title', 'version', 'synthetic'], 'pack', errors);
   }
   if (
-    !isRecord(pack) ||
-    !isId(pack.id) ||
-    !isText(pack.title) ||
-    !isText(pack.version) ||
-    typeof pack.synthetic !== 'boolean'
+    !isId(packId) ||
+    !isText(packTitle) ||
+    !isText(packVersion) ||
+    typeof synthetic !== 'boolean'
   ) {
     errors.push('pack must include non-empty id, title, version, and a synthetic boolean.');
   }
 
   const domains: ExamPack['domains'] = [];
-  if (!Array.isArray(input.domains) || input.domains.length === 0) {
+  const rawDomains = getProperty(input, 'domains');
+  if (!Array.isArray(rawDomains) || rawDomains.length === 0) {
     errors.push('domains must contain at least one domain.');
   } else {
-    for (const [index, item] of input.domains.entries()) {
+    for (const [index, item] of rawDomains.entries()) {
       if (isRecord(item)) {
         rejectUnknownKeys(item, ['id', 'title', 'weight'], `domains[${index}]`, errors);
       }
+      const id = isRecord(item) ? getProperty(item, 'id') : undefined;
+      const title = isRecord(item) ? getProperty(item, 'title') : undefined;
+      const weight = isRecord(item) ? getProperty(item, 'weight') : undefined;
       if (
-        !isRecord(item) ||
-        !isId(item.id) ||
-        !isText(item.title) ||
-        typeof item.weight !== 'number' ||
-        !Number.isFinite(item.weight) ||
-        item.weight <= 0 ||
-        item.weight > 100
+        !isId(id) ||
+        !isText(title) ||
+        typeof weight !== 'number' ||
+        !Number.isFinite(weight) ||
+        weight <= 0 ||
+        weight > 100
       ) {
         errors.push(
           `domains[${index}] requires an id, title, and weight greater than 0 and at most 100.`,
         );
         continue;
       }
-      domains.push({
-        id: item.id as string,
-        title: item.title as string,
-        weight: item.weight as number,
-      });
+      domains.push({ id, title, weight });
     }
     if (!hasUniqueIds(domains)) errors.push('Domain IDs must be unique.');
     if (
-      domains.length === input.domains.length &&
+      domains.length === rawDomains.length &&
       Math.abs(domains.reduce((sum, item) => sum + item.weight, 0) - 100) > 0.01
     ) {
       errors.push('Domain weights must total 100.');
     }
   }
 
-  const threshold = input.passingThreshold;
+  const threshold = getProperty(input, 'passingThreshold');
   if (
     threshold !== undefined &&
     (typeof threshold !== 'number' ||
@@ -123,17 +131,30 @@ export function validateExamPack(input: unknown): PackValidation {
   }
 
   const questions: PackQuestion[] = [];
-  if (!Array.isArray(input.questions) || input.questions.length === 0) {
+  const rawQuestions = getProperty(input, 'questions');
+  if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
     errors.push('questions must contain at least one question.');
   } else {
-    for (const [index, value] of input.questions.entries()) {
+    for (const [index, value] of rawQuestions.entries()) {
       if (!isRecord(value)) {
         errors.push(`questions[${index}] must be an object.`);
         continue;
       }
+      rejectUnknownKeys(
+        value,
+        ['id', 'type', 'domainId', 'prompt', 'options', 'answerIds', 'explanation', 'sources'],
+        `questions[${index}]`,
+        errors,
+      );
+      const id = getProperty(value, 'id');
+      const type = getProperty(value, 'type');
+      const domainId = getProperty(value, 'domainId');
+      const prompt = getProperty(value, 'prompt');
+      const explanation = getProperty(value, 'explanation');
       const options: PackOption[] = [];
-      if (Array.isArray(value.options)) {
-        for (const [optionIndex, option] of value.options.entries()) {
+      const rawOptions = getProperty(value, 'options');
+      if (Array.isArray(rawOptions)) {
+        for (const [optionIndex, option] of rawOptions.entries()) {
           if (isRecord(option)) {
             rejectUnknownKeys(
               option,
@@ -142,15 +163,19 @@ export function validateExamPack(input: unknown): PackValidation {
               errors,
             );
           }
-          if (isRecord(option) && isId(option.id) && isText(option.text)) {
-            options.push({ id: option.id, text: option.text });
+          const optionId = isRecord(option) ? getProperty(option, 'id') : undefined;
+          const optionText = isRecord(option) ? getProperty(option, 'text') : undefined;
+          if (isId(optionId) && isText(optionText)) {
+            options.push({ id: optionId, text: optionText });
           }
         }
       }
-      const answerIds = Array.isArray(value.answerIds) ? value.answerIds : [];
+      const rawAnswerIds = getProperty(value, 'answerIds');
+      const answerIds: unknown[] = Array.isArray(rawAnswerIds) ? rawAnswerIds : [];
       const sources: PackSource[] = [];
-      if (Array.isArray(value.sources)) {
-        for (const [sourceIndex, source] of value.sources.entries()) {
+      const rawSources = getProperty(value, 'sources');
+      if (Array.isArray(rawSources)) {
+        for (const [sourceIndex, source] of rawSources.entries()) {
           if (isRecord(source)) {
             rejectUnknownKeys(
               source,
@@ -159,24 +184,26 @@ export function validateExamPack(input: unknown): PackValidation {
               errors,
             );
           }
-          if (isRecord(source) && isText(source.path) && isText(source.label)) {
-            sources.push({ path: source.path, label: source.label });
+          const path = isRecord(source) ? getProperty(source, 'path') : undefined;
+          const label = isRecord(source) ? getProperty(source, 'label') : undefined;
+          if (isText(path) && isText(label)) {
+            sources.push({ path, label });
           }
         }
       }
       if (
-        !isId(value.id) ||
-        !['single_choice', 'multiple_choice'].includes(String(value.type)) ||
-        !isId(value.domainId) ||
-        !isText(value.prompt) ||
-        !isText(value.explanation) ||
+        !isId(id) ||
+        !isQuestionType(type) ||
+        !isId(domainId) ||
+        !isText(prompt) ||
+        !isText(explanation) ||
         options.length < 2 ||
         !hasUniqueIds(options) ||
         answerIds.length === 0 ||
         !answerIds.every((id): id is string => isId(id)) ||
         new Set(answerIds).size !== answerIds.length ||
         !answerIds.every((id) => options.some((option) => option.id === id)) ||
-        (value.type === 'single_choice' && answerIds.length !== 1) ||
+        (type === 'single_choice' && answerIds.length !== 1) ||
         sources.length === 0
       ) {
         errors.push(
@@ -184,8 +211,8 @@ export function validateExamPack(input: unknown): PackValidation {
         );
         continue;
       }
-      if (!domains.some((domain) => domain.id === value.domainId)) {
-        errors.push(`questions[${index}] references unknown domain "${value.domainId}".`);
+      if (!domains.some((domain) => domain.id === domainId)) {
+        errors.push(`questions[${index}] references unknown domain "${domainId}".`);
       }
       for (const source of sources) {
         if (
@@ -200,32 +227,47 @@ export function validateExamPack(input: unknown): PackValidation {
         }
       }
       questions.push({
-        id: value.id as string,
-        type: value.type as PackQuestion['type'],
-        domainId: value.domainId as string,
-        prompt: value.prompt as string,
+        id,
+        type,
+        domainId,
+        prompt,
         options,
-        answerIds: answerIds as string[],
-        explanation: value.explanation as string,
+        answerIds,
+        explanation,
         sources,
       });
     }
     if (!hasUniqueIds(questions)) errors.push('Question IDs must be unique within a pack.');
   }
 
-  if (errors.length || !isRecord(exam) || !isRecord(pack)) return { valid: false, errors };
+  if (
+    errors.length ||
+    !isId(examId) ||
+    !isText(examTitle) ||
+    !isText(examVersion) ||
+    !isId(packId) ||
+    !isText(packTitle) ||
+    !isText(packVersion) ||
+    typeof synthetic !== 'boolean'
+  ) {
+    return { valid: false, errors };
+  }
   const result: ExamPack = {
     schemaVersion: 1,
-    exam: { id: exam.id as string, title: exam.title as string, version: exam.version as string },
+    exam: {
+      id: examId,
+      title: examTitle,
+      version: examVersion,
+    },
     pack: {
-      id: pack.id as string,
-      title: pack.title as string,
-      version: pack.version as string,
-      synthetic: pack.synthetic as boolean,
+      id: packId,
+      title: packTitle,
+      version: packVersion,
+      synthetic,
     },
     domains,
     questions,
   };
-  if (threshold !== undefined) result.passingThreshold = threshold as number;
+  if (typeof threshold === 'number') result.passingThreshold = threshold;
   return { valid: true, pack: result, errors: [] };
 }
