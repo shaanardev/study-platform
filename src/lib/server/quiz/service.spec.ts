@@ -48,9 +48,11 @@ describe('practice sessions', () => {
     const result = answerQuestion(databasePath, session.id, 'pipeline-validation-basics', ['a']);
 
     expect(result.correct).toBe(false);
-    expect(result.answerIds).toEqual(['a', 'b']);
+    expect(result.answerIds).toEqual(['a']);
+    expect(result.answerIdsCorrect).toEqual(['a', 'b']);
     expect(result.explanation).toContain('Quality checks');
     expect(getPracticeSession(databasePath, session.id)?.answers).toHaveLength(1);
+    expect(getPracticeSession(databasePath, session.id)?.answers[0]?.answerIds).toEqual(['a']);
   });
 
   it('favours unseen questions first and offers missed questions again within the chosen domain', async () => {

@@ -1,11 +1,11 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { getPackIndex } from '$lib/server/packs/importer';
+import { getPackIndex } from '../../lib/server/packs/importer';
 import {
   answerQuestion,
   createPracticeSession,
   getPracticeSession,
   getResumablePracticeSession,
-} from '$lib/server/quiz/service';
+} from '../../lib/server/quiz/service';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {

@@ -9,4 +9,10 @@ describe('mock exam timing', () => {
     expect(isExpired(deadline, 121_000)).toBe(true);
     expect(remainingMilliseconds(deadline, 130_000)).toBe(0);
   });
+
+  it('rejects deadlines that overflow the timestamp range', () => {
+    expect(() => createDeadline(0, Number.MAX_VALUE)).toThrow(
+      'A valid start time and duration are required.',
+    );
+  });
 });
