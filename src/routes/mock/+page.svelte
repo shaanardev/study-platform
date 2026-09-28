@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { resolve } from '$app/paths';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -42,7 +43,7 @@
   <div class="mx-auto w-full max-w-215">
     <a
       class="inline-block font-semibold text-[#28553a] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
-      href="/"
+      href={resolve('/')}
       >← Exam pack library</a
     >
     <header class="my-8 max-w-175">
@@ -85,7 +86,7 @@
           <p>Import a pack from the exam pack library to start a mock exam.</p>
           <a
             class="font-semibold text-[#28553a] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
-            href="/"
+            href={resolve('/')}
             >Open exam pack library</a
           >
         </section>
@@ -95,7 +96,11 @@
           aria-labelledby="setup-heading"
         >
           <h2 id="setup-heading" class="mb-5 text-xl font-semibold">Choose a mock exam</h2>
-          <form method="GET" action="/mock" class="grid gap-3 sm:grid-cols-2 sm:items-center">
+          <form
+            method="GET"
+            action={resolve('/mock')}
+            class="grid gap-3 sm:grid-cols-2 sm:items-center"
+          >
             <label class="font-bold" for="pack-preview">Exam pack version</label>
             <select
               class="select min-h-12 w-full rounded-lg border border-[#aeb9ad] bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
@@ -176,7 +181,7 @@
           {/if}
           <form
             method="POST"
-            action="?/start"
+            action={resolve('/mock?/start')}
             class="mt-5 grid gap-3 border-t border-[#e2e6df] pt-4"
           >
             <input type="hidden" name="examId" value={selectedPack?.examId ?? ''}>
@@ -254,7 +259,7 @@
             </p>
             <h2 class="mb-4 text-xl leading-relaxed font-semibold">{question.prompt}</h2>
             {#if data.attempt.status === 'in_progress'}
-              <form method="POST" action="?/answer" class="grid gap-3">
+              <form method="POST" action={resolve('/mock?/answer')} class="grid gap-3">
                 <input type="hidden" name="attemptId" value={data.attempt.id}>
                 <input type="hidden" name="questionId" value={question.id}>
                 <fieldset class="my-2 grid min-w-0 gap-1 rounded-xl border border-[#dce1d9] p-4">
@@ -315,7 +320,7 @@
         {#if data.attempt.status === 'in_progress'}
           <form
             method="POST"
-            action="?/submit"
+            action={resolve('/mock?/submit')}
             class="mt-8 grid gap-3 border-t border-[#e2e6df] pt-5"
           >
             <input type="hidden" name="attemptId" value={data.attempt.id}>

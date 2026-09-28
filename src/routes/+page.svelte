@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { asset, resolve } from '$app/paths';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -32,22 +33,22 @@
     <nav class="mb-8 flex flex-wrap items-center gap-x-4 gap-y-3" aria-label="Study tools">
       <a
         class="btn preset-filled-primary-700-300 min-h-11 no-underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-        href="/practice"
+        href={resolve('/practice')}
         >Start or resume a practice quiz →</a
       >
       <a
         class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-        href="/progress"
+        href={resolve('/progress')}
         >Review progress and mistakes →</a
       >
       <a
         class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-        href="/mock"
+        href={resolve('/mock')}
         >Take a timed mock exam →</a
       >
       <a
         class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-        href="/review"
+        href={resolve('/review')}
         >Flag or correct questions →</a
       >
     </nav>
@@ -70,11 +71,11 @@
         </p>
         <a
           class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-          href="/exam-pack.schema.json"
+          href={asset('exam-pack.schema.json')}
           >Read the exam pack JSON schema</a
         >
       </div>
-      <form method="POST" action="?/import" class="w-full sm:w-auto">
+      <form method="POST" action={resolve('/?/import')} class="w-full sm:w-auto">
         <button
           class="btn preset-filled-primary-700-300 min-h-11 w-full whitespace-nowrap focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3 sm:w-auto"
           type="submit"

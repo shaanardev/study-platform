@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -37,7 +38,7 @@
   <div class="mx-auto w-[min(100%-2rem,980px)] py-8 pb-20">
     <a
       class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-warning-500"
-      href="/"
+      href={resolve('/')}
       >← Exam pack library</a
     >
     <header class="my-8 max-w-175">
@@ -59,7 +60,7 @@
     >
       <a
         class="btn preset-filled-primary-700-300 min-h-11 no-underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-warning-500"
-        href="/review/export"
+        href={resolve('/review/export')}
         >Export feedback JSON</a
       >
       {#if selectedPack}
@@ -76,7 +77,7 @@
         <p>Import an exam pack before reviewing questions.</p>
         <a
           class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-warning-500"
-          href="/"
+          href={resolve('/')}
           >Open exam pack library</a
         >
       </section>
@@ -94,7 +95,9 @@
       (item) => `${item.examId}|${item.packId}|${item.packVersion}` === event.currentTarget.value,
     );
     if (pack)
-      window.location.href = `/review?examId=${encodeURIComponent(pack.examId)}&packId=${encodeURIComponent(pack.packId)}&packVersion=${encodeURIComponent(pack.packVersion)}`;
+      window.location.href = resolve(
+        `/review?examId=${encodeURIComponent(pack.examId)}&packId=${encodeURIComponent(pack.packId)}&packVersion=${encodeURIComponent(pack.packVersion)}`,
+      );
   }}
         >
           {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
@@ -162,7 +165,9 @@
                 </legend>
                 {#each question.sources as source (source.path)}
                   <a
-                    href={`/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}`}
+                    href={resolve(
+    `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}`,
+  )}
                     target="_blank"
                     rel="noopener noreferrer"
                     class="grid gap-1 font-semibold text-primary-700-300 underline-offset-4 hover:underline"
@@ -183,7 +188,7 @@
               <div
                 class="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(200px,0.8fr)_minmax(360px,1.5fr)_auto]"
               >
-                <form class="grid gap-3" method="POST" action="?/flag">
+                <form class="grid gap-3" method="POST" action={resolve('/review?/flag')}>
                   <input type="hidden" name="examId" value={selectedPack.exam.id}>
                   <input type="hidden" name="packId" value={selectedPack.pack.id}>
                   <input type="hidden" name="packVersion" value={selectedPack.pack.version}>
@@ -205,7 +210,7 @@
                     Save flag
                   </button>
                 </form>
-                <form class="grid gap-3" method="POST" action="?/correct">
+                <form class="grid gap-3" method="POST" action={resolve('/review?/correct')}>
                   <input type="hidden" name="examId" value={selectedPack.exam.id}>
                   <input type="hidden" name="packId" value={selectedPack.pack.id}>
                   <input type="hidden" name="packVersion" value={selectedPack.pack.version}>
@@ -231,7 +236,7 @@
                     Save correction
                   </button>
                 </form>
-                <form class="grid gap-3 lg:pt-8" method="POST" action="?/retire">
+                <form class="grid gap-3 lg:pt-8" method="POST" action={resolve('/review?/retire')}>
                   <input type="hidden" name="examId" value={selectedPack.exam.id}>
                   <input type="hidden" name="packId" value={selectedPack.pack.id}>
                   <input type="hidden" name="packVersion" value={selectedPack.pack.version}>
