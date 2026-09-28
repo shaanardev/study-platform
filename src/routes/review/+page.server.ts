@@ -7,6 +7,7 @@ import {
   retireQuestion,
 } from '#lib/server/feedback/service.js';
 import { getPackIndex } from '#lib/server/packs/importer.js';
+import { resolve } from '$app/paths';
 import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = '.local/exam-packs.sqlite';
@@ -40,7 +41,7 @@ function key(form: FormData) {
 }
 
 function selectedUrl(values: ReturnType<typeof key>) {
-  return `/review?examId=${encodeURIComponent(values.examId)}&packId=${encodeURIComponent(values.packId)}&packVersion=${encodeURIComponent(values.packVersion)}`;
+  return `${resolve('/review')}?examId=${encodeURIComponent(values.examId)}&packId=${encodeURIComponent(values.packId)}&packVersion=${encodeURIComponent(values.packVersion)}`;
 }
 
 export const actions: Actions = {
