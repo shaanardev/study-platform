@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
+import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
 import { getImportedPack, getImportedSourceAsset, openPackDatabase } from '../db/packs';
 import { getEffectivePack } from '../feedback/service';
-import { type ExamPack, type PackQuestion, validateExamPack } from '../packs/validate';
+import { validateExamPack } from '../packs/validate';
 
 export type QuizAnswer = {
   questionId: string;
