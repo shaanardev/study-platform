@@ -26,5 +26,16 @@
     "noUncheckedSideEffectImports": true,
     "useDefineForClassFields": true
   },
-  "exclude": ["node_modules", "pnpm-store", ".svelte-kit", "build", "dist", "coverage", "static"]
+  "exclude": [
+    "node_modules",
+    "pnpm-store",
+    ".svelte-kit",
+    "build",
+    "dist",
+    "coverage",
+    "static"
+  ],
+  "include": [
+    "src"
+  ]
 }

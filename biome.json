@@ -17,7 +17,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noDeprecatedImports": "error"
+      }
     },
     "domains": {
       "types": "all",
@@ -43,7 +46,9 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.svelte"],
+      "includes": [
+        "**/*.svelte"
+      ],
       "formatter": {
         "enabled": true
       },
