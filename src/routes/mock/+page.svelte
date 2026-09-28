@@ -39,13 +39,13 @@
 </svelte:head>
 
 <main class="min-h-screen bg-[#f4f5f2] px-4 pb-20 pt-8 text-[#20251f] sm:px-6">
-  <div class="mx-auto w-full max-w-[860px]">
+  <div class="mx-auto w-full max-w-215">
     <a
       class="inline-block font-semibold text-[#28553a] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
       href="/"
       >← Exam pack library</a
     >
-    <header class="my-8 max-w-[700px]">
+    <header class="my-8 max-w-175">
       <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">Timed mock</p>
       <h1 class="mb-3 text-[clamp(2.2rem,6vw,3.3rem)] leading-[1.05] font-bold tracking-[-0.045em]">
         Mock exam

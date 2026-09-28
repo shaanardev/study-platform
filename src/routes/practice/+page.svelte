@@ -38,11 +38,11 @@
 </svelte:head>
 
 <main class="min-h-screen bg-[#f4f5f2] px-4 py-8 pb-20 font-sans text-[#20251f] sm:px-6">
-  <div class="mx-auto w-full max-w-[820px]">
+  <div class="mx-auto w-full max-w-205">
     <a class="inline-block font-semibold text-[#28553a] underline-offset-4 hover:underline" href="/"
       >← Exam pack library</a
     >
-    <header class="my-8 max-w-[650px]">
+    <header class="my-8 max-w-162.5">
       <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">Practice</p>
       <h1 class="mb-3 text-[clamp(2.2rem,6vw,3.3rem)] leading-[1.05] font-bold tracking-[-0.045em]">
         Build your exam confidence

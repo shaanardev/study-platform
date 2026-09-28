@@ -40,7 +40,7 @@
       href="/"
       >← Exam pack library</a
     >
-    <header class="my-8 max-w-[700px]">
+    <header class="my-8 max-w-175">
       <p class="mb-2 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">
         Question review
       </p>
