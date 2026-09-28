@@ -1,4 +1,4 @@
-import { exportFeedback } from '../../../lib/server/feedback/service';
+import { exportFeedback } from '#lib/server/feedback/service.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = () =>

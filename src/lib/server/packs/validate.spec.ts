@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateExamPack } from './validate';
+import { validateExamPack } from '#lib/server/packs/validate.js';
 
 const validPack = {
   schemaVersion: 1,

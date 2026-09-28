@@ -2,15 +2,15 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { saveImportedPack } from '../db/packs';
-import { validateExamPack } from '../packs/validate';
+import { saveImportedPack } from '#lib/server/db/packs.js';
+import { validateExamPack } from '#lib/server/packs/validate.js';
 import {
   createMockAttempt,
   getMockAttempt,
   getMockCoverage,
   saveMockAnswer,
   submitMockAttempt,
-} from './mock-service';
+} from '#lib/server/quiz/mock-service.js';
 
 const dirs: string[] = [];
 afterEach(async () =>

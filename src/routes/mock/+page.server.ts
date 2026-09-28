@@ -1,5 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { getPackIndex } from '../../lib/server/packs/importer';
+import { getPackIndex } from '#lib/server/packs/importer.js';
 import {
   createMockAttempt,
   getMockAttempt,
@@ -7,7 +7,7 @@ import {
   getResumableMockAttempt,
   saveMockAnswer,
   submitMockAttempt,
-} from '../../lib/server/quiz/mock-service';
+} from '#lib/server/quiz/mock-service.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = '.local/exam-packs.sqlite';

@@ -2,10 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getImportedPack, saveImportedPack } from '../db/packs';
-import { validateExamPack } from '../packs/validate';
-import { createMockAttempt, saveMockAnswer, submitMockAttempt } from '../quiz/mock-service';
-import { answerQuestion, createPracticeSession, getPracticeSession } from '../quiz/service';
+import { getImportedPack, saveImportedPack } from '#lib/server/db/packs.js';
 import {
   createCorrection,
   exportFeedback,
@@ -13,7 +10,18 @@ import {
   flagQuestion,
   listFeedback,
   retireQuestion,
-} from './service';
+} from '#lib/server/feedback/service.js';
+import { validateExamPack } from '#lib/server/packs/validate.js';
+import {
+  createMockAttempt,
+  saveMockAnswer,
+  submitMockAttempt,
+} from '#lib/server/quiz/mock-service.js';
+import {
+  answerQuestion,
+  createPracticeSession,
+  getPracticeSession,
+} from '#lib/server/quiz/service.js';
 
 const directories: string[] = [];
 
