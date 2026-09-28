@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -49,12 +50,12 @@
       <nav class="mt-4 flex flex-wrap gap-x-4 gap-y-3" aria-label="Study navigation">
         <a
           class="font-semibold text-[#28553a] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-          href="/"
+          href={resolve('/')}
           >Exam packs</a
         >
         <a
           class="font-semibold text-[#28553a] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-          href="/practice"
+          href={resolve('/practice')}
           >Practice quiz</a
         >
       </nav>
@@ -86,7 +87,7 @@
           </p>
           <a
             class="font-semibold text-[#28553a] underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-            href="/practice"
+            href={resolve('/practice')}
             >Start a practice quiz</a
           >
         </div>
@@ -177,7 +178,7 @@
         </div>
       {:else}
         {#each missedGroups as group (`${group.examId}:${group.packId}:${group.packVersion}`)}
-          <form class="mb-5 grid gap-3" method="POST" action="?/practiceMissed">
+          <form class="mb-5 grid gap-3" method="POST" action={resolve('/progress?/practiceMissed')}>
             <fieldset class="card m-0 grid gap-4 rounded-2xl border border-[#dce1d9] bg-white p-5">
               <legend class="px-1 text-sm font-bold text-[#536c57]">
                 {group.examTitle}

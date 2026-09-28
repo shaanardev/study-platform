@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -39,7 +40,9 @@
 
 <main class="min-h-screen bg-[#f4f5f2] px-4 py-8 pb-20 font-sans text-[#20251f] sm:px-6">
   <div class="mx-auto w-full max-w-205">
-    <a class="inline-block font-semibold text-[#28553a] underline-offset-4 hover:underline" href="/"
+    <a
+      class="inline-block font-semibold text-[#28553a] underline-offset-4 hover:underline"
+      href={resolve('/')}
       >← Exam pack library</a
     >
     <header class="my-8 max-w-162.5">
@@ -76,7 +79,7 @@
         </div>
         <a
           class="btn min-h-11 rounded-lg bg-[#28553a] px-4 font-bold text-white hover:bg-[#1e432d] focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
-          href={`/practice?session=${encodeURIComponent(data.session.id)}`}
+          href={resolve(`/practice?session=${encodeURIComponent(data.session.id)}`)}
           >Resume quiz</a
         >
       </section>
@@ -88,7 +91,9 @@
         <p class="mb-4 text-[#5e665e]">
           Import a pack from the exam pack library to begin a practice quiz.
         </p>
-        <a class="font-semibold text-[#28553a] underline-offset-4 hover:underline" href="/"
+        <a
+          class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
+          href={resolve('/')}
           >Open exam pack library</a
         >
       </section>
@@ -98,7 +103,7 @@
         aria-labelledby="setup-heading"
       >
         <h2 id="setup-heading" class="mb-5 text-xl font-semibold">Start a practice quiz</h2>
-        <form class="grid gap-3" method="POST" action="?/start">
+        <form class="grid gap-3" method="POST" action={resolve('/practice?/start')}>
           <label class="font-bold" for="pack">Exam pack version</label>
           <select
             class="select min-h-11 w-full focus-visible:outline-3 focus-visible:outline-[#d29537] focus-visible:outline-offset-3"
@@ -200,7 +205,9 @@
             <div class="flex flex-wrap gap-x-5 gap-y-3">
               {#each latestAnswer.sources as source (source.path)}
                 <a
-                  href={`/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`}
+                  href={resolve(
+    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`,
+  )}
                   target="_blank"
                   rel="noopener"
                   class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
@@ -221,7 +228,7 @@
             <h2 id="quiz-heading" class="mb-5 text-xl leading-relaxed font-semibold">
               {activeQuestion.prompt}
             </h2>
-            <form class="grid gap-3" method="POST" action="?/answer">
+            <form class="grid gap-3" method="POST" action={resolve('/practice?/answer')}>
               <input type="hidden" name="sessionId" value={data.session.id}>
               <input type="hidden" name="questionId" value={activeQuestion.id}>
               <fieldset class="grid gap-1">
