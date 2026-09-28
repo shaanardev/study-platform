@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDeadline, isExpired, remainingMilliseconds } from './timing';
+import { createDeadline, isExpired, remainingMilliseconds } from '#lib/server/quiz/timing.js';
 
 describe('mock exam timing', () => {
   it('keeps a fixed deadline and never reports negative time after resume', () => {

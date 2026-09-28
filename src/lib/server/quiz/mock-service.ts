@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { error } from '@sveltejs/kit';
+import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
+import { getEffectivePack } from '#lib/server/feedback/service.js';
+import { allocateWeightedQuestions, findCoverageGaps } from '#lib/server/quiz/mock-selection.js';
+import { createDeadline, isExpired, remainingMilliseconds } from '#lib/server/quiz/timing.js';
 import type { PackQuestion } from '#lib/types/exam-pack.js';
-import { getImportedPack, openPackDatabase } from '../db/packs';
-import { getEffectivePack } from '../feedback/service';
-import { allocateWeightedQuestions, findCoverageGaps } from './mock-selection';
-import { createDeadline, isExpired, remainingMilliseconds } from './timing';
 
 type SafeQuestion = Omit<PackQuestion, 'answerIds' | 'explanation'> & {
   explanation?: string;

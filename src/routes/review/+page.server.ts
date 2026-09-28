@@ -5,8 +5,8 @@ import {
   flagQuestion,
   readPackForReview,
   retireQuestion,
-} from '../../lib/server/feedback/service';
-import { getPackIndex } from '../../lib/server/packs/importer';
+} from '#lib/server/feedback/service.js';
+import { getPackIndex } from '#lib/server/packs/importer.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = '.local/exam-packs.sqlite';

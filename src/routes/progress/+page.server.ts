@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { redirect } from '@sveltejs/kit';
-import { getProgress } from '../../lib/server/progress/queries';
-import { createPracticeSession } from '../../lib/server/quiz/service';
+import { getProgress } from '#lib/server/progress/queries.js';
+import { createPracticeSession } from '#lib/server/quiz/service.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = resolve('.local/exam-packs.sqlite');

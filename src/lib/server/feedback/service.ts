@@ -1,8 +1,8 @@
 import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
+import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
+import { validateExamPack } from '#lib/server/packs/validate.js';
 import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
-import { getImportedPack, openPackDatabase } from '../db/packs';
-import { validateExamPack } from '../packs/validate';
 
 export type FeedbackKey = {
   examId: string;

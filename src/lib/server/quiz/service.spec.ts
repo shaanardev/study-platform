@@ -2,15 +2,15 @@ import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { saveImportedPack } from '../db/packs';
-import { importPacksFromFolder } from '../packs/importer';
-import { validateExamPack } from '../packs/validate';
+import { saveImportedPack } from '#lib/server/db/packs.js';
+import { importPacksFromFolder } from '#lib/server/packs/importer.js';
+import { validateExamPack } from '#lib/server/packs/validate.js';
 import {
   answerQuestion,
   createPracticeSession,
   getPracticeSession,
   readQuestionSource,
-} from './service';
+} from '#lib/server/quiz/service.js';
 
 const directories: string[] = [];
 

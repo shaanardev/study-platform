@@ -2,11 +2,15 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ExamPack } from '#lib';
-import { saveImportedPack } from '../db/packs';
-import { createMockAttempt, saveMockAnswer, submitMockAttempt } from '../quiz/mock-service';
-import { answerQuestion, createPracticeSession } from '../quiz/service';
-import { getProgress } from './queries';
+import { saveImportedPack } from '#lib/server/db/packs.js';
+import { getProgress } from '#lib/server/progress/queries.js';
+import {
+  createMockAttempt,
+  saveMockAnswer,
+  submitMockAttempt,
+} from '#lib/server/quiz/mock-service.js';
+import { answerQuestion, createPracticeSession } from '#lib/server/quiz/service.js';
+import type { ExamPack } from '#lib/types/exam-pack.js';
 
 const directories: string[] = [];
 

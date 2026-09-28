@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocateWeightedQuestions, findCoverageGaps } from './mock-selection';
+import { allocateWeightedQuestions, findCoverageGaps } from '#lib/server/quiz/mock-selection.js';
 
 describe('weighted mock selection', () => {
   it('allocates requested questions by blueprint weights using largest remainders', () => {

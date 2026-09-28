@@ -1,8 +1,12 @@
 import type { Dirent } from 'node:fs';
 import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { listImportedPacks, saveImportedPack, saveImportedSourceAsset } from '../db/packs';
-import { validateExamPack } from './validate';
+import {
+  listImportedPacks,
+  saveImportedPack,
+  saveImportedSourceAsset,
+} from '#lib/server/db/packs.js';
+import { validateExamPack } from '#lib/server/packs/validate.js';
 
 export type ImportResult = { imported: string[]; errors: string[] };
 export type ImportOptions = { folder?: string; databasePath?: string };

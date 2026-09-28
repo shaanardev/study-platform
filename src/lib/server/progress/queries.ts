@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
-import { openPackDatabase } from '../db/packs';
-import { validateExamPack } from '../packs/validate';
+import { openPackDatabase } from '#lib/server/db/packs.js';
+import { validateExamPack } from '#lib/server/packs/validate.js';
 
 export type ProgressAttempt = {
   id: string;

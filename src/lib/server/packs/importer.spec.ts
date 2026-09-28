@@ -2,7 +2,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getPackIndex, importPacksFromFolder } from './importer';
+import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
 
 const temporaryDirectories: string[] = [];
 
