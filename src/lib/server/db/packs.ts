@@ -1,7 +1,8 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync, type SQLOutputValue } from 'node:sqlite';
-import { type ExamPack, validateExamPack } from '../packs/validate';
+import type { ExamPack } from '#lib/types/exam-pack.js';
+import { validateExamPack } from '../packs/validate';
 
 type DatabaseRow = Record<string, SQLOutputValue>;
 

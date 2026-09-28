@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { error } from '@sveltejs/kit';
+import type { PackQuestion } from '#lib/types/exam-pack.js';
 import { getImportedPack, openPackDatabase } from '../db/packs';
 import { getEffectivePack } from '../feedback/service';
-import type { PackQuestion } from '../packs/validate';
 import { allocateWeightedQuestions, findCoverageGaps } from './mock-selection';
 import { createDeadline, isExpired, remainingMilliseconds } from './timing';
 

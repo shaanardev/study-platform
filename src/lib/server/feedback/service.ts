@@ -1,7 +1,7 @@
 import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
+import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
 import { getImportedPack, openPackDatabase } from '../db/packs';
-import type { ExamPack, PackQuestion } from '../packs/validate';
 import { validateExamPack } from '../packs/validate';
 
 export type FeedbackKey = {
