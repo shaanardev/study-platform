@@ -8,6 +8,7 @@ import {
   saveMockAnswer,
   submitMockAttempt,
 } from '#lib/server/quiz/mock-service.js';
+import { resolve } from '$app/paths';
 import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = '.local/exam-packs.sqlite';
@@ -65,7 +66,7 @@ export const actions: Actions = {
         questionCount,
         durationMinutes,
       });
-      redirect(303, `/mock?attempt=${encodeURIComponent(attempt.id)}`);
+      redirect(303, `${resolve('/mock')}?attempt=${encodeURIComponent(attempt.id)}`);
     } catch (cause) {
       if (
         typeof cause === 'object' &&
@@ -97,12 +98,12 @@ export const actions: Actions = {
         return fail(400, { message: 'Select a valid answer before saving.', gaps: [] });
       throw cause;
     }
-    redirect(303, `/mock?attempt=${encodeURIComponent(attemptId)}`);
+    redirect(303, `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`);
   },
   submit: async ({ request }) => {
     const form = await request.formData();
     const attemptId = String(form.get('attemptId') ?? '');
     submitMockAttempt(databasePath, attemptId);
-    redirect(303, `/mock?attempt=${encodeURIComponent(attemptId)}`);
+    redirect(303, `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`);
   },
 };

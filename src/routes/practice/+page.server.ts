@@ -6,6 +6,7 @@ import {
   getPracticeSession,
   getResumablePracticeSession,
 } from '#lib/server/quiz/service.js';
+import { resolve } from '$app/paths';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
@@ -33,7 +34,7 @@ export const actions: Actions = {
       questionCount,
       domainIds,
     });
-    redirect(303, `/practice?session=${encodeURIComponent(session.id)}`);
+    redirect(303, `${resolve('/practice')}?session=${encodeURIComponent(session.id)}`);
   },
   answer: async ({ request }) => {
     const form = await request.formData();
@@ -53,6 +54,6 @@ export const actions: Actions = {
       }
       throw cause;
     }
-    redirect(303, `/practice?session=${encodeURIComponent(sessionId)}`);
+    redirect(303, `${resolve('/practice')}?session=${encodeURIComponent(sessionId)}`);
   },
 };
