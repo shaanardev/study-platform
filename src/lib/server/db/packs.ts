@@ -41,6 +41,12 @@ export type PackIndexItem = {
   importedAt: string;
 };
 
+export type ImportedSourceAsset = {
+  questionId: string;
+  source: { path: string; label: string };
+  excerpt: string;
+};
+
 export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlite')) {
   const path = resolve(databasePath);
   mkdirSync(dirname(path), { recursive: true });
@@ -144,7 +150,11 @@ export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlit
   return database;
 }
 
-export function saveImportedPack(databasePath: string, pack: ExamPack): void {
+export function saveImportedPack(
+  databasePath: string,
+  pack: ExamPack,
+  sourceAssets: ImportedSourceAsset[] = [],
+): void {
   const database = openPackDatabase(databasePath);
   try {
     database.exec('BEGIN');
@@ -181,6 +191,22 @@ export function saveImportedPack(databasePath: string, pack: ExamPack): void {
           packVersion: pack.pack.version,
         }),
       );
+    const insertSourceAsset = database.prepare(`
+      INSERT OR IGNORE INTO saved_source_assets (
+        exam_id, pack_id, pack_version, question_id, source_path, label, excerpt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const { questionId, source, excerpt } of sourceAssets) {
+      insertSourceAsset.run(
+        pack.exam.id,
+        pack.pack.id,
+        pack.pack.version,
+        questionId,
+        source.path,
+        source.label,
+        excerpt,
+      );
+    }
     database.exec('COMMIT');
   } catch (error) {
     try {
@@ -250,34 +276,6 @@ export function getImportedPack(
     `)
       .get(examId, packId, packVersion);
     return row ? parseStoredPack(readTextColumn(row, 'contentJson')) : undefined;
-  } finally {
-    database.close();
-  }
-}
-
-export function saveImportedSourceAsset(
-  databasePath: string,
-  pack: ExamPack,
-  questionId: string,
-  source: { path: string; label: string },
-  excerpt: string,
-): void {
-  const database = openPackDatabase(databasePath);
-  try {
-    database
-      .prepare(`
-      INSERT OR IGNORE INTO saved_source_assets (exam_id, pack_id, pack_version, question_id, source_path, label, excerpt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `)
-      .run(
-        pack.exam.id,
-        pack.pack.id,
-        pack.pack.version,
-        questionId,
-        source.path,
-        source.label,
-        excerpt,
-      );
   } finally {
     database.close();
   }

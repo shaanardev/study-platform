@@ -2,6 +2,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { openPackDatabase } from '#lib/server/db/packs.js';
 import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
 
 const temporaryDirectories: string[] = [];
@@ -84,5 +85,34 @@ describe('importPacksFromFolder', () => {
         'does not resolve to a local file.',
       ].join(''),
     );
+  });
+
+  it('rolls back the pack when saving one of its source assets fails', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'exam-packs-'));
+    temporaryDirectories.push(directory);
+    const incoming = join(directory, 'incoming');
+    const databasePath = join(directory, 'state', 'packs.sqlite');
+    await cp(resolve('packs/incoming'), incoming, { recursive: true });
+
+    const database = openPackDatabase(databasePath);
+    try {
+      database.exec(`
+        CREATE TRIGGER reject_source_asset
+        BEFORE INSERT ON saved_source_assets
+        BEGIN
+          SELECT RAISE(ABORT, 'source asset write failed');
+        END;
+      `);
+    } finally {
+      database.close();
+    }
+
+    const result = await importPacksFromFolder({ folder: incoming, databasePath });
+
+    expect(result.imported).toEqual([]);
+    expect(result.errors).toContain(
+      'sample-databricks-associate.json: could not store this pack (source asset write failed).',
+    );
+    expect(getPackIndex(databasePath)).toEqual([]);
   });
 });

@@ -2,9 +2,9 @@ import type { Dirent } from 'node:fs';
 import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import {
+  type ImportedSourceAsset,
   listImportedPacks,
   saveImportedPack,
-  saveImportedSourceAsset,
 } from '#lib/server/db/packs.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 
@@ -58,6 +58,11 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
 
     const packDirectory = await realpath(dirname(filePath));
     let sourceError: string | undefined;
+    const sourceFiles: {
+      questionId: string;
+      source: { path: string; label: string };
+      filePath: string;
+    }[] = [];
     for (const question of validation.pack.questions) {
       for (const source of question.sources) {
         const candidate = resolve(dirname(filePath), source.path);
@@ -71,6 +76,7 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
             sourceError = `source path "${source.path}" is not a file within the pack folder`;
             break;
           }
+          sourceFiles.push({ questionId: question.id, source, filePath: actualPath });
         } catch {
           sourceError = `source path "${source.path}" does not resolve to a local file`;
           break;
@@ -83,20 +89,23 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
       continue;
     }
 
+    let sourceAssets: ImportedSourceAsset[];
     try {
-      saveImportedPack(databasePath, validation.pack);
-      for (const question of validation.pack.questions) {
-        for (const source of question.sources) {
-          const sourceFile = resolve(dirname(filePath), source.path);
-          saveImportedSourceAsset(
-            databasePath,
-            validation.pack,
-            question.id,
-            source,
-            await readFile(sourceFile, 'utf8'),
-          );
-        }
-      }
+      sourceAssets = await Promise.all(
+        sourceFiles.map(async ({ questionId, source, filePath: sourcePath }) => ({
+          questionId,
+          source,
+          excerpt: await readFile(sourcePath, 'utf8'),
+        })),
+      );
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'unknown file error';
+      errors.push(`${entry.name}: could not read source files (${reason}).`);
+      continue;
+    }
+
+    try {
+      saveImportedPack(databasePath, validation.pack, sourceAssets);
       imported.push(
         `${validation.pack.exam.id}/${validation.pack.pack.id}@${validation.pack.pack.version}`,
       );
