@@ -17,7 +17,7 @@ afterEach(async () => {
 
 describe('pack persistence', () => {
   it('rejects stored content that is not a valid exam pack', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ordewell-pack-db-'));
+    const directory = await mkdtemp(join(tmpdir(), 'exam-pack-db-'));
     temporaryDirectories.push(directory);
     const databasePath = join(directory, 'packs.sqlite');
     const pack: ExamPack = {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { asset, resolve } from '$app/paths';
+  import { resolve } from '$app/paths';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
@@ -17,7 +17,7 @@
   <div class="mx-auto w-[min(100%-2rem,960px)] py-8 sm:py-14 sm:pb-20">
     <header class="mb-10 max-w-165">
       <p class="mb-2 text-xs font-bold tracking-[0.09em] text-primary-700-300 uppercase">
-        Ordewell · local study library
+        Local study library
       </p>
       <h1
         class="mb-3 text-[clamp(2.25rem,6vw,3.5rem)] leading-[1.05] font-bold tracking-[-0.045em]"
@@ -71,7 +71,7 @@
         </p>
         <a
           class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
-          href={asset('exam-pack.schema.json')}
+          href={resolve('/exam-pack.schema.json')}
           >Read the exam pack JSON schema</a
         >
       </div>

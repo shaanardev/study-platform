@@ -32,7 +32,7 @@ afterEach(async () => {
 });
 
 async function setup() {
-  const directory = await mkdtemp(join(tmpdir(), 'ordewell-feedback-'));
+  const directory = await mkdtemp(join(tmpdir(), 'exam-feedback-'));
   directories.push(directory);
   const databasePath = join(directory, 'feedback.sqlite');
   const validation = validateExamPack(
@@ -85,7 +85,7 @@ describe('question feedback', () => {
     const second = exportFeedback(databasePath);
     expect(first).toBe(second);
     expect(JSON.parse(first)).toEqual({
-      format: 'ordewell-question-feedback',
+      format: 'question-feedback',
       version: 1,
       items: [
         {

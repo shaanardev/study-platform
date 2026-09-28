@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-  <title>Review imported questions · Ordewell</title>
+  <title>Review imported questions</title>
   <meta
     name="description"
     content="Flag, correct, and retire imported exam questions while preserving their source packs."

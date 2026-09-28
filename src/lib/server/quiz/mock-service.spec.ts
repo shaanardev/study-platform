@@ -17,7 +17,7 @@ afterEach(async () =>
   Promise.all(dirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))),
 );
 async function setup() {
-  const directory = await mkdtemp(join(tmpdir(), 'ordewell-mock-'));
+  const directory = await mkdtemp(join(tmpdir(), 'mock-exam-'));
   dirs.push(directory);
   const databasePath = join(directory, 'packs.sqlite');
   const validated = validateExamPack(

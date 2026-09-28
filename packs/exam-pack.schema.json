@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ordewell.local/schemas/exam-pack.schema.json",
-  "title": "Ordewell exam blueprint and question pack",
+  "$id": "https://learning-platform.local/schemas/exam-pack.schema.json",
+  "title": "Exam blueprint and question pack",
   "description": "Offline exam and question data with source paths relative to the pack file.",
   "type": "object",
   "additionalProperties": false,

@@ -16,7 +16,7 @@ afterEach(async () => {
 
 describe('importPacksFromFolder', () => {
   it('imports the tracked synthetic sample into SQLite and exposes it in the pack index', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ordewell-packs-'));
+    const directory = await mkdtemp(join(tmpdir(), 'exam-packs-'));
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
@@ -40,7 +40,7 @@ describe('importPacksFromFolder', () => {
   });
 
   it('rejects importing the same exam, pack, and version twice', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ordewell-packs-'));
+    const directory = await mkdtemp(join(tmpdir(), 'exam-packs-'));
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
@@ -58,7 +58,7 @@ describe('importPacksFromFolder', () => {
   });
 
   it('rejects source references that do not resolve to local files', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ordewell-packs-'));
+    const directory = await mkdtemp(join(tmpdir(), 'exam-packs-'));
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     await mkdir(incoming);

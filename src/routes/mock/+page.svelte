@@ -35,7 +35,7 @@
 </script>
 
 <svelte:head>
-  <title>Timed mock exam · Ordewell</title>
+  <title>Timed mock exam</title>
   <meta name="description" content="Take a timed mock exam from an imported exam pack.">
 </svelte:head>
 

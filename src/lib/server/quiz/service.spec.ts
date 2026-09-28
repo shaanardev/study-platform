@@ -21,7 +21,7 @@ afterEach(async () => {
 });
 
 async function setup() {
-  const directory = await mkdtemp(join(tmpdir(), 'ordewell-quiz-'));
+  const directory = await mkdtemp(join(tmpdir(), 'practice-quiz-'));
   directories.push(directory);
   const databasePath = join(directory, 'practice.sqlite');
   const pack = validateExamPack(
@@ -105,7 +105,7 @@ describe('practice sessions', () => {
   });
 
   it('keeps a citation excerpt available from the imported snapshot', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ordewell-quiz-source-'));
+    const directory = await mkdtemp(join(tmpdir(), 'practice-quiz-source-'));
     directories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'practice.sqlite');

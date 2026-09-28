@@ -381,7 +381,7 @@ export function exportFeedback(databasePath: string): string {
         retired: saved.retired,
       };
     });
-    return JSON.stringify({ format: 'ordewell-question-feedback', version: 1, items });
+    return JSON.stringify({ format: 'question-feedback', version: 1, items });
   } finally {
     database.close();
   }

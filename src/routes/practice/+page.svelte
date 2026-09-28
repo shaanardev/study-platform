@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-  <title>Practice quiz · Ordewell</title>
+  <title>Practice quiz</title>
   <meta name="description" content="Choose an exam pack and resume a saved practice quiz.">
 </svelte:head>
 
