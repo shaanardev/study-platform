@@ -1,0 +1,262 @@
+# overview
+  - adaptive query execution (AQE)
+    - dynamic adaptations; dynamically adjusts the execution plan during runtime based on observed data statisitcs
+    - runtime optimizations; dynamic partition pruning, join reordering and others are performed as the job executes
+  - code optimization recommendations
+    - Use dataFrames or SQL instead of RDD APIs.
+    - In production jobs, avoid expensive operations that trigger computation beyond simply reading and writing files, including: `count()`,  `display()`, `collect()`
+    - Avoid operations that force all computation onto the driver node, such as single-threaded Python or pandas operations.
+      - Use pandas API on Spark to distribute pandas functions across the cluster.
+    - Encourage the use of newer, more efficient APIs—such as DataFrames, Datasets, and pandas API on Spark rather than older, less efficient RDD-based approaches.
+    - Avoid unnecessary actions and operations that require collecting large datasets or results to the driver.
+    - Use built-in Spark functions whenever possible; they are generally faster and more scalable than custom Python or pandas logic
+  - number of bytes read impacts performance by requiring workers to fetch more data
+# Designing the Foundation
+  - [common performance bottlenecks](./common-bottlenecks.png)
+  - avoid the small file problem
+    - [optimize write](./small-file-problem-optimize-write.png)
+    - [auto compact](./small-file-problem-auto-compact.png)
+  - Data Skipping
+    - a simple I/O pruning technique that improves query performance.
+    - the system stores file-level statistics, such as min and max values
+    - when a query includes a filter, Spark checks these statistics first.
+    - files that cannot contain matching records are skipped, reducing unnecessary reads.
+    - example: if a file’s age range is 1–10 and the query requests ages 20–30, that file can be skipped entirely.
+    - data skipping is most effective when queries filter on columns with useful statistics.
+  - [Z-Ordering](./z-ordering.png)
+    - organizes data within a Delta table based on selected columns.
+    - places related values closer together in storage.
+    - improves data skipping by creating tighter file-level minimum and maximum ranges.
+    - especially useful for columns frequently used in query filters, such as `user_id` or `date`.
+    - it does not rewrite every file immediately; new data may still need to be compacted or optimized.
+    - best used when queries repeatedly filter on high-cardinality columns.
+    - avoid Z-ordering columns that are rarely used in filters, since it adds optimization overhead.
+    - before z-ordering, sprk may have to open multiple files to check if they contain the value since there is no efficient way to know which files are relevant
+    - after z-ordering the data is organized such that the value seven (in the table diagram) if present wil lbe contained within a specific file as indicated by the min and max stats stored in each files metadata.
+  - Delta lake stats
+    - delta Lake collects file-level statistics to support data skipping.
+    - by default, statistics are collected for the first 32 columns controlled by `delta.dataSkippingNumIndexedCols`.
+    - These statistics include values such as; min and max value and null counts
+    - Spark uses the statistics to identify files that might contain matching rows and skips files that cannot match the query filter.
+    - Data skipping works together with Z-ordering; stats help eliminate irrelevant files and Z-ordering makes statistics more selective by clustering related values.
+    - important limitations
+      - The 32-column default may be insufficient if frequently filtered columns appear later in the schema.
+      - You can increase the number of indexed columns, but collecting and maintaining more statistics adds overhead.
+      - Query filters are generally applied in this order:
+        1. Partition filters
+        2. Data-skipping filters based on file statistics
+        3. Row-level filtering
+      - For best performance, place commonly filtered columns early in the schema or configure the statistics column limit appropriately.
+      - Statistics are most useful when filters are selective and the data has been compacted or organized effectively.
+  - Partitioning
+    - partitioning organizes data into separate directories based on one or more column values.
+    - queries can then scan only the relevant partitions instead of the entire table.
+    - use partitioning mainly for low-cardinality columns, such as date, month, region, country
+    - Avoid partitioning by high-cardinality columns, such as`user_id`,`transaction_id`, timestamps with extremely precise values
+    - Too many partitions can create many small files, metadata overhead, slower writes and maintenance
+    - A partition column should be frequently used in `WHERE` clauses.
+    - Partitioning is most beneficial when each partition contains a substantial amount of data; avoid creating tiny partitions.
+    - For high-cardinality filter columns, prefer Z-ordering rather than partitioning.
+    - Partitioning and Z-ordering can be used together; partition by a coarse column such as `date` and Z-order by a frequently filtered column such as `customer_id` 
+    - databricks recommends liquid cluster
+    - partitioning can lead to data skew; some partitions contain very little data while others have a lot resulting in inconsistent file sizes
+  - Liquid Clustering
+    - data-storage technique designed to improve table organization and query performance.
+    - automatically adapts a table’s layout to changing query patterns.
+    - reduces the need to manually manage or update clustering keys.
+    - improves data skipping and query efficiency.
+    - scales as data volume and access patterns change.
+    - better performance with less manual tuning.
+    - more consistent query performance.
+    - reduced data-management overhead and costs.
+    - flexibility as query patterns evolve.
+    - works with columns of varying cardinality.
+    - simplifies table maintenance and optimization.
+    - intelligently decides what ranges of data to combine
+    - data skew is gone because data sizes are consistent
+    - liquid stores metadata; new data can be clustered into existing clusters on write
+    - main objective is to target a specific file size allowing for more flexibility compared to rigid boundaries
+    - reduces cognitive overhead by eliminating the need to worry about cardinality
+  - table stats
+    - collects stats on all columns in the table
+    - helps AQE; choose proper join type, select correct build side in hash join, calibrating the join order in a multi-way join
+    - `ANALYZE TABLE mytable COMPUTE STATISTICS FOR ALL COLUMNS`
+  - [predictive optimization](./predictive-optimization.png)
+    - using predictive analytics techniques to automatically optimize and enhance performance
+    - leveraging data-driven insights to proactively identify and implement optimizations
+    - background automation of maintenance such as `OPTIMIZE` and `VACUUM`
+    - only on delta tables
+
+# Code Optimizations
+  - skew
+    - data typically read in as 128MB partitions and evenly distributed
+    - as data is transformed possible to have more records in one partition than another
+    - small amount is ignorable
+    - large skews can result in spill or worse, hard to diagnose OOM errors
+    - impacts performance
+    - most cloud DWs require a manual offline redistribution to solve for data skew
+    - AQE can automatically break down larger partitions into more event distributed smaller ones
+    - common solutions
+      - AQE (enabled by default); considers 256MB of data and at last % times bigger in size
+      - filter skewed values; filtering out nulls
+      - databricks proprietary skew hints; explicitly tell spark about the table & column so that spark can resolve i for you
+      - salt the join keys forcing even distribution during the shuffle
+        - if none of hte options are suitable, salting is the only alternative
+        - involves breaking down a large skewed partition into smaller ones by adding random integers as suffixes
+  - shuffles
+    - wide transformation; operation that requires two stages that requires shuffling
+    - process of redistributing data across partitions
+    - wide transformation examples; `join()`, `distinct()`, `groupBy`, `orderBy()` and technically `count()`
+    - narrow transformation; requires only one stage does not involve shuffling
+    - mitigation
+      - reduce network IO by using fewer larger workers
+      - remove unnecessary columns
+      - filter out unnecessary records preemptively
+      - denormalize datasets especially when shuffle is root in a join
+    - re-evaluate join strategy
+      - reordering
+      - dynamically switching join strategies
+      - broadcast hash join
+      - shuffle hash joins (default for Photon)
+      - sort merge join (default for OS Spark)
+    - bucketing
+      - hard to get right
+      - expensive especially if your bucketing periodically
+      - eliminates the sort in the sort merge join by pre-sorting partitions
+  - spill
+    - move data from RAM to disk and later back into RAM
+    - occurs when a given partition is simply too large to fit into RAM
+    - Spark is forced into potentially expensive disk reads & writes to free up local RAM
+    - all of this to avoid OOM errors
+    - setting `spark.sql.files.maxPartitionBytes` too high; the default is 128 MB.
+    - using `explode()` on an even-sized array.
+    - running `join()` or `crossJoin()` on two tables that generate many new rows.
+    - joining two tables with a skewed key.
+    - using `groupBy()` when the resulting groups have low cardinality.
+    - calling `countDistinct()` or `size(collect_set())`.
+    - repartitioning incorrectly or using too few partitions.
+    - if the cluster’s RAM cannot support the required workload, some spilling is expected.
+    - to reduce spill:
+      - keep partition sizes reasonably small.
+      - avoid unnecessary repartitioning.
+      - identify and address data skew.
+      - use appropriate join strategies.
+      - monitor executor memory and cluster configuration.
+      - optimize aggregations and avoid collecting unnecessarily large sets.
+    - spark ui 
+      - represents spill with two values or the partition that was spilled 
+        - spill (memory); the size of that data as it existed in memory
+        - spill (disk); the size of the data as it existed on disk
+      - size on disk will always be smaller due to natural compression gained in the act of serializing that data before writes
+    - mitigations
+      - allocate cluster with more RAM per core
+      - address data skew
+      - manage spark partition size
+      - avoid expensive operations like `explode()`
+      - reduce amount of data preemptively whenever possible; excluding unnecessary columns or filtering out rows
+  - serialization
+    - user defined functions (UDFs)
+    - all UDFs must be serialized and distributed to each executor
+    - parameters and return value of each UDF must be converted for each row of data before distribution to executors
+    - python UDFs; python code has to be pickled, spark must instantiate a python interpreter in each & every executor, conversion of each row from Python to DataFrame is expensive
+    - UDFs create an analysis barrier for the Catalyst Optimizer
+    - Catalyst Optimizer cannot connect code before and after UDF
+    - UDF is a black box; optimizations are limited to the code before and after, excluding the UDF and how all the code works together
+    - mitigating
+      - dont use UDFs; use built ins all the time
+      - use vectorized UDFs over stock Python UDFs
+      - used type transformations in Scala
+      - avoid using UDFs to integrate Spark code with existing business logic, porting to Spark almost always pays off
+
+# Fine Tuning Choosing the right cluster
+  - All-Purpose Compute (Development and interactive testing)
+    - Also called interactive clusters.
+    - Used for development and iterative testing.
+    - Useful for developing and testing code before production.
+    - Supports interactive workloads and debugging.
+    - Generally more expensive than job clusters.
+  - Jobs Compute (Production job and workflow execution)
+    - Designed specifically for running workflow jobs.
+    - Provides resources optimized for scheduled or automated tasks.
+    - Recommended instead of all-purpose compute for production jobs.
+    - Typically provides better isolation and lower costs.
+    - Useful for debugging individual jobs.
+  - SQL Warehouse (SQL analytics, BI, and high-concurrency queries)
+    - Designed for SQL workloads and analytics.
+    - Includes Photon for improved performance.
+    - Supports high-concurrency queries.
+    - Used for BI dashboards, reporting, and SQL-based analysis.
+  - Spot Instances
+    - use unused cloud VM capacity at a lower price than on-demand instances.
+    - spot instances can reduce infrastructure costs.
+    - they may be interrupted when the cloud provider needs the capacity back.
+    - they are not recommended for jobs with strict SLAs.
+    - use them for cost-sensitive or fault-tolerant workloads.
+    - combine spot instances with on-demand instances to improve reliability.
+    - configure fallback to on-demand instances when spot capacity is unavailable.
+    - useful for lowering costs, but workloads should be designed to handle interruptions and retries.
+
+    | Workload | Recommended Instance Type |
+    |---|---|
+    | Non-critical jobs | Spot instances |
+    | Jobs with strict SLAs | On-demand instances |
+    | Jobs requiring high reliability | On-demand instances with spot fallback |
+    | Cost-sensitive, interruption-tolerant jobs | Spot instances |
+
+  - auto scaling
+    - dynamically resizes cluster based on workload
+    - adds worker nodes when demand increases.
+    - removes worker nodes when demand decreases.
+    - helps maintain performance while controlling costs.
+    - keeps clusters from being unnecessarily overprovisioned.
+    - can configure; minimum number of workers, maximum number of workers, autoscaling range based on workload requirements.
+    - useful when workload demand changes over time, but it may not be necessary for predictable production jobs with stable resource requirements.
+    - improves performance during workload spikes.
+    - reduces costs during periods of low demand.
+    - supports ad hoc analysis and experimentation.
+    - helps manage unpredictable workloads.
+    - can automatically scale streaming environments.
+    - reduces manual cluster management.
+
+    | Use Case | Autoscaling Range |
+    |---|---|
+    | Ad hoc usage or business analytics | Large variance |
+    | Production batch jobs | Not needed or limited to the upper limit |
+    | Streaming workloads | Available in Spark Declarative Pipelines |
+  
+  - [photon](https://docs.databricks.com/aws/en/compute/photon)
+    - vectorized query engine that accelerates your SQL workloads, DataFrame API calls, ETL pipelines, and stateless streaming workload
+    - processes data in columnar batches, delivering significant performance improvements over traditional row-based execution
+    - Photon is also compatible with Apache Spark APIs, so it works with your existing code with no changes required.
+  - serverless
+    - available across all compute types
+    - still own the optimization layer; shuffles, spill, liquid clustering, photon still applies
+  - optimization recommendations
+    - workload-Specific Recommendations
+      - data science and data engineering development; use an all-purpose cluster and enable autoscaling where appropriate.
+      - ingestion and ETL jobs; use compute-optimized clusters and consider autoscaling for variable workloads.
+      - ad hoc SQL analytics; use SQL warehouses and consider serverless SQL warehouses or auto-stop settings.
+      - ML reporting; use clusters with appropriate memory and compute capacity then size the cluster according to reporting requirements.
+    - best practices
+      - enable spot or preemptible instances where appropriate.
+      - use the latest databricks runtime version.
+      - enable photon for sql workloads.
+      - configure autoscaling to match workload demands.
+      - use optimized autoscaling when available.
+      - select node types based on the workload’s compute and memory requirements.
+      - regularly review cluster size and configuration.
+      - refine cluster settings as workload patterns change.
+    - cluster configuration should be based on the workload:
+      - general-purpose clusters: data science and engineering development
+      - compute-optimized clusters: etl and ingestion jobs
+      - sql warehouses: ad hoc sql analysis
+      - memory-optimized clusters: machine-learning workloads
+  - picking the best instances
+    - run `set spark.sql.shuffle.partitions = 2x N Cores`
+    - keep available memory less than 128gb
+    - core to memory ratio is 1 to 128mb -> 2gb of reads (another section in the notes syas 200gb of data reads)
+    - avoid setting any other configs at first
+    - sizing a driver; same size as worker/s unless you care about being the absolute cheapest
+    - driver configured at 4 to 8 core 16 to 32gb ram is sufficient for most workloads
+    - large commits to delta tables use more memory
+    - driver suggestions voided when; running many streams/concurrent jobs on the same machine, commit a very large (100k+ files) amount of data to a delta table, collecting large amount of data to the driver to use in Pandas/R

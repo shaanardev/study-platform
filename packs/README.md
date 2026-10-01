@@ -40,6 +40,7 @@ The generated JSON follows [the pack schema](./exam-pack.schema.json).
 
 ## Databricks May 2026 practice pack
 
-The [Databricks pack](./databricks-dea-may-2026/README.md) is a historical, reviewed
-200-question pack. Its editorial source is archived for a later conversion to the JSON authoring
-format. The generic CLI does not apply its exam-specific rules.
+The [Databricks pack](./databricks-dea-may-2026/README.md) is an authored, synthetic 200-question
+pack built from seven domain question files. Its data-driven profile checks the exact guide counts,
+all objective mappings, question format, and baseline audit in addition to the generic schema and
+app import checks.
