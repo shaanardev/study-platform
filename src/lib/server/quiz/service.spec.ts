@@ -1,9 +1,10 @@
-import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { saveImportedPack } from '#lib/server/db/packs.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
+import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 import {
   answerQuestion,
@@ -109,7 +110,7 @@ describe('practice sessions', () => {
     directories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'practice.sqlite');
-    await cp(resolve('packs/incoming'), incoming, { recursive: true });
+    await createSamplePackFolder(incoming);
     const result = await importPacksFromFolder({ folder: incoming, databasePath });
     await rm(incoming, { recursive: true, force: true });
 

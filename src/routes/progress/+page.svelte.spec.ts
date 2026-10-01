@@ -95,7 +95,7 @@ describe('progress page', () => {
       .closest('form');
     expect(form).not.toBeNull();
     expect(form).toHaveAttribute('method', 'POST');
-    expect(form).toHaveAttribute('action', '?/practiceMissed');
+    expect(form).toHaveAttribute('action', '/progress?/practiceMissed');
     await expect
       .element(page.getByRole('button', { name: 'Practice selected missed questions' }))
       .toBeInTheDocument();

@@ -18,3 +18,10 @@ Importing is explicit: open the local app and select **Import packs from local f
 versions are stored in `.local/exam-packs.sqlite`; personal pack files and local database files are
 excluded from Git. Reimporting an already stored exam, pack, and pack version is reported as a
 duplicate instead of overwriting it.
+
+## Databricks May 2026 practice pack
+
+The [Databricks pack recipe](./databricks-dea-may-2026/README.md) builds a reviewed 200-question
+pack from the supplied learning materials. Its questions match the May 2026 guide's seven domain
+weights exactly. The recipe includes baseline review decisions, source references, and scripts
+that verify the JSON Schema, question proportions, objective coverage, and real app import.

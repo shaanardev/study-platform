@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openPackDatabase } from '#lib/server/db/packs.js';
 import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
+import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 
 const temporaryDirectories: string[] = [];
 
@@ -21,7 +22,7 @@ describe('importPacksFromFolder', () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
-    await cp(resolve('packs/incoming'), incoming, { recursive: true });
+    await createSamplePackFolder(incoming);
 
     const result = await importPacksFromFolder({ folder: incoming, databasePath });
 
@@ -45,7 +46,7 @@ describe('importPacksFromFolder', () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
-    await cp(resolve('packs/incoming'), incoming, { recursive: true });
+    await createSamplePackFolder(incoming);
 
     await importPacksFromFolder({ folder: incoming, databasePath });
     const duplicate = await importPacksFromFolder({ folder: incoming, databasePath });
@@ -92,7 +93,7 @@ describe('importPacksFromFolder', () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
-    await cp(resolve('packs/incoming'), incoming, { recursive: true });
+    await createSamplePackFolder(incoming);
 
     const database = openPackDatabase(databasePath);
     try {
