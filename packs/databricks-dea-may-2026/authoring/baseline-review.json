@@ -580,7 +580,7 @@
     "domainId": "ingestion",
     "objective": "I1",
     "originalAnswer": "A stream processing engine built on Spark SQL that treats streams as unbounded tables",
-    "reviewedAnswer": "A stream processing engine built on Spark SQL that treats streams as unbounded tables",
+    "reviewedAnswer": "Structured Streaming treats the input stream as an unbounded table",
     "reviewedExplanation": "Structured Streaming is Spark's stream processing engine built on Spark SQL. It treats a data stream as an unbounded input table - new rows appended to the table represent new data in the stream. This unified programming model allows using the same operations (DataFrame/Dataset API) for both batch and streaming."
   },
   {
@@ -635,7 +635,7 @@
     "domainId": "ingestion",
     "objective": "I1",
     "originalAnswer": "A method to capture and propagate changes made to data in a source system",
-    "reviewedAnswer": "A method to capture and propagate changes made to data in a source system",
+    "reviewedAnswer": "Change Data Capture (CDC)",
     "reviewedExplanation": "Change Data Capture (CDC) identifies and captures changes (inserts, updates, deletes) made to data in a source database, making them available for downstream systems. CDC enables incremental data loading without full table scans. Implementations include log-based CDC (reading transaction logs) and trigger-based CDC."
   },
   {
@@ -669,7 +669,7 @@
     "domainId": "ingestion",
     "objective": "I1",
     "originalAnswer": "To provide a change log of row-level changes for incremental processing",
-    "reviewedAnswer": "To provide a change log of row-level changes for incremental processing",
+    "reviewedAnswer": "Delta Change Data Feed (CDF)",
     "reviewedExplanation": "Change Data Feed (CDF) tracks row-level changes (INSERT, UPDATE, DELETE) in Delta tables. When enabled, it maintains a history of changes that can be queried. This enables efficient incremental processing downstream - consumers can read only changed rows rather than full tables, and CDC-style workflows become simpler."
   },
   {
@@ -726,7 +726,7 @@
     "domainId": "ingestion",
     "objective": "I1",
     "originalAnswer": "To perform custom logic on each micro-batch of a streaming query using DataFrame operations",
-    "reviewedAnswer": "To perform custom logic on each micro-batch of a streaming query using DataFrame operations",
+    "reviewedAnswer": "foreachBatch",
     "reviewedExplanation": "foreachBatch allows custom logic on each micro-batch as a DataFrame. It enables operations not directly supported by streaming sinks: using batch DataFrame writers, performing multiple writes, or applying custom transformations per batch. The function receives the batch DataFrame and batch ID as parameters."
   },
   {
@@ -1170,7 +1170,7 @@
     "domainId": "cicd",
     "objective": "C3",
     "originalAnswer": "Use Databricks Asset Bundles with environment-specific configuration files and CI/CD pipelines",
-    "reviewedAnswer": "Use Databricks Asset Bundles with environment-specific configuration files and CI/CD pipelines",
+    "reviewedAnswer": "Use Declarative Automation Bundles with environment-specific configuration files and CI/CD pipelines",
     "reviewedExplanation": "Databricks Asset Bundles (DABs) define jobs as YAML files with environment-specific overrides. Use the same bundle with different target environments (databricks bundle deploy -t dev/staging/prod). CI/CD pipelines automate testing and promotion. This ensures consistency across environments."
   },
   {
@@ -1220,7 +1220,7 @@
     "domainId": "cicd",
     "objective": "C4",
     "originalAnswer": "To deploy Databricks resources defined in an Asset Bundle to a target workspace",
-    "reviewedAnswer": "To deploy Databricks resources defined in an Asset Bundle to a target workspace",
+    "reviewedAnswer": "To deploy Databricks resources defined in an Declarative Automation Bundle to a target workspace",
     "reviewedExplanation": "databricks bundle deploy deploys resources defined in databricks.yml (jobs, pipelines, notebooks, queries) to the specified target workspace. It validates the bundle, creates/updates resources, and handles dependencies. This enables infrastructure-as-code deployment from local development or CI/CD pipelines."
   },
   {
@@ -1264,7 +1264,7 @@
     "domainId": "cicd",
     "objective": "C4",
     "originalAnswer": "To check the syntax and configuration of a Databricks Asset Bundle without deploying",
-    "reviewedAnswer": "To check the syntax and configuration of a Databricks Asset Bundle without deploying",
+    "reviewedAnswer": "To check the syntax and configuration of a Declarative Automation Bundle without deploying",
     "reviewedExplanation": "databricks bundle validate checks the bundle configuration for errors: valid YAML syntax, correct resource definitions, valid references, and environment configurations. It catches issues before deployment. Run this in CI/CD pipelines and before deploy to ensure bundle correctness."
   },
   {
@@ -1331,7 +1331,7 @@
     "domainId": "monitoring",
     "objective": "M5",
     "originalAnswer": "To run initialization code when a cluster starts, such as installing libraries or configuring settings",
-    "reviewedAnswer": "Inspect cluster events and init-script logs for the failing startup command",
+    "reviewedAnswer": "Cluster events and init-script logs for the failing startup command",
     "reviewedExplanation": "Init scripts run during classic compute initialization. A failing command or missing dependency can prevent startup, so inspect startup events and logs. Use supported governed script locations for the access mode; legacy DBFS script storage should not be assumed."
   },
   {
@@ -1749,7 +1749,7 @@
     "domainId": "ingestion",
     "objective": "I2",
     "originalAnswer": "Idempotent, incrementally re-runnable loading that tracks which files have already been ingested",
-    "reviewedAnswer": "Idempotent, incrementally re-runnable loading that tracks which files have already been ingested",
+    "reviewedAnswer": "It tracks files already ingested, enabling idempotent incremental reruns",
     "reviewedExplanation": "COPY INTO is a retriable, idempotent bulk load: it records which source files it has already processed, so re-running the command only ingests new files. This makes it well suited to repeatable batch ingestion into Delta tables."
   },
   {

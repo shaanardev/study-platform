@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-reviewed",
+      "title": "May 2026 reviewed baseline and original practice",
+      "version": "1.1.0",
+      "synthetic": true
+    },
+    "domains": [
+      { "id": "platform", "title": "Databricks Intelligence Platform", "weight": 6 },
+      { "id": "ingestion", "title": "Data Ingestion and Loading", "weight": 21 },
+      { "id": "transformation", "title": "Data Transformation and Modeling", "weight": 22 },
+      { "id": "jobs", "title": "Working with Lakeflow Jobs", "weight": 16 },
+      { "id": "cicd", "title": "Implementing CI/CD", "weight": 10 },
+      { "id": "monitoring", "title": "Troubleshooting, Monitoring, and Optimization", "weight": 10 },
+      { "id": "governance", "title": "Governance and Security", "weight": 15 }
+    ]
+  },
+  "outputFile": "databricks-dea-may-2026-v1.1.0.json",
+  "assetsDirectory": "assets/databricks-dea-may-2026-v1.1.0",
+  "shuffle": {
+    "answerSeed": 20260504,
+    "orderSeed": 20260505
+  },
+  "questionFiles": [
+    "questions/platform.json",
+    "questions/ingestion.json",
+    "questions/transformation.json",
+    "questions/jobs.json",
+    "questions/cicd.json",
+    "questions/monitoring.json",
+    "questions/governance.json"
+  ],
+  "assetFiles": [
+    "baseline-review.json",
+    "objective-coverage.json",
+    "provenance.json"
+  ]
+}
