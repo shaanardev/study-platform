@@ -1,0 +1,1506 @@
+[
+  {
+    "id": "dea26-baseline-034",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Each input file contains one JSON document formatted across multiple lines, including nested objects. Which batch reader is appropriate?",
+    "options": [
+      {
+        "id": "a",
+        "text": "spark.read.option(\"multiLine\", \"true\").json(path)"
+      },
+      {
+        "id": "b",
+        "text": "spark.read.option(\"schema\", \"auto\").json(path)"
+      },
+      {
+        "id": "c",
+        "text": "spark.read.option(\"multiLine\", \"true\").parquet(path)"
+      },
+      {
+        "id": "d",
+        "text": "spark.read.option(\"parse\", \"nested\").csv(path)"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The Spark JSON reader infers a schema when none is supplied. multiLine permits a JSON document to span lines; nesting alone does not require it. For repeatable production loads, supply an explicit schema. inferSchema is not needed for the JSON reader.",
+    "sources": [
+      {
+        "path": "sources/ingestion/binary.md",
+        "label": "Spark binary file source"
+      },
+      {
+        "path": "sources/ingestion/upload.md",
+        "label": "Governed file upload and access"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-042",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A JDBC-only source records every insert and update with a strictly increasing change sequence. How should a scheduled notebook ingest it incrementally?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Read rows above the saved sequence, commit them to Delta, and then advance the saved sequence"
+      },
+      {
+        "id": "b",
+        "text": "Read the first 1,000 rows on every run"
+      },
+      {
+        "id": "c",
+        "text": "Advance the saved sequence before writing the destination"
+      },
+      {
+        "id": "d",
+        "text": "Use Auto Loader directly against the database transaction log"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A high-water mark can limit JDBC reads when the source reliably exposes changes. Advance it after a successful sink commit and make retries idempotent. Timestamp cursors need tie and late-update handling; this pattern does not capture deletes unless the source represents them.",
+    "sources": [
+      {
+        "path": "sources/ingestion/jdbc.md",
+        "label": "Spark JDBC data source"
+      },
+      {
+        "path": "sources/ingestion/rest.md",
+        "label": "HTTP ingestion response handling"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-049",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Which supported Auto Loader input format carries column types in its file metadata?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Parquet"
+      },
+      {
+        "id": "b",
+        "text": "CSV"
+      },
+      {
+        "id": "c",
+        "text": "JSON"
+      },
+      {
+        "id": "d",
+        "text": "Plain text"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Parquet embeds typed schema information. Auto Loader defaults to strings for JSON and CSV inference unless inferColumnTypes is enabled. Delta tables are read using the Delta source, not cloudFiles.format=\"delta\".",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      },
+      {
+        "path": "sources/ingestion/auto-production.md",
+        "label": "Auto Loader production patterns"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-059",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A team is onboarding a continuously arriving event source with Spark SQL and DataFrame operations. Which model does Structured Streaming use?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Structured Streaming treats the input stream as an unbounded table"
+      },
+      {
+        "id": "b",
+        "text": "It converts every stream to a periodically replaced static table"
+      },
+      {
+        "id": "c",
+        "text": "It requires a separate programming model from Spark SQL"
+      },
+      {
+        "id": "d",
+        "text": "It stores all incoming records only on the driver"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Structured Streaming is Spark's stream processing engine built on Spark SQL. It treats a data stream as an unbounded input table - new rows appended to the table represent new data in the stream. This unified programming model allows using the same operations (DataFrame/Dataset API) for both batch and streaming.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-060",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Why should a production Structured Streaming query use a durable checkpoint location?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To persist source progress and applicable state so a compatible query can recover"
+      },
+      {
+        "id": "b",
+        "text": "To store the Unity Catalog grants for its output table"
+      },
+      {
+        "id": "c",
+        "text": "To guarantee exactly-once writes to every external database automatically"
+      },
+      {
+        "id": "d",
+        "text": "To replace the output table data files"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A checkpoint retains progress and state. Recovery depends on a compatible query and source, retained state, and sink semantics. Exactly-once end-to-end behavior also requires an appropriate sink; foreachBatch needs its own idempotency.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-061",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A cloud bucket continuously receives new JSON files. What does Auto Loader provide?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Incremental discovery and processing of new files through the cloudFiles source"
+      },
+      {
+        "id": "b",
+        "text": "Direct CDC reading of any relational database log"
+      },
+      {
+        "id": "c",
+        "text": "Automatic creation of BI dashboards"
+      },
+      {
+        "id": "d",
+        "text": "A replacement for destination access permissions"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Auto Loader tracks file discovery and progress to ingest new files incrementally. A durable checkpoint enables recovery. It uses Structured Streaming APIs and can process bounded increments with AvailableNow; it is not a JDBC database connector.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      },
+      {
+        "path": "sources/ingestion/auto-production.md",
+        "label": "Auto Loader production patterns"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-063",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A streaming query emits independent, newly arrived records to a compatible sink. Which output mode emits only new result rows?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Append mode"
+      },
+      {
+        "id": "b",
+        "text": "Complete mode, which emits the full result table"
+      },
+      {
+        "id": "c",
+        "text": "Update mode, which emits every row on each trigger"
+      },
+      {
+        "id": "d",
+        "text": "Replace mode, which is the standard streaming output mode"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Append mode only outputs new rows added to the result table since the last trigger. Complete mode outputs the entire result table. Update mode outputs only rows that were updated. Replace mode does not exist in Structured Streaming. Append is most common for stateless transformations writing to files or Delta tables.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-064",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A source database team needs downstream systems to learn which rows were inserted, updated, or deleted. What capability captures and propagates these changes?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Change Data Capture (CDC)"
+      },
+      {
+        "id": "b",
+        "text": "A full snapshot that ignores row changes"
+      },
+      {
+        "id": "c",
+        "text": "Static schema inference"
+      },
+      {
+        "id": "d",
+        "text": "File compaction"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Change Data Capture (CDC) identifies and captures changes (inserts, updates, deletes) made to data in a source database, making them available for downstream systems. CDC enables incremental data loading without full table scans. Implementations include log-based CDC (reading transaction logs) and trigger-based CDC.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-067",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A file-ingestion query must process the backlog that exists at run start and then stop, using multiple micro-batches if needed. Which trigger fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "trigger(availableNow=True)"
+      },
+      {
+        "id": "b",
+        "text": "trigger(processingTime=\"10 seconds\")"
+      },
+      {
+        "id": "c",
+        "text": "An infinite loop around spark.read"
+      },
+      {
+        "id": "d",
+        "text": "A watermark without any trigger"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "AvailableNow processes the available backlog and terminates, respecting source rate limits through multiple batches. ProcessingTime continues polling. Trigger.Once is legacy and deprecated; AvailableNow is the preferred bounded incremental pattern.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-068",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A downstream pipeline should process row-level inserts, updates, and deletes committed to a Delta table. Which feature provides that change log when enabled?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Delta Change Data Feed (CDF)"
+      },
+      {
+        "id": "b",
+        "text": "Auto Loader schemaLocation"
+      },
+      {
+        "id": "c",
+        "text": "A regular Delta table snapshot only"
+      },
+      {
+        "id": "d",
+        "text": "COPY INTO file history"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Change Data Feed (CDF) tracks row-level changes (INSERT, UPDATE, DELETE) in Delta tables. When enabled, it maintains a history of changes that can be queried. This enables efficient incremental processing downstream - consumers can read only changed rows rather than full tables, and CDC-style workflows become simpler.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-074",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "CDF is enabled on a Delta table. Which SQL function can return changes between specified table versions?",
+    "options": [
+      {
+        "id": "a",
+        "text": "SELECT * FROM table_changes(\"table_name\", startVersion, endVersion)"
+      },
+      {
+        "id": "b",
+        "text": "SELECT * FROM table_history(\"table_name\", startVersion, endVersion)"
+      },
+      {
+        "id": "c",
+        "text": "COPY INTO table_changes FROM versions"
+      },
+      {
+        "id": "d",
+        "text": "DESCRIBE STREAM table_name"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "table_changes() is a Delta Lake function to query Change Data Feed. Specify start/end versions or timestamps: SELECT * FROM table_changes(\"my_table\", 1, 5). It returns changed rows with metadata columns (_change_type, _commit_version, _commit_timestamp) indicating what changed. CDF must be enabled on the table first.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-075",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A streaming sink does not directly support a required batch DataFrame operation for each micro-batch. Which Structured Streaming interface can run custom logic on each batch?",
+    "options": [
+      {
+        "id": "a",
+        "text": "foreachBatch"
+      },
+      {
+        "id": "b",
+        "text": "foreachPartition, which runs once for the entire stream"
+      },
+      {
+        "id": "c",
+        "text": "AvailableNow, which is a sink callback"
+      },
+      {
+        "id": "d",
+        "text": "schemaLocation"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "foreachBatch allows custom logic on each micro-batch as a DataFrame. It enables operations not directly supported by streaming sinks: using batch DataFrame writers, performing multiple writes, or applying custom transformations per batch. The function receives the batch DataFrame and batch ID as parameters.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-081",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "An append-only Delta bronze table receives new rows. Why use spark.readStream.table(\"main.bronze.events\") downstream?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To process newly committed data incrementally using Delta transaction progress"
+      },
+      {
+        "id": "b",
+        "text": "To replay the entire table on every trigger"
+      },
+      {
+        "id": "c",
+        "text": "To capture arbitrary source updates and deletes as row-level changes without CDF"
+      },
+      {
+        "id": "d",
+        "text": "To bypass all Unity Catalog permissions"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A Delta streaming source tracks committed additions. An initial run can process existing data and then new commits. Updates and deletes need an appropriate design such as Change Data Feed; an append stream is not a general CDC feed.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-084",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A Structured Streaming ingestion writes to a Delta sink and must recover without duplicating committed micro-batches. What is required?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A durable checkpoint and the Delta streaming sink transaction semantics"
+      },
+      {
+        "id": "b",
+        "text": "A new checkpoint path for every retry"
+      },
+      {
+        "id": "c",
+        "text": "Only the append output mode, regardless of sink"
+      },
+      {
+        "id": "d",
+        "text": "A foreachBatch callback that blindly appends to JDBC"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The Delta streaming sink combines transactions with tracked query progress to avoid duplicate commits on recovery. Keep the checkpoint stable. Output mode alone does not establish end-to-end delivery semantics.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-085",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "What does AvailableNow change about a supported Structured Streaming source?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It processes data available at the start of the run and terminates after that backlog is handled"
+      },
+      {
+        "id": "b",
+        "text": "It automatically chooses larger worker VMs"
+      },
+      {
+        "id": "c",
+        "text": "It waits forever for future arrivals"
+      },
+      {
+        "id": "d",
+        "text": "It removes the need to checkpoint progress"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "AvailableNow bounds a streaming run to the available backlog and may use multiple micro-batches. It does not itself autoscale compute. Retaining the checkpoint supports incremental progress between scheduled runs.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-086",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Auto Loader infers its schema and uses cloudFiles.schemaEvolutionMode=\"addNewColumns\". A new column arrives. What happens?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The stored schema is extended, the stream stops with a schema-change error, and a restart uses the new schema"
+      },
+      {
+        "id": "b",
+        "text": "The writer mergeSchema option alone makes the reader evolve without stopping"
+      },
+      {
+        "id": "c",
+        "text": "The new column is always silently discarded"
+      },
+      {
+        "id": "d",
+        "text": "The column is added to every unrelated table in the catalog"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Reader evolution is configured with cloudFiles.schemaEvolutionMode. addNewColumns records new fields and requires a restart; rescue captures unexpected fields without evolving the schema. Delta writer schema evolution is a separate concern.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      },
+      {
+        "path": "sources/ingestion/auto-production.md",
+        "label": "Auto Loader production patterns"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-091",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A foreachBatch callback writes to JDBC and can be retried after a partial failure. How can it avoid duplicate destination effects?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Implement sink-side idempotency using batch or record keys and suitable transaction logic"
+      },
+      {
+        "id": "b",
+        "text": "Assume the checkpoint prevents every callback replay"
+      },
+      {
+        "id": "c",
+        "text": "Use append mode and omit business keys"
+      },
+      {
+        "id": "d",
+        "text": "Disable checkpoints so each run starts fresh"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "foreachBatch provides at-least-once callback execution. A retry may repeat a batch. Design upserts or a transactionally maintained batch ledger to avoid duplicate effects. A checkpoint alone cannot make a non-idempotent external sink exactly-once.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-093",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "What does cloudFiles.schemaLocation persist?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The inferred input schema and its evolution history"
+      },
+      {
+        "id": "b",
+        "text": "All target Delta table rows"
+      },
+      {
+        "id": "c",
+        "text": "The only copy of source files"
+      },
+      {
+        "id": "d",
+        "text": "The job task dependency graph"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "schemaLocation persists Auto Loader schema metadata. checkpointLocation tracks streaming progress and state. They have different purposes, even though some configurations use the same physical directory. Independent queries need independent checkpoints.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      },
+      {
+        "path": "sources/ingestion/auto-production.md",
+        "label": "Auto Loader production patterns"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-177",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A pipeline preserves raw source records before cleaning and conformance. Which medallion layer should hold those initially ingested records?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Bronze"
+      },
+      {
+        "id": "b",
+        "text": "Silver"
+      },
+      {
+        "id": "c",
+        "text": "Gold"
+      },
+      {
+        "id": "d",
+        "text": "A serving-only semantic layer"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The medallion architecture flows Bronze (raw ingested data) to Silver (cleaned, conformed, deduplicated) to Gold (business-level aggregates). Each hop progressively improves data quality and structure.",
+    "sources": [
+      {
+        "path": "sources/ingestion/streaming.md",
+        "label": "Structured Streaming query semantics"
+      },
+      {
+        "path": "sources/ingestion/delta.md",
+        "label": "Delta Lake streaming and change data"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-188",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A scheduled batch job repeatedly scans a cloud directory and should skip files it already loaded. Which statement describes COPY INTO behavior?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It tracks files already ingested, enabling idempotent incremental reruns"
+      },
+      {
+        "id": "b",
+        "text": "It enforces uniqueness of business keys across different files"
+      },
+      {
+        "id": "c",
+        "text": "It replaces the target table on every run"
+      },
+      {
+        "id": "d",
+        "text": "It automatically captures updates and deletes from source databases"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "COPY INTO is a retriable, idempotent bulk load: it records which source files it has already processed, so re-running the command only ingests new files. This makes it well suited to repeatable batch ingestion into Delta tables.",
+    "sources": [
+      {
+        "path": "sources/ingestion/copy.md",
+        "label": "COPY INTO file ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-copy-syntax",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A registered cloud path contains Parquet files and main.bronze.orders is an existing Delta table. Which SQL loads them incrementally?",
+    "options": [
+      {
+        "id": "a",
+        "text": "COPY INTO main.bronze.orders FROM 's3://example-bucket/orders/' FILEFORMAT = PARQUET"
+      },
+      {
+        "id": "b",
+        "text": "COPY main.bronze.orders TO 's3://example-bucket/orders/'"
+      },
+      {
+        "id": "c",
+        "text": "RESTORE main.bronze.orders FROM PARQUET"
+      },
+      {
+        "id": "d",
+        "text": "OPTIMIZE main.bronze.orders FILEFORMAT = PARQUET"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "COPY INTO loads source files into the destination and tracks previously loaded files. The path must be accessible to the executing identity. RESTORE and OPTIMIZE operate on table history and layout rather than ingesting new files.",
+    "sources": [
+      {
+        "path": "sources/ingestion/copy.md",
+        "label": "COPY INTO file ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-copy-force",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A file was already loaded with COPY INTO. An engineer now sets COPY_OPTIONS to force=true. What risk must be considered?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Previously processed files can be loaded again, so duplicate rows may be introduced"
+      },
+      {
+        "id": "b",
+        "text": "All source files become encrypted"
+      },
+      {
+        "id": "c",
+        "text": "The destination becomes an external table"
+      },
+      {
+        "id": "d",
+        "text": "Only new source columns are copied"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "force bypasses file-loading history for the command. It is useful when deliberately reloading files, but a pipeline must account for duplicate destination effects.",
+    "sources": [
+      {
+        "path": "sources/ingestion/copy.md",
+        "label": "COPY INTO file ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-copy-row-duplicates",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Two distinct source files contain the same order row. Both files are new to COPY INTO. What should the engineer expect?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Both files can load; file-level idempotency does not enforce business-key uniqueness"
+      },
+      {
+        "id": "b",
+        "text": "COPY INTO automatically keeps only the row with the latest order date"
+      },
+      {
+        "id": "c",
+        "text": "COPY INTO rejects every duplicate business key"
+      },
+      {
+        "id": "d",
+        "text": "Only the alphabetically first file can load"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Tracking previously loaded files prevents ordinary file replay. It does not compare business keys across separate files. Perform row-level deduplication as a subsequent transformation if needed.",
+    "sources": [
+      {
+        "path": "sources/ingestion/copy.md",
+        "label": "COPY INTO file ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-copy-access",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A job can read the source files, but COPY INTO fails because its execution identity lacks destination write access. What should be fixed?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Grant the required destination privileges and parent usage privileges to the Run as identity"
+      },
+      {
+        "id": "b",
+        "text": "Give SELECT only to the human viewing the run"
+      },
+      {
+        "id": "c",
+        "text": "Enable force=true to bypass authorization"
+      },
+      {
+        "id": "d",
+        "text": "Remove FILEFORMAT from the command"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Ingestion requires both source access and authorization to modify the target. Run as determines the execution identity. File idempotency options do not bypass Unity Catalog permissions.",
+    "sources": [
+      {
+        "path": "sources/ingestion/copy.md",
+        "label": "COPY INTO file ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-auto-infer-types",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Auto Loader reads JSON with schema inference and no inferColumnTypes override. What type is normally inferred for a numeric JSON field?",
+    "options": [
+      {
+        "id": "a",
+        "text": "String"
+      },
+      {
+        "id": "b",
+        "text": "Always decimal(38,18)"
+      },
+      {
+        "id": "c",
+        "text": "Always binary"
+      },
+      {
+        "id": "d",
+        "text": "Always timestamp"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Auto Loader defaults to strings for JSON and CSV fields to reduce type mismatch issues. cloudFiles.inferColumnTypes=true enables data-based type inference. This differs from the ordinary Spark JSON reader.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-auto-rescue",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Unexpected JSON fields should be retained for investigation without changing the declared table columns. Which Auto Loader evolution mode fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "cloudFiles.schemaEvolutionMode=\"rescue\""
+      },
+      {
+        "id": "b",
+        "text": "cloudFiles.schemaEvolutionMode=\"addNewColumns\""
+      },
+      {
+        "id": "c",
+        "text": "Set only the Delta writer mergeSchema option"
+      },
+      {
+        "id": "d",
+        "text": "Delete the checkpoint on every new field"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "rescue records unexpected fields in rescued data rather than evolving the schema. addNewColumns changes the stored reader schema and requires a restart on new columns.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-auto-checkpoint-isolation",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Two independent Auto Loader queries read different landing paths and write the same bronze table. How should their checkpoints be configured?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Give each query a separate durable checkpoint"
+      },
+      {
+        "id": "b",
+        "text": "Use one checkpoint path for both independent queries"
+      },
+      {
+        "id": "c",
+        "text": "Omit checkpoints because the destination is shared"
+      },
+      {
+        "id": "d",
+        "text": "Place both checkpoints in the driver temporary directory"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Each independent ingestion query must maintain its own source progress and state. Sharing a sink does not make query checkpoints interchangeable. Durable paths allow compatible query recovery.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-production.md",
+        "label": "Auto Loader production patterns"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-auto-discovery",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A high-volume object-storage source makes repeated directory listing expensive. Which Auto Loader capability should be considered?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Managed file events or file notification discovery, with the required storage configuration"
+      },
+      {
+        "id": "b",
+        "text": "Converting JSON input to a Git folder"
+      },
+      {
+        "id": "c",
+        "text": "Removing source progress tracking"
+      },
+      {
+        "id": "d",
+        "text": "Replacing the destination table with a notebook revision"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "File event or notification discovery can reduce repeated listing overhead at scale. It is a file discovery mechanism; schema rules and checkpoint recovery still need configuration.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-discovery.md",
+        "label": "Auto Loader file discovery"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-auto-delta-schema",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "The Auto Loader reader already recognizes an added field, but the Delta destination rejects that field. Which concern remains?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Configure compatible Delta writer schema evolution separately from reader schema evolution"
+      },
+      {
+        "id": "b",
+        "text": "Delete the Unity Catalog metastore"
+      },
+      {
+        "id": "c",
+        "text": "Set the JSON reader multiLine option regardless of format"
+      },
+      {
+        "id": "d",
+        "text": "Switch the job time zone"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Reader schema evolution and target write schema compatibility are separate. A compatible writer schema evolution setting may be required when adding destination columns. Neither setting grants data access.",
+    "sources": [
+      {
+        "path": "sources/ingestion/auto-schema.md",
+        "label": "Auto Loader schema inference and evolution"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-ingest-file-choice",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "Millions of new JSON files arrive regularly in governed cloud storage. The team needs incremental file tracking and restartable ingestion. Which choice fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Auto Loader into a Unity Catalog-governed Delta table"
+      },
+      {
+        "id": "b",
+        "text": "A full recursive reread of every file on each run"
+      },
+      {
+        "id": "c",
+        "text": "Lakehouse Federation against the JSON directory"
+      },
+      {
+        "id": "d",
+        "text": "A Git pull operation"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Auto Loader is designed for scalable incremental file ingestion. Retain its checkpoint, configure schema handling, and select a discovery mode appropriate for source scale and available storage features.",
+    "sources": [
+      {
+        "path": "sources/ingestion/standard-connect.md",
+        "label": "Standard and managed connectors"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-managed-source-choice",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A supported enterprise database must replicate inserts, updates, and deletes with limited connector maintenance. Which option should be evaluated first?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A Lakeflow Connect managed database connector with supported change capture"
+      },
+      {
+        "id": "b",
+        "text": "Auto Loader against the JDBC connection string"
+      },
+      {
+        "id": "c",
+        "text": "A view that copies no data"
+      },
+      {
+        "id": "d",
+        "text": "A nightly export of notebook revision history"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A managed database connector can operate a change-capture ingestion pipeline for supported sources. Verify source support, prerequisites, connectivity, and change capture capabilities before choosing it.",
+    "sources": [
+      {
+        "path": "sources/ingestion/connect-cdc.md",
+        "label": "Managed database connector architecture"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-standard-control",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A supported source needs custom transformations during ingestion and a team-managed pipeline. How do standard connectors differ from managed connectors?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Standard connectors expose more pipeline implementation control and require more responsibility for pipeline behavior"
+      },
+      {
+        "id": "b",
+        "text": "Standard connectors always require Databricks to own the source database"
+      },
+      {
+        "id": "c",
+        "text": "Managed connectors cannot use Unity Catalog"
+      },
+      {
+        "id": "d",
+        "text": "Standard connectors are only for SQL dashboards"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Standard connectors are used in pipeline code and give the team control over processing logic. Managed connectors automate more source-specific ingestion setup and operation. Compare source support and required customization.",
+    "sources": [
+      {
+        "path": "sources/ingestion/standard-connect.md",
+        "label": "Standard and managed connectors"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-connect-gateway",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "In a Lakeflow Connect managed database CDC design, what is the role of the ingestion gateway?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Continuously capture source database changes and stage them for ingestion"
+      },
+      {
+        "id": "b",
+        "text": "Execute every downstream BI query"
+      },
+      {
+        "id": "c",
+        "text": "Store Git branches for the pipeline code"
+      },
+      {
+        "id": "d",
+        "text": "Act as the destination table row filter"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The database ingestion gateway captures changes into staging storage. The ingestion pipeline applies staged data to destination tables. SaaS and other connector types can have different architectures.",
+    "sources": [
+      {
+        "path": "sources/ingestion/connect-cdc.md",
+        "label": "Managed database connector architecture"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-connect-connection",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A managed connector needs authenticated access to its source. Which Unity Catalog object represents the source connection details?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A connection"
+      },
+      {
+        "id": "b",
+        "text": "A SQL view containing the password as a literal"
+      },
+      {
+        "id": "c",
+        "text": "An OPTIMIZE command"
+      },
+      {
+        "id": "d",
+        "text": "A job task dependency edge"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A Unity Catalog connection represents source authentication and connection details for supported connector designs. Destination configuration and privileges are separate. Avoid credentials embedded directly in source code.",
+    "sources": [
+      {
+        "path": "sources/ingestion/connect.md",
+        "label": "Lakeflow Connect managed ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-connect-initial-load",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A managed ingestion pipeline runs for the first time and then repeatedly. What is the usual incremental ingestion pattern when the source supports it?",
+    "options": [
+      {
+        "id": "a",
+        "text": "An initial load followed by processing tracked source changes"
+      },
+      {
+        "id": "b",
+        "text": "A mandatory full table reload on every run"
+      },
+      {
+        "id": "c",
+        "text": "Loading only the first source row forever"
+      },
+      {
+        "id": "d",
+        "text": "Requiring analysts to copy every change manually"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Managed incremental ingestion generally starts with an initial load and then consumes tracked changes or a supported cursor. Exact behavior and supported change types depend on the connector and source.",
+    "sources": [
+      {
+        "path": "sources/ingestion/connect.md",
+        "label": "Lakeflow Connect managed ingestion"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-connect-source-prerequisites",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A supported SQL Server source is reachable, but managed CDC ingestion cannot capture changes. What should be checked next?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The source change-tracking or CDC prerequisites and connector account permissions"
+      },
+      {
+        "id": "b",
+        "text": "The dashboard color palette"
+      },
+      {
+        "id": "c",
+        "text": "Only the destination table comment"
+      },
+      {
+        "id": "d",
+        "text": "The local Git branch name"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Network reachability is only one prerequisite. Source change capture configuration and source identity permissions must meet the connector requirements. The destination must also be configured and authorized.",
+    "sources": [
+      {
+        "path": "sources/ingestion/connect-cdc.md",
+        "label": "Managed database connector architecture"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-jdbc-selection",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A source has no suitable managed connector but exposes a JDBC endpoint. Which approach can implement a scheduled batch ingestion?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Read through the Spark JDBC data source in a notebook, write governed Delta tables, and orchestrate with Lakeflow Jobs"
+      },
+      {
+        "id": "b",
+        "text": "Use cloudFiles.format=\"jdbc\""
+      },
+      {
+        "id": "c",
+        "text": "Use a Git folder as a database reader"
+      },
+      {
+        "id": "d",
+        "text": "Call OPTIMIZE on the source JDBC URL"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The JDBC data source reads a supported relational database using a driver, connection settings, and query or table options. Incremental behavior must be designed explicitly; Jobs can schedule and sequence the workload.",
+    "sources": [
+      {
+        "path": "sources/ingestion/jdbc.md",
+        "label": "Spark JDBC data source"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-rest-pagination",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A REST source returns a next-page token. A notebook must ingest the full result set reliably. What should it do?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Follow pagination until complete, record progress, and make destination writes safe to retry"
+      },
+      {
+        "id": "b",
+        "text": "Assume the first response includes all source rows"
+      },
+      {
+        "id": "c",
+        "text": "Treat the next-page token as a Delta table name"
+      },
+      {
+        "id": "d",
+        "text": "Append the same first page repeatedly until the job times out"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Pagination is part of the source API contract. Preserve a restartable cursor or page progress as appropriate and design idempotent writes. A successful HTTP response alone does not mean the complete dataset was read.",
+    "sources": [
+      {
+        "path": "sources/ingestion/rest.md",
+        "label": "HTTP ingestion response handling"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-rest-rate-limit",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "An ingestion API returns HTTP 429 with a Retry-After header. Which recovery approach fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Use bounded retries honoring Retry-After or backoff, with retry-safe writes"
+      },
+      {
+        "id": "b",
+        "text": "Retry in a tight unbounded loop"
+      },
+      {
+        "id": "c",
+        "text": "Delete the checkpoint and all destination rows"
+      },
+      {
+        "id": "d",
+        "text": "Change the API response body into a cron expression"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Rate limiting is usually transient, so respect the service retry guidance and cap retries. Ensure replay does not create duplicate effects. Authentication and deterministic validation errors require different remediation.",
+    "sources": [
+      {
+        "path": "sources/ingestion/rest.md",
+        "label": "HTTP ingestion response handling"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-local-csv-volume",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A small CSV on a workstation must be available to a governed notebook workload. Which approach fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Upload it to a Unity Catalog volume, then read it with the appropriate CSV options"
+      },
+      {
+        "id": "b",
+        "text": "Assume its C:\\ path exists on every remote executor"
+      },
+      {
+        "id": "c",
+        "text": "Register the workstation folder as a SQL warehouse"
+      },
+      {
+        "id": "d",
+        "text": "Use DESCRIBE HISTORY to transfer the file"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A workstation path is not a distributed compute path. Upload the file to supported governed storage or use the UI table-upload workflow, then configure format, header, delimiter, and schema as appropriate.",
+    "sources": [
+      {
+        "path": "sources/ingestion/upload.md",
+        "label": "Governed file upload and access"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-unstructured-binary",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "An ingestion task must retain PDF documents and file metadata in bronze without treating each document as a table row schema. Which reader is appropriate?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The binaryFile data source, with governed file access"
+      },
+      {
+        "id": "b",
+        "text": "The Parquet reader regardless of file contents"
+      },
+      {
+        "id": "c",
+        "text": "The CSV reader with every PDF forced into numeric columns"
+      },
+      {
+        "id": "d",
+        "text": "A SQL warehouse used as a PDF filesystem"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "binaryFile produces file metadata and binary content for unstructured files. Downstream parsing or extraction is separate. Govern landing access using volumes or registered external locations.",
+    "sources": [
+      {
+        "path": "sources/ingestion/binary.md",
+        "label": "Spark binary file source"
+      }
+    ]
+  },
+  {
+    "id": "dea26-ingestion-federation-vs-ingestion",
+    "type": "single_choice",
+    "domainId": "ingestion",
+    "prompt": "A team wants to query a remote database through Unity Catalog without copying its rows into local Delta tables. Which choice meets that requirement?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Lakehouse Federation"
+      },
+      {
+        "id": "b",
+        "text": "COPY INTO from a Parquet directory"
+      },
+      {
+        "id": "c",
+        "text": "Auto Loader into bronze"
+      },
+      {
+        "id": "d",
+        "text": "A managed replication pipeline whose purpose is to copy data"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Federation provides governed queries against supported external sources. It is distinct from ingestion that materializes destination data. Choose based on latency, source load, performance, and whether a local copy is required.",
+    "sources": [
+      {
+        "path": "sources/ingestion/federation.md",
+        "label": "Lakehouse Federation"
+      }
+    ]
+  }
+]
