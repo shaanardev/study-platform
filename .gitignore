@@ -1,4 +1,5 @@
 node_modules
+.ordewell
 .pnpm-store
 .local/
 *.sqlite
@@ -30,5 +31,4 @@ vite.config.ts.timestamp-*
 /packs/incoming/*
 !/packs/incoming/assets/
 /packs/incoming/assets/*
-!/packs/incoming/assets/synthetic-notes.md
 !/packs/incoming/sample-databricks-associate.json
