@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-jobs-preview",
+      "title": "May 2026 Lakeflow Jobs domain preview",
+      "version": "1.0.0",
+      "synthetic": true
+    },
+    "domains": [
+      {
+        "id": "jobs",
+        "title": "Working with Lakeflow Jobs",
+        "weight": 100
+      }
+    ]
+  },
+  "outputFile": "preview-jobs-pack.json",
+  "assetsDirectory": "preview-jobs-assets",
+  "shuffle": {
+    "answerSeed": "dea26-jobs-preview-answers",
+    "orderSeed": "dea26-jobs-preview-order"
+  },
+  "questionFiles": [
+    "questions/jobs.json"
+  ],
+  "assetFiles": [
+    "baseline-review.json",
+    "objective-coverage.json"
+  ]
+}
