@@ -167,7 +167,7 @@ describe('build command', () => {
         expect(yield* fs.readFileString(`${fixture.root}/inline-built/preview-pack.json`)).toBe(
           modular,
         );
-        const pack = yield* verifyPack(`${fixture.output}/preview-pack.json`);
+        const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`);
         expect(pack.questions.map(({ id }) => id).sort()).toEqual([
           'core-q1',
           'core-q2',
@@ -302,7 +302,7 @@ describe('build command', () => {
         expect(yield* fs.readFileString(`${output}/preview-assets/provenance/manifest.json`)).toBe(
           '{ "source": "references/core.md", "kind": "synthetic-preview" }\n',
         );
-        const pack = yield* verifyPack(`${output}/preview-pack.json`);
+        const { pack } = yield* verifyPack(`${output}/preview-pack.json`);
         expect(pack.questions.every(({ sources }) => sources.length === 1)).toBe(true);
       }),
     ));
@@ -312,7 +312,7 @@ describe('build command', () => {
       Effect.gen(function* () {
         const output = yield* outputDirectory;
         yield* buildPack('test/fixtures/modular-preview/authoring.json', output);
-        const pack = yield* verifyPack(`${output}/preview-pack.json`);
+        const { pack } = yield* verifyPack(`${output}/preview-pack.json`);
         expect(pack.domains).toEqual([{ id: 'core', title: 'Core', weight: 100 }]);
         expect(pack.questions.map(({ id }) => id).sort()).toEqual(['core-q1', 'core-q2']);
         for (const question of pack.questions) {

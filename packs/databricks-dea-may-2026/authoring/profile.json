@@ -23,9 +23,10 @@
   "questionRules": {
     "type": "single_choice",
     "optionCount": 4,
-    "explanationMinWords": 10,
+    "explanationMinWords": 15,
     "requiredSourcePathFragment": "/sources/"
   },
+  "answerPositions": { "a": 50, "b": 50, "c": 50, "d": 50 },
   "baselineAudit": {
     "path": "assets/databricks-dea-may-2026-v1.1.0/baseline-review.json",
     "total": 194,

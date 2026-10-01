@@ -92,10 +92,9 @@ pnpm pack:build packs/databricks-dea-may-2026/authoring/authoring.json packs/inc
 pnpm pack:verify packs/incoming/databricks-dea-may-2026-v1.1.0.json --profile packs/databricks-dea-may-2026/authoring/profile.json
 ```
 
-The verifier checks the exam-pack schema, source paths, app import, practice and mock flows, exact
-guide counts and weights, objective coverage, question rules, and baseline audit. The prior
-TypeScript runner and recipe remain archived in [`legacy/`](./legacy/); they are not active CLI
-commands.
+The CLI checks the exam-pack schema, source paths, app import, practice and mock flows, exact guide
+counts and weights, objective coverage, question rules, and baseline audit. The generic authoring
+input and verification profile are the maintained source for this pack.
 
 The verification report records the pack SHA-256, so its results apply to that precise JSON.
 For future content changes, increment the pack version, output filename, and asset directory
