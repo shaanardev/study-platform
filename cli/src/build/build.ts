@@ -1,12 +1,28 @@
-import { copyFile, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { Data, Effect, Random, Schema } from 'effect';
-import { type AuthoringFile as Authoring, AuthoringFile } from './authoring.js';
+// FileSystem.stat follows links in v4; use lstat only for the no-follow check.
+// oxlint-disable-next-line effecttsgo/node-builtin-import
+import { lstat } from 'node:fs/promises';
+import { Data, Effect, FileSystem, Path, Random, Schema } from 'effect';
+import { type AuthoringFile as Authoring, AuthoringFile, QuestionFile } from './authoring.js';
+
+type AssembledAuthoring = Authoring & {
+  readonly questions: Schema.Schema.Type<typeof QuestionFile>;
+};
 
 export class BuildError extends Data.TaggedError('BuildError')<{
   readonly message: string;
   readonly cause?: unknown;
 }> {}
+
+const toBuildError = (cause: unknown): BuildError =>
+  cause instanceof BuildError
+    ? cause
+    : new BuildError({ message: cause instanceof Error ? cause.message : String(cause), cause });
+
+const isMissingFile = (error: BuildError): boolean =>
+  error.cause instanceof Error && 'code' in error.cause && error.cause.code === 'ENOENT';
+
+const statWithoutFollowingLinks = (path: string) =>
+  Effect.tryPromise({ try: () => lstat(path), catch: toBuildError });
 
 function itemAt<T>(items: ArrayLike<T>, index: number): T {
   const value = items[index];
@@ -17,8 +33,8 @@ function itemAt<T>(items: ArrayLike<T>, index: number): T {
 function safeRelativePath(path: string, label: string): string {
   if (
     !path ||
-    isAbsolute(path) ||
-    /^[a-zA-Z]:[\\/]/.test(path) ||
+    path.startsWith('/') ||
+    /^[a-zA-Z]:/.test(path) ||
     path.includes('\\') ||
     path.includes('\0')
   ) {
@@ -31,23 +47,34 @@ function safeRelativePath(path: string, label: string): string {
   return path;
 }
 
-async function rejectOutputSymlinks(root: string, destination: string): Promise<void> {
-  const parts = relative(root, destination).split(sep);
-  let current = root;
+const rejectSymlinks = Effect.fn(function* (destination: string) {
+  const path = yield* Path.Path;
+  const filesystemRoot = path.parse(destination).root;
+  const parts = path.relative(filesystemRoot, destination).split(path.sep);
+  let current = filesystemRoot;
   for (const part of parts) {
-    current = join(current, part);
-    try {
-      if ((await lstat(current)).isSymbolicLink()) {
-        throw new Error(`Output path contains a symbolic link: ${current}`);
-      }
-    } catch (cause) {
-      if (cause instanceof Error && 'code' in cause && cause.code === 'ENOENT') break;
-      throw cause;
-    }
+    current = path.join(current, part);
+    const info = yield* statWithoutFollowingLinks(current).pipe(
+      Effect.catchIf(isMissingFile, () => Effect.succeed(undefined)),
+    );
+    if (!info) break;
+    if (info.isSymbolicLink())
+      return yield* Effect.fail(
+        new BuildError({ message: `Path contains a symbolic link: ${current}` }),
+      );
   }
-}
+});
 
-function validateAuthoring(input: Authoring): void {
+const requireInputFile = Effect.fn(function* (filename: string) {
+  yield* rejectSymlinks(filename);
+  const info = yield* statWithoutFollowingLinks(filename);
+  if (!info.isFile())
+    return yield* Effect.fail(new BuildError({ message: `Not a regular file: ${filename}` }));
+  return yield* (yield* FileSystem.FileSystem).realPath(filename);
+});
+
+function validateAuthoring(input: AssembledAuthoring): void {
+  if (input.questions.length === 0) throw new Error('Authoring must contain at least one question');
   const ids = new Set<string>();
   for (const domain of input.metadata.domains) {
     if (ids.has(domain.id)) throw new Error(`Duplicate domain ID: ${domain.id}`);
@@ -68,6 +95,7 @@ function validateAuthoring(input: Authoring): void {
     throw new Error('outputFile must be a filename, not a path');
   }
   safeRelativePath(input.assetsDirectory, 'assetsDirectory');
+  for (const asset of input.assetFiles ?? []) safeRelativePath(asset, 'assetFiles path');
   const questionIds = new Set<string>();
   for (const question of input.questions) {
     if (questionIds.has(question.id)) throw new Error(`Duplicate question ID: ${question.id}`);
@@ -90,10 +118,10 @@ function validateAuthoring(input: Authoring): void {
   }
 }
 
-function shuffleQuestions(input: Authoring): Record<string, unknown>[] {
+function shuffleQuestions(input: AssembledAuthoring): Record<string, unknown>[] {
   const groups = new Map<
     string,
-    { question: Authoring['questions'][number]; position: number }[]
+    { question: AssembledAuthoring['questions'][number]; position: number }[]
   >();
   for (const question of input.questions) {
     const key = `${question.options.length}:${question.correctOptionIds.length}`;
@@ -123,9 +151,7 @@ function shuffleQuestions(input: Authoring): Record<string, unknown>[] {
     );
     const correctIds = new Set(question.correctOptionIds);
     const wrong = question.options.filter((option) => !correctIds.has(option.id));
-    const shuffledWrong = Effect.runSync(
-      Random.shuffle(wrong).pipe(Random.withSeed(question.id)),
-    );
+    const shuffledWrong = Effect.runSync(Random.shuffle(wrong).pipe(Random.withSeed(question.id)));
     const group = groups.get(`${question.options.length}:${correct.length}`);
     const position = group?.find((entry) => entry.question === question)?.position;
     if (position === undefined) throw new Error(`No answer position assigned for ${question.id}`);
@@ -152,53 +178,63 @@ function shuffleQuestions(input: Authoring): Record<string, unknown>[] {
   return Effect.runSync(Random.shuffle(result).pipe(Random.withSeed(input.shuffle.orderSeed)));
 }
 
-async function build(authoringPath: string, outputDirectory: string): Promise<void> {
-  const authoringFile = resolve(authoringPath);
-  let raw: unknown;
-  try {
-    raw = JSON.parse(await readFile(authoringFile, 'utf8'));
-  } catch (cause) {
-    throw new Error(`Unable to read JSON authoring file: ${String(cause)}`);
-  }
-  let input: Authoring;
-  try {
-    input = Schema.decodeUnknownSync(AuthoringFile, { onExcessProperty: 'error' })(raw);
-  } catch (cause) {
-    throw new Error(`Invalid authoring file: ${String(cause)}`);
-  }
-  validateAuthoring(input);
-  const sourceRoot = await realpath(dirname(authoringFile));
-  const outputRoot = resolve(outputDirectory);
-  const assetsRoot = resolve(outputRoot, input.assetsDirectory);
-  if (!assetsRoot.startsWith(`${outputRoot}${sep}`))
-    throw new Error('assetsDirectory escapes output directory');
-  const artifacts: { source: string; destination: string }[] = [];
-  for (const question of input.questions) {
-    for (const source of question.sources) {
-      const relativePath = safeRelativePath(source.path, 'source path');
-      const sourcePath = resolve(sourceRoot, relativePath);
-      const actualSource = await realpath(sourcePath);
-      if (!actualSource.startsWith(`${sourceRoot}${sep}`))
-        throw new Error(`Source asset escapes authoring directory: ${source.path}`);
-      artifacts.push({ source: actualSource, destination: resolve(assetsRoot, relativePath) });
-    }
-  }
-  const pack = { ...input.metadata, questions: shuffleQuestions(input) };
-  await mkdir(outputRoot, { recursive: true });
-  await rejectOutputSymlinks(outputRoot, join(outputRoot, input.outputFile));
-  for (const artifact of artifacts) {
-    await rejectOutputSymlinks(outputRoot, artifact.destination);
-  }
-  await writeFile(join(outputRoot, input.outputFile), `${JSON.stringify(pack, null, 2)}\n`, 'utf8');
-  for (const artifact of new Map(artifacts.map((item) => [item.destination, item])).values()) {
-    await mkdir(dirname(artifact.destination), { recursive: true });
-    await copyFile(artifact.source, artifact.destination);
-  }
-}
-
 export const buildPack = (authoringPath: string, outputDirectory: string) =>
-  Effect.tryPromise({
-    try: () => build(authoringPath, outputDirectory),
-    catch: (cause) =>
-      new BuildError({ message: cause instanceof Error ? cause.message : String(cause), cause }),
-  });
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const authoringFile = yield* requireInputFile(path.resolve(authoringPath));
+    const content = yield* fs.readFileString(authoringFile);
+    const input = yield* Schema.decodeEffect(Schema.fromJsonString(AuthoringFile), {
+      onExcessProperty: 'error',
+    })(content).pipe(
+      Effect.mapError(
+        (cause) => new BuildError({ message: `Invalid authoring file: ${cause}`, cause }),
+      ),
+    );
+    const sourceRoot = path.dirname(authoringFile);
+    const questions = [...(input.questions ?? [])];
+    for (const reference of input.questionFiles ?? []) {
+      const relativePath = yield* Effect.try({
+        try: () => safeRelativePath(reference, 'questionFiles path'),
+        catch: toBuildError,
+      });
+      const questionPath = yield* requireInputFile(path.resolve(sourceRoot, relativePath));
+      const drafts = yield* Schema.decodeEffect(Schema.fromJsonString(QuestionFile), {
+        onExcessProperty: 'error',
+      })(yield* fs.readFileString(questionPath)).pipe(
+        Effect.mapError(
+          (cause) =>
+            new BuildError({ message: `Invalid question file ${reference}: ${cause}`, cause }),
+        ),
+      );
+      questions.push(...drafts);
+    }
+    const assembled = { ...input, questions };
+    yield* Effect.try({ try: () => validateAuthoring(assembled), catch: toBuildError });
+
+    const outputRoot = path.resolve(outputDirectory);
+    const assetsRoot = path.resolve(outputRoot, input.assetsDirectory);
+    const assetPaths = new Set([
+      ...questions.flatMap((question) => question.sources.map((source) => source.path)),
+      ...(input.assetFiles ?? []),
+    ]);
+    const artifacts = yield* Effect.forEach(assetPaths, (asset) =>
+      Effect.gen(function* () {
+        const source = yield* requireInputFile(path.resolve(sourceRoot, asset));
+        return { source, destination: path.resolve(assetsRoot, asset) };
+      }),
+    );
+    const pack = { ...input.metadata, questions: shuffleQuestions(assembled) };
+    const packJson = yield* Schema.encodeEffect(
+      Schema.fromJsonString(Schema.Unknown, { space: 2 }),
+    )(pack);
+    const packPath = path.join(outputRoot, input.outputFile);
+    yield* rejectSymlinks(packPath);
+    for (const artifact of artifacts) yield* rejectSymlinks(artifact.destination);
+    yield* fs.makeDirectory(outputRoot, { recursive: true });
+    yield* fs.writeFileString(packPath, `${packJson}\n`);
+    for (const artifact of artifacts) {
+      yield* fs.makeDirectory(path.dirname(artifact.destination), { recursive: true });
+      yield* fs.copyFile(artifact.source, artifact.destination);
+    }
+  }).pipe(Effect.mapError(toBuildError));

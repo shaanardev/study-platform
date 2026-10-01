@@ -1,0 +1,13 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": { "id": "preview-exam", "title": "Preview Exam", "version": "1" },
+    "pack": { "id": "preview-pack", "title": "Core Preview", "version": "1", "synthetic": true },
+    "domains": [{ "id": "core", "title": "Core", "weight": 100 }]
+  },
+  "outputFile": "preview-pack.json",
+  "assetsDirectory": "preview-assets",
+  "shuffle": { "answerSeed": "preview-answers", "orderSeed": "preview-order" },
+  "questionFiles": ["questions/core.json"],
+  "assetFiles": ["audit/review.json", "provenance/manifest.json", "references/core.md"]
+}

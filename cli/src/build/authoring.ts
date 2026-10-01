@@ -46,12 +46,18 @@ const Question = Schema.Struct({
   sources: Schema.Array(Source).pipe(Schema.check(Schema.isMinLength(1))),
 });
 
+/** A modular question file is a JSON array using the same draft schema as inline questions. */
+export const QuestionFile = Schema.Array(Question);
+
 export const AuthoringFile = Schema.Struct({
   metadata: Metadata,
   outputFile: Text,
   assetsDirectory: Text,
   shuffle: Schema.Struct({ answerSeed: Seed, orderSeed: Seed }),
-  questions: Schema.Array(Question).pipe(Schema.check(Schema.isMinLength(1))),
+  questions: Schema.optional(QuestionFile),
+  // Paths are resolved under the main authoring file's directory and checked before use.
+  questionFiles: Schema.optional(Schema.Array(Text)),
+  assetFiles: Schema.optional(Schema.Array(Text)),
 });
 
 export type AuthoringFile = Schema.Schema.Type<typeof AuthoringFile>;
