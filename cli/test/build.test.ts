@@ -1,6 +1,7 @@
 import { NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Result, Schema } from 'effect';
 import { afterEach, describe, expect, it } from 'vitest';
+import { AuthoringFile } from '../src/build/authoring.js';
 import { buildPack } from '../src/build/build.js';
 
 const outputs: string[] = [];
@@ -50,16 +51,77 @@ describe('build command', () => {
             { id: 'foundation', weight: 60 },
             { id: 'operations', weight: 40 },
           ],
-          questions: expect.arrayContaining([
-            expect.objectContaining({ id: 'foundation-q1', answerIds: ['a'] }),
-            expect.objectContaining({ id: 'operations-q1', answerIds: ['a', 'b'] }),
-          ]),
         });
+        const questions = (parsedPack as { questions: { options: { id: string }[]; answerIds: string[] }[] }).questions;
+        expect(questions).toHaveLength(2);
+        for (const question of questions) {
+          const optionIds = question.options.map((option) => option.id);
+          expect(question.answerIds.length).toBeGreaterThan(0);
+          expect(question.answerIds.every((id) => optionIds.includes(id))).toBe(true);
+        }
         expect(
           yield* (yield* FileSystem.FileSystem).readFileString(
             `${first}/assets/references/foundation.md`,
           ),
         ).toBe('Foundation source material.\n');
+      }),
+    ));
+
+  it('balances correct answers across four positions in a 200-question bank', () =>
+    run(
+      Effect.gen(function* () {
+        const output = yield* outputDirectory;
+        const fs = yield* FileSystem.FileSystem;
+        const authoringPath = `${output}/authoring.json`;
+        const buildDirectory = `${output}/built`;
+        yield* fs.writeFileString(`${output}/reference.md`, 'Reference material.\n');
+        const questions = Array.from({ length: 200 }, (_, index) => ({
+          id: `question-${index + 1}`,
+          type: 'single_choice' as const,
+          domainId: 'core',
+          prompt: `Question ${index + 1}?`,
+          options: [
+            { id: 'correct', text: 'Correct' },
+            { id: 'wrong-a', text: 'Wrong A' },
+            { id: 'wrong-b', text: 'Wrong B' },
+            { id: 'wrong-c', text: 'Wrong C' },
+          ],
+          correctOptionIds: ['correct'],
+          explanation: 'Correct is the answer.',
+          sources: [{ path: 'reference.md', label: 'Reference' }],
+        }));
+        const authoringJson = yield* Schema.encodeEffect(Schema.fromJsonString(AuthoringFile))({
+          metadata: {
+            schemaVersion: 1,
+            exam: { id: 'exam', title: 'Exam', version: '1' },
+            pack: { id: 'pack', title: 'Pack', version: '1', synthetic: false },
+            domains: [{ id: 'core', title: 'Core', weight: 100 }],
+            passingThreshold: 70,
+          },
+          outputFile: 'pack.json',
+          assetsDirectory: 'assets',
+          shuffle: { answerSeed: 123, orderSeed: 'questions' },
+          questions,
+        });
+        yield* fs.writeFileString(
+          authoringPath,
+          authoringJson,
+        );
+
+        yield* buildPack(authoringPath, buildDirectory);
+        const content = yield* fs.readFileString(`${buildDirectory}/pack.json`);
+        const pack = (yield* Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(
+          content,
+        )) as { questions: { options: { id: string }[]; answerIds: string[] }[] };
+        const positions = new Map([['a', 0], ['b', 0], ['c', 0], ['d', 0]]);
+        for (const question of pack.questions) {
+          expect(question.options).toHaveLength(4);
+          expect(question.answerIds).toHaveLength(1);
+          expect(question.options.some((option) => option.id === question.answerIds[0])).toBe(true);
+          const position = question.answerIds[0];
+          positions.set(position, (positions.get(position) ?? 0) + 1);
+        }
+        expect([...positions.values()]).toEqual([50, 50, 50, 50]);
       }),
     ));
 

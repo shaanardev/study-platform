@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto';
 import { copyFile, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { Data, Effect, Schema } from 'effect';
+import { Data, Effect, Random, Schema } from 'effect';
 import { type AuthoringFile as Authoring, AuthoringFile } from './authoring.js';
 
 export class BuildError extends Data.TaggedError('BuildError')<{
@@ -13,97 +12,6 @@ function itemAt<T>(items: ArrayLike<T>, index: number): T {
   const value = items[index];
   if (value === undefined) throw new Error(`Missing item at index ${index}`);
   return value;
-}
-
-// This MT19937 implementation matches CPython random.Random for integer and string seeds.
-class PythonRandom {
-  mt = new Uint32Array(624);
-  index = 624;
-
-  constructor(seed: number | string) {
-    this.seed(seed);
-  }
-
-  seed(seed: number | string): void {
-    let key: number[];
-    if (typeof seed === 'number') key = [seed >>> 0];
-    else {
-      const bytes = Buffer.from(seed);
-      const combined = Buffer.concat([bytes, createHash('sha512').update(bytes).digest()]);
-      let value = BigInt(`0x${combined.toString('hex')}`);
-      key = [];
-      while (value > 0n) {
-        key.push(Number(value & 0xffffffffn));
-        value >>= 32n;
-      }
-      if (key.length === 0) key = [0];
-    }
-
-    this.mt[0] = 19650218;
-    for (let i = 1; i < 624; i++) {
-      const previous = itemAt(this.mt, i - 1);
-      this.mt[i] = (Math.imul(1812433253, previous ^ (previous >>> 30)) + i) >>> 0;
-    }
-    let i = 1;
-    let j = 0;
-    for (let k = Math.max(624, key.length); k > 0; k--) {
-      const current = itemAt(this.mt, i);
-      const previous = itemAt(this.mt, i - 1);
-      this.mt[i] =
-        ((current ^ Math.imul(previous ^ (previous >>> 30), 1664525)) + itemAt(key, j) + j) >>> 0;
-      i++;
-      j++;
-      if (i >= 624) {
-        this.mt[0] = itemAt(this.mt, 623);
-        i = 1;
-      }
-      if (j >= key.length) j = 0;
-    }
-    for (let k = 623; k > 0; k--) {
-      const current = itemAt(this.mt, i);
-      const previous = itemAt(this.mt, i - 1);
-      this.mt[i] = ((current ^ Math.imul(previous ^ (previous >>> 30), 1566083941)) - i) >>> 0;
-      i++;
-      if (i >= 624) {
-        this.mt[0] = itemAt(this.mt, 623);
-        i = 1;
-      }
-    }
-    this.mt[0] = 0x80000000;
-    this.index = 624;
-  }
-
-  next32(): number {
-    if (this.index >= 624) {
-      for (let i = 0; i < 624; i++) {
-        const y = (itemAt(this.mt, i) & 0x80000000) | (itemAt(this.mt, (i + 1) % 624) & 0x7fffffff);
-        this.mt[i] = itemAt(this.mt, (i + 397) % 624) ^ (y >>> 1) ^ (y & 1 ? 0x9908b0df : 0);
-      }
-      this.index = 0;
-    }
-    let y = itemAt(this.mt, this.index++);
-    y ^= y >>> 11;
-    y ^= (y << 7) & 0x9d2c5680;
-    y ^= (y << 15) & 0xefc60000;
-    y ^= y >>> 18;
-    return y >>> 0;
-  }
-
-  randbelow(limit: number): number {
-    const bits = Math.floor(Math.log2(limit)) + 1;
-    let value: number;
-    do {
-      value = this.next32() >>> (32 - bits);
-    } while (value >= limit);
-    return value;
-  }
-
-  shuffle<T>(items: T[]): void {
-    for (let i = items.length - 1; i > 0; i--) {
-      const j = this.randbelow(i + 1);
-      [items[i], items[j]] = [itemAt(items, j), itemAt(items, i)];
-    }
-  }
 }
 
 function safeRelativePath(path: string, label: string): string {
@@ -196,14 +104,16 @@ function shuffleQuestions(input: Authoring): Record<string, unknown>[] {
     });
     groups.set(key, group);
   }
-  const answerRandom = new PythonRandom(input.shuffle.answerSeed);
-  for (const group of groups.values()) {
-    const first = itemAt(group, 0).question;
-    const slots = first.options.length - first.correctOptionIds.length + 1;
-    const positions = group.map((_, index) => index % slots);
-    answerRandom.shuffle(positions);
-    for (const [index, item] of group.entries()) item.position = itemAt(positions, index);
-  }
+  Effect.runSync(
+    Effect.gen(function* () {
+      for (const group of groups.values()) {
+        const first = itemAt(group, 0).question;
+        const slots = first.options.length - first.correctOptionIds.length + 1;
+        const positions = yield* Random.shuffle(group.map((_, index) => index % slots));
+        for (const [index, item] of group.entries()) item.position = itemAt(positions, index);
+      }
+    }).pipe(Random.withSeed(input.shuffle.answerSeed)),
+  );
   const result = input.questions.map((question) => {
     const correct = question.correctOptionIds.map((id) =>
       itemAt(
@@ -213,11 +123,13 @@ function shuffleQuestions(input: Authoring): Record<string, unknown>[] {
     );
     const correctIds = new Set(question.correctOptionIds);
     const wrong = question.options.filter((option) => !correctIds.has(option.id));
-    new PythonRandom(question.id).shuffle(wrong);
+    const shuffledWrong = Effect.runSync(
+      Random.shuffle(wrong).pipe(Random.withSeed(question.id)),
+    );
     const group = groups.get(`${question.options.length}:${correct.length}`);
     const position = group?.find((entry) => entry.question === question)?.position;
     if (position === undefined) throw new Error(`No answer position assigned for ${question.id}`);
-    const options = [...wrong];
+    const options = [...shuffledWrong];
     options.splice(position, 0, ...correct);
     const letters = options.map((option, index) => ({
       id: String.fromCharCode(97 + index),
@@ -237,8 +149,7 @@ function shuffleQuestions(input: Authoring): Record<string, unknown>[] {
       })),
     };
   });
-  new PythonRandom(input.shuffle.orderSeed).shuffle(result);
-  return result;
+  return Effect.runSync(Random.shuffle(result).pipe(Random.withSeed(input.shuffle.orderSeed)));
 }
 
 async function build(authoringPath: string, outputDirectory: string): Promise<void> {
