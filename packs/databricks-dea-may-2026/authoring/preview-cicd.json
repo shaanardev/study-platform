@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-cicd-preview",
+      "title": "May 2026 CI/CD domain preview",
+      "version": "1.0.0",
+      "synthetic": true
+    },
+    "domains": [
+      {
+        "id": "cicd",
+        "title": "Implementing CI/CD",
+        "weight": 100
+      }
+    ]
+  },
+  "outputFile": "preview-cicd-pack.json",
+  "assetsDirectory": "preview-cicd-assets",
+  "shuffle": {
+    "answerSeed": "dea26-cicd-preview-answers",
+    "orderSeed": "dea26-cicd-preview-order"
+  },
+  "questionFiles": [
+    "questions/cicd.json"
+  ],
+  "assetFiles": [
+    "baseline-review.json",
+    "objective-coverage.json"
+  ]
+}

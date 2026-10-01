@@ -1,0 +1,794 @@
+[
+  {
+    "id": "dea26-baseline-005",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A team wants to edit Databricks code on feature branches and synchronize it with a remote Git repository. Which workspace feature fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Databricks Git folders"
+      },
+      {
+        "id": "b",
+        "text": "Delta Lake time travel"
+      },
+      {
+        "id": "c",
+        "text": "DBFS mounts"
+      },
+      {
+        "id": "d",
+        "text": "Unity Catalog table lineage"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Git folders, formerly Repos, support Git-based branches, commits, pulls, and pushes. Table history tracks data changes rather than code changes. Commit and push code before creating a pull request in the Git provider.",
+    "sources": [
+      {
+        "path": "sources/cicd/git-folders.md",
+        "label": "git-folders"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-005.md",
+        "label": "Reviewed baseline databricks-engineer-q-005"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-112",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "What do Declarative Automation Bundles provide for a data engineering team?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Versioned configuration and code for reproducible deployment of jobs, pipelines, and related workspace resources"
+      },
+      {
+        "id": "b",
+        "text": "A copy of every Delta data file embedded in YAML"
+      },
+      {
+        "id": "c",
+        "text": "A substitute for testing deployment changes"
+      },
+      {
+        "id": "d",
+        "text": "An automatically granted admin identity for every developer"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Bundles, formerly Declarative Automation Bundles, package resource definitions and code for development and CI/CD. They integrate with Git and the Databricks CLI. They do not replace tests or automatically grant privileges.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-112.md",
+        "label": "Reviewed baseline databricks-engineer-q-112"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-115",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "What is the databricks CLI used for?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To interact with Databricks programmatically: manage clusters, jobs, workspaces, and run commands from local machines or CI/CD pipelines"
+      },
+      {
+        "id": "b",
+        "text": "Only for browsing the web"
+      },
+      {
+        "id": "c",
+        "text": "To create SQL dashboards only"
+      },
+      {
+        "id": "d",
+        "text": "To manage user passwords only"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The Databricks CLI enables programmatic interaction with Databricks: create/manage clusters, submit jobs, import/export notebooks, manage Unity Catalog objects, deploy Declarative Automation Bundles, and more. It is essential for automation, CI/CD pipelines, and scripting Databricks operations.",
+    "sources": [
+      {
+        "path": "sources/cicd/cli.md",
+        "label": "cli"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-115.md",
+        "label": "Reviewed baseline databricks-engineer-q-115"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-124",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "How can you deploy a Databricks job to multiple workspaces (dev, staging, prod)?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Use Declarative Automation Bundles with environment-specific configuration files and CI/CD pipelines"
+      },
+      {
+        "id": "b",
+        "text": "Manually recreate the job in each workspace"
+      },
+      {
+        "id": "c",
+        "text": "It is not possible"
+      },
+      {
+        "id": "d",
+        "text": "Copy the job ID between workspaces"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Declarative Automation Bundles (DABs) define jobs as YAML files with environment-specific overrides. Use the same bundle with different target environments (databricks bundle deploy -t dev/staging/prod). CI/CD pipelines automate testing and promotion. This ensures consistency across environments.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-124.md",
+        "label": "Reviewed baseline databricks-engineer-q-124"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-129",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "What is the databricks bundle deploy command used for?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To deploy Databricks resources defined in an Declarative Automation Bundle to a target workspace"
+      },
+      {
+        "id": "b",
+        "text": "To delete bundles"
+      },
+      {
+        "id": "c",
+        "text": "To create notebooks"
+      },
+      {
+        "id": "d",
+        "text": "To schedule jobs only"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "databricks bundle deploy deploys resources defined in databricks.yml (jobs, pipelines, notebooks, queries) to the specified target workspace. It validates the bundle, creates/updates resources, and handles dependencies. This enables infrastructure-as-code deployment from local development or CI/CD pipelines.",
+    "sources": [
+      {
+        "path": "sources/cicd/cli.md",
+        "label": "cli"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-129.md",
+        "label": "Reviewed baseline databricks-engineer-q-129"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-133",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "What is the databricks bundle validate command used for?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To check the syntax and configuration of a Declarative Automation Bundle without deploying"
+      },
+      {
+        "id": "b",
+        "text": "To run jobs"
+      },
+      {
+        "id": "c",
+        "text": "To delete bundles"
+      },
+      {
+        "id": "d",
+        "text": "To create clusters"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "databricks bundle validate checks the bundle configuration for errors: valid YAML syntax, correct resource definitions, valid references, and environment configurations. It catches issues before deployment. Run this in CI/CD pipelines and before deploy to ensure bundle correctness.",
+    "sources": [
+      {
+        "path": "sources/cicd/cli.md",
+        "label": "cli"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-133.md",
+        "label": "Reviewed baseline databricks-engineer-q-133"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-138",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A bundle job has already been deployed. What does databricks bundle run -t prod daily_etl do?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Starts the named deployed bundle resource for the prod target"
+      },
+      {
+        "id": "b",
+        "text": "Deploys all changed resources automatically and then starts the job"
+      },
+      {
+        "id": "c",
+        "text": "Runs every job in every workspace"
+      },
+      {
+        "id": "d",
+        "text": "Only validates YAML without executing any resource"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "bundle run runs a specified bundle resource; deploy changes first with bundle deploy. validate checks configuration. Selecting a target controls the environment to which the command applies.",
+    "sources": [
+      {
+        "path": "sources/cicd/cli.md",
+        "label": "cli"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-138.md",
+        "label": "Reviewed baseline databricks-engineer-q-138"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-171",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A developer has committed a notebook fix on a feature branch in a Databricks Git folder. What makes it available for remote review?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Push the branch and create a pull request in the Git provider"
+      },
+      {
+        "id": "b",
+        "text": "Run RESTORE on a Delta table"
+      },
+      {
+        "id": "c",
+        "text": "Export the job run logs to a volume"
+      },
+      {
+        "id": "d",
+        "text": "Change the production workspace host in YAML without pushing"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A local commit records history in the Git folder. Pushing publishes commits to the remote branch, where a pull request supports review before merging. Notebook history and table time travel do not publish a Git branch.",
+    "sources": [
+      {
+        "path": "sources/cicd/git-folders.md",
+        "label": "git-folders"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      },
+      {
+        "path": "sources/cicd/baseline/databricks-engineer-q-171.md",
+        "label": "Reviewed baseline databricks-engineer-q-171"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-target-variable",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "One bundle must write to dev and prod catalogs using the same code. Which pattern fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Define a catalog variable and override its value in each target"
+      },
+      {
+        "id": "b",
+        "text": "Hardcode prod catalog names in every notebook"
+      },
+      {
+        "id": "c",
+        "text": "Copy the production notebook manually after every edit"
+      },
+      {
+        "id": "d",
+        "text": "Replace the workspace metastore on every deployment"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Bundle variables and target configuration let the same resource definitions and code use environment-specific values. Keep the target selection explicit in CI/CD.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-target-reference",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A bundle defines a variable named catalog. Which substitution references its configured value?",
+    "options": [
+      {
+        "id": "a",
+        "text": "${var.catalog}"
+      },
+      {
+        "id": "b",
+        "text": "${catalog.var}"
+      },
+      {
+        "id": "c",
+        "text": "{{ input.catalog }}"
+      },
+      {
+        "id": "d",
+        "text": "catalog.schema.table"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Bundle variable substitution uses ${var.name}. For each task inputs use a different dynamic reference syntax. A Unity Catalog three-part identifier names a data object, not a bundle variable.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-target-host",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "Dev and prod deployments use different Databricks workspaces. Where should the environment-specific host be configured?",
+    "options": [
+      {
+        "id": "a",
+        "text": "In the appropriate bundle target workspace configuration"
+      },
+      {
+        "id": "b",
+        "text": "Inside the SQL SELECT list for every query"
+      },
+      {
+        "id": "c",
+        "text": "In the data table transaction log"
+      },
+      {
+        "id": "d",
+        "text": "Only in a notebook display label"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Targets can override workspace settings and resource configuration. The selected target must resolve to the intended host and authenticated identity. Verify the deployment summary before promotion.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-deployment-order",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "Which command sequence validates a prod target, deploys its resources, and then runs daily_etl?",
+    "options": [
+      {
+        "id": "a",
+        "text": "databricks bundle validate -t prod; databricks bundle deploy -t prod; databricks bundle run -t prod daily_etl"
+      },
+      {
+        "id": "b",
+        "text": "databricks bundle run -t prod daily_etl; assume this deploys every change automatically"
+      },
+      {
+        "id": "c",
+        "text": "databricks bundle validate -t prod; assume this executes all job tasks"
+      },
+      {
+        "id": "d",
+        "text": "databricks bundle destroy -t prod; assume this deploys the resources"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "validate checks configuration, deploy updates resources, and run starts a named resource. Use the same intended target throughout. Running a resource is distinct from deploying changed code and definitions.",
+    "sources": [
+      {
+        "path": "sources/cicd/cli.md",
+        "label": "cli"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-same-code-promotion",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A tested commit is ready for production. Which deployment process provides reproducible promotion?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Deploy that reviewed commit with the prod target and controlled configuration"
+      },
+      {
+        "id": "b",
+        "text": "Edit the production notebook manually to resemble the dev version"
+      },
+      {
+        "id": "c",
+        "text": "Deploy whichever developer branch was modified most recently"
+      },
+      {
+        "id": "d",
+        "text": "Copy a job run ID from dev into prod"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Promote a known reviewed code revision through environment targets. Bundles define resources and configuration alongside code. Manual recreation and mutable unreviewed source weaken deployment repeatability.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-git-branch",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A developer needs to make a change without immediately modifying the shared main branch. What should they do in the Git folder?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Create or switch to a feature branch, make the change, and commit it"
+      },
+      {
+        "id": "b",
+        "text": "Run VACUUM on the code repository"
+      },
+      {
+        "id": "c",
+        "text": "Use Delta time travel to version the notebook source"
+      },
+      {
+        "id": "d",
+        "text": "Change the job owner to create a Git branch"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Git folders expose branch operations for code development. Feature branches support review before merging into the shared branch. Delta versioning concerns table data, not Git code history.",
+    "sources": [
+      {
+        "path": "sources/cicd/git-folders.md",
+        "label": "git-folders"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-git-sync",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A teammate has merged a change into the remote branch used by a Git folder. How should the developer obtain it?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Pull the remote changes after handling local modifications appropriately"
+      },
+      {
+        "id": "b",
+        "text": "Run OPTIMIZE on the notebook"
+      },
+      {
+        "id": "c",
+        "text": "Only commit the current local files without fetching changes"
+      },
+      {
+        "id": "d",
+        "text": "Grant SELECT on the repository"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Pull synchronizes remote commits into the local Git working copy. Resolve or preserve local modifications and conflicts deliberately. Committing alone does not fetch teammates changes.",
+    "sources": [
+      {
+        "path": "sources/cicd/git-folders.md",
+        "label": "git-folders"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-validation-limit",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "bundle validate succeeds. Which statement about readiness is correct?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Configuration validation passed, but workload tests and runtime authorization still need appropriate verification"
+      },
+      {
+        "id": "b",
+        "text": "Every SQL query is guaranteed to return the intended business result"
+      },
+      {
+        "id": "c",
+        "text": "Production execution has already completed"
+      },
+      {
+        "id": "d",
+        "text": "Every destination privilege has been granted automatically"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Configuration validation is useful before deployment. It cannot prove every transformation result, source availability, or runtime permission. CI/CD should also verify the behavior of the workload.",
+    "sources": [
+      {
+        "path": "sources/cicd/cli.md",
+        "label": "cli"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-automation-identity",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A CI/CD pipeline must deploy resources without depending on one employee account. Which identity fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A service principal with the required scoped deployment permissions"
+      },
+      {
+        "id": "b",
+        "text": "Every developer using a shared personal password"
+      },
+      {
+        "id": "c",
+        "text": "An anonymous SQL warehouse user"
+      },
+      {
+        "id": "d",
+        "text": "A column mask UDF"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A service principal provides an identity for automation. Grant only the required privileges and configure supported non-interactive authentication. Deployment identity and job Run as identity should both be explicit.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-bundle-resource-definition",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A job schedule was changed manually in prod but the bundle still defines the old schedule. What should the team do to maintain reproducibility?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Record the intended schedule in the versioned bundle configuration and redeploy through the normal process"
+      },
+      {
+        "id": "b",
+        "text": "Rely permanently on undocumented manual drift"
+      },
+      {
+        "id": "c",
+        "text": "Delete all job history"
+      },
+      {
+        "id": "d",
+        "text": "Use a column tag to version the schedule"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Resource definitions should describe the intended deployed configuration. Capture approved changes in source control so future deployments do not unexpectedly restore an older setting.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-bundle-target-runtime",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "A bundle catalog variable is resolved during deployment. Can passing a different job runtime parameter automatically change that already-resolved bundle variable?",
+    "options": [
+      {
+        "id": "a",
+        "text": "No; deployment variables and job runtime parameters have separate evaluation contexts"
+      },
+      {
+        "id": "b",
+        "text": "Yes; every runtime parameter rewrites databricks.yml"
+      },
+      {
+        "id": "c",
+        "text": "Yes; a notebook widget always changes the CLI target"
+      },
+      {
+        "id": "d",
+        "text": "Only when the job uses an external table"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Bundle substitutions are resolved for deployment or CLI operations. Job parameters are values supplied to task execution. Wire the desired runtime configurability into task parameters explicitly.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  },
+  {
+    "id": "dea26-cicd-bundle-source-control",
+    "type": "single_choice",
+    "domainId": "cicd",
+    "prompt": "Which files should be reviewed together when a notebook change also alters its production task dependencies?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The transformation code and the bundle resource configuration"
+      },
+      {
+        "id": "b",
+        "text": "Only an exported screenshot of the job graph"
+      },
+      {
+        "id": "c",
+        "text": "Only the latest table data files"
+      },
+      {
+        "id": "d",
+        "text": "Only a user token copied into the repository"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Bundles keep workload resources and code together for review and deployment. Changing dependencies affects execution behavior and should be reviewed with the code that relies on those dependencies.",
+    "sources": [
+      {
+        "path": "sources/cicd/bundles.md",
+        "label": "bundles"
+      },
+      {
+        "path": "sources/cicd/academy-learning-plan/notes.md",
+        "label": "Supplied academy notes: Declarative Automation Bundles"
+      }
+    ]
+  }
+]
