@@ -10,7 +10,8 @@ The importable file is
 Its sources and reports are beside it in
 [`../incoming/assets/databricks-dea-may-2026-v1.0.0/`](../incoming/assets/databricks-dea-may-2026-v1.0.0/).
 Keep that directory with the JSON when moving the pack. These generated personal files follow the
-repository's existing Git ignore rules; this recipe remains available for rebuilding them.
+repository's existing Git ignore rules. The original recipe is preserved under `legacy/` for a
+future conversion to the generic JSON authoring format.
 
 ## Exam blueprint and question counts
 
@@ -80,35 +81,22 @@ The local Ordewell and spawned Codex session records informed the import contrac
 local sources, and weighted mock behavior. They are application design context, not authorities
 for Databricks technical answers.
 
-## Rebuild and verify
+## Verify and archived source
 
-Run from the repository root with Node.js 24.12 or newer. Node runs the TypeScript scripts using its
-built-in type stripping; a dedicated TypeScript configuration checks them as part of `pnpm check`.
-The scripts use Node built-ins and the app's existing dependencies.
+Run the active generic verifier from the repository root:
 
 ```bash
-pnpm run pack:build -- --recipe src/scripts/exam-packs/recipes/databricks-dea-may-2026/build-recipe.ts
-pnpm run pack:verify -- packs/incoming/databricks-dea-may-2026-v1.0.0.json --profile src/scripts/exam-packs/recipes/databricks-dea-may-2026/verify-profile.ts
+pnpm pack:verify packs/incoming/databricks-dea-may-2026-v1.0.0.json
 ```
 
-The default source is the WSL path corresponding to the supplied Windows directory. To use a
-different copy of the same materials:
-
-```bash
-pnpm run pack:build -- --recipe src/scripts/exam-packs/recipes/databricks-dea-may-2026/build-recipe.ts --materials /path/to/data-eng-associate
-```
-
-The build and verify runners are exam-agnostic. Each exam pack supplies a TypeScript recipe with
-its metadata, domains, questions, references, source assets, and any optional strict verification
-profile. This recipe's [`curation.ts`](../../src/scripts/exam-packs/recipes/databricks-dea-may-2026/curation.ts)
-contains the explicit editorial choices and authored questions;
-[`references.ts`](../../src/scripts/exam-packs/recipes/databricks-dea-may-2026/references.ts)
-contains primary documentation references. The generic builder packages the recipe's reviewed
-content and shuffles answers and questions deterministically.
-
-The [`verify-profile.ts`](../../src/scripts/exam-packs/recipes/databricks-dea-may-2026/verify-profile.ts)
-adds this pack's exact guide weights, objectives, source hashes, and baseline audit on top of the
-generic schema, content, source-path, and app-import checks.
+The previous TypeScript runner and DEA recipe are archived in [`legacy/`](./legacy/). The
+[`curation.ts`](./legacy/recipes/databricks-dea-may-2026/curation.ts) file preserves editorial
+choices and authored questions; [`references.ts`](./legacy/recipes/databricks-dea-may-2026/references.ts)
+preserves primary documentation references. The archived
+[`verify-profile.ts`](./legacy/recipes/databricks-dea-may-2026/verify-profile.ts) preserves exact
+guide weights, objectives, source hashes, and baseline audit rules. These files are historical
+material and are not active CLI commands. Rebuilding this DEA version requires converting its
+reviewed content and local sources into the new JSON authoring format.
 
 The verification report records the pack SHA-256, so its results apply to that precise JSON.
 For future content changes, increment the pack version, output filename, and asset directory

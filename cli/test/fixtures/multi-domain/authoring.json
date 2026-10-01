@@ -1,0 +1,45 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": { "id": "sample-exam", "title": "Sample Exam", "version": "1" },
+    "pack": { "id": "sample-pack", "title": "Sample Pack", "version": "1", "synthetic": false },
+    "domains": [
+      { "id": "foundation", "title": "Foundation", "weight": 60 },
+      { "id": "operations", "title": "Operations", "weight": 40 }
+    ],
+    "passingThreshold": 70
+  },
+  "outputFile": "sample-pack.json",
+  "assetsDirectory": "assets",
+  "shuffle": { "answerSeed": 42, "orderSeed": "sample-order" },
+  "questions": [
+    {
+      "id": "foundation-q1",
+      "type": "single_choice",
+      "domainId": "foundation",
+      "prompt": "Which layer stores durable data?",
+      "options": [
+        { "id": "cache", "text": "Cache" },
+        { "id": "database", "text": "Database" },
+        { "id": "queue", "text": "Queue" }
+      ],
+      "correctOptionIds": ["database"],
+      "explanation": "A database stores durable data.",
+      "sources": [{ "path": "references/foundation.md", "label": "Foundation notes" }]
+    },
+    {
+      "id": "operations-q1",
+      "type": "multiple_choice",
+      "domainId": "operations",
+      "prompt": "Which are deployment checks?",
+      "options": [
+        { "id": "health", "text": "Health check" },
+        { "id": "lint", "text": "Style check" },
+        { "id": "backup", "text": "Backup check" }
+      ],
+      "correctOptionIds": ["health", "backup"],
+      "explanation": "Health and backup checks verify deployment readiness.",
+      "sources": [{ "path": "references/operations.md", "label": "Operations notes" }]
+    }
+  ]
+}

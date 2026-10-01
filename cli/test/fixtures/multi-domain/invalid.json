@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": { "id": "sample-exam", "title": "Sample Exam", "version": "1" },
+    "pack": { "id": "sample-pack", "title": "Sample Pack", "version": "1", "synthetic": false },
+    "domains": [{ "id": "foundation", "title": "Foundation", "weight": 100 }]
+  },
+  "outputFile": "sample-pack.json",
+  "assetsDirectory": "assets",
+  "shuffle": { "answerSeed": 42, "orderSeed": 42 },
+  "questions": [
+    {
+      "id": "bad-q",
+      "type": "single_choice",
+      "domainId": "foundation",
+      "prompt": "Invalid?",
+      "options": [{ "id": "a", "text": "A" }, { "id": "b", "text": "B" }],
+      "correctOptionIds": ["missing"],
+      "explanation": "Invalid answer reference.",
+      "sources": [{ "path": "references/foundation.md", "label": "Notes" }]
+    }
+  ]
+}

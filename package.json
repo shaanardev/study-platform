@@ -12,16 +12,15 @@
     "preview": "vite preview --host 127.0.0.1",
     "serve": "vite dev --host 127.0.0.1",
     "prepare": "svelte-kit sync || echo ''",
-    "check": "pnpm typecheck && pnpm typecheck:scripts && pnpm validate && pnpm test",
+    "check": "pnpm typecheck && pnpm --dir cli typecheck && pnpm validate && pnpm test && pnpm --dir cli test",
     "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "typecheck:scripts": "tsc --project src/scripts/tsconfig.json",
     "validate": "biome check .",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint:fix": "biome check --write ./src",
     "test:unit": "vitest run",
     "test": "vitest run",
-    "pack:build": "node src/scripts/exam-packs/build.ts",
-    "pack:verify": "node src/scripts/exam-packs/verify.ts"
+    "pack:build": "tsx cli/src/index.ts build",
+    "pack:verify": "tsx cli/src/index.ts verify"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
@@ -37,6 +36,7 @@
     "svelte": "^5.56.4",
     "svelte-check": "^4.7.5",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"

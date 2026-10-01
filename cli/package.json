@@ -5,10 +5,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "tsx src/index.ts",
+    "packs": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "test": "vitest run",
     "prepare": "effect-tsgo patch --typescript --oxlint"
   },
   "keywords": [],
