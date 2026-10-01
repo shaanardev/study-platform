@@ -3,14 +3,21 @@ import { readFile, realpath, stat } from 'node:fs/promises';
 // oxlint-disable-next-line effecttsgo/node-builtin-import
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import type { AnySchema } from 'ajv';
 import { Data, Effect } from 'effect';
 import type { ExamPack } from '../../../src/lib/types/exam-pack.js';
+import { verifyProfile } from './profile.js';
 
 export class VerifyError extends Data.TaggedError('VerifyError')<{
   readonly message: string;
 }> {}
 
 export type PackForVerification = ExamPack;
+export type VerifyResult = {
+  pack: PackForVerification;
+  profileReportPath?: string;
+};
 
 const normalized = (value: string): string =>
   value
@@ -86,14 +93,23 @@ async function verifyStructure(packPath: string, pack: PackForVerification): Pro
 }
 
 // oxlint-disable-next-line effecttsgo/async-function
-async function verifyPackPromise(packPath: string): Promise<PackForVerification> {
+async function verifyPackPromise(packPath: string, profilePath?: string): Promise<VerifyResult> {
   const path = resolve(packPath);
-  const pack = JSON.parse(await readFile(path, 'utf8')) as PackForVerification;
+  const input: unknown = JSON.parse(await readFile(path, 'utf8'));
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+  const schema = JSON.parse(await readFile(resolve(root, 'packs/exam-pack.schema.json'), 'utf8')) as AnySchema;
+  const validateSchema = new Ajv2020({ allErrors: true, strict: false }).compile(schema);
+  requireThat(
+    validateSchema(input),
+    `Exam pack JSON Schema validation failed: ${JSON.stringify(validateSchema.errors ?? [])}`,
+  );
+  const pack = input as PackForVerification;
   await verifyStructure(path, pack);
   const appVerifier = fileURLToPath(new URL('./verify-app.ts', import.meta.url));
+  const tsxCli = resolve(root, 'cli/node_modules/tsx/dist/cli.mjs');
   const { spawnSync } = await import('node:child_process');
-  const result = spawnSync(process.execPath, [appVerifier, path], {
-    cwd: resolve(dirname(fileURLToPath(import.meta.url)), '../../..'),
+  const result = spawnSync(process.execPath, [tsxCli, appVerifier, path], {
+    cwd: root,
     encoding: 'utf8',
   });
   if (result.error) throw result.error;
@@ -104,13 +120,18 @@ async function verifyPackPromise(packPath: string): Promise<PackForVerification>
   const output = result.stdout.trim().split(/\r?\n/).at(-1) ?? '';
   requireThat(output.length > 0, 'App verifier returned no report');
   JSON.parse(output);
-  return pack;
+  if (!profilePath) return { pack };
+  const profileResult = await verifyProfile(path, pack, resolve(profilePath));
+  return { pack, profileReportPath: profileResult.reportPath };
 }
 
 // Promise based Node filesystem and child process boundaries are captured here as one expected CLI error.
-export const verifyPack = (packPath: string): Effect.Effect<PackForVerification, VerifyError> =>
+export const verifyPack = (
+  packPath: string,
+  profilePath?: string,
+): Effect.Effect<VerifyResult, VerifyError> =>
   Effect.tryPromise({
-    try: () => verifyPackPromise(packPath),
+    try: () => verifyPackPromise(packPath, profilePath),
     catch: (cause) =>
       new VerifyError({ message: cause instanceof Error ? cause.message : String(cause) }),
   });
