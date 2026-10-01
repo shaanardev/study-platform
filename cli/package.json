@@ -1,0 +1,31 @@
+{
+  "name": "pack-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "run": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "prepare": "effect-tsgo patch --typescript --oxlint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.0",
+  "dependencies": {
+    "@effect/platform-node": "4.0.0-rc.118",
+    "effect": "4.0.0-rc.118"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@effect/tsgo": "0.44.0",
+    "oxlint": "1.82.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.8"
+  }
+}
