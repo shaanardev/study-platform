@@ -50,39 +50,34 @@
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage",
-    "**/*.test-d.ts"
-  ],
-    "plugins": [
-      {
-        "name": "@effect/language-service",
-        "diagnostics": false,
-        "diagnosticSeverity": {
-          "abortControllerInEffect": "warning",
-          "asyncFunction": "warning",
-          "cryptoRandomUUID": "warning",
-          "cryptoRandomUUIDInEffect": "warning",
-          "extendsNativeError": "warning",
-          "globalConsole": "warning",
-          "globalConsoleInEffect": "warning",
-          "globalDate": "warning",
-          "globalDateInEffect": "warning",
-          "globalFetch": "warning",
-          "globalFetchInEffect": "warning",
-          "globalRandom": "warning",
-          "globalRandomInEffect": "warning",
-          "globalTimers": "warning",
-          "globalTimersInEffect": "warning",
-          "instanceOfSchema": "warning",
-          "newPromise": "warning",
-          "nodeBuiltinImport": "warning",
-          "preferSchemaOverJson": "warning",
-          "processEnv": "warning",
-          "processEnvInEffect": "warning"
-        }
+  "exclude": ["node_modules", "dist", "coverage", "**/*.test-d.ts"],
+  "plugins": [
+    {
+      "name": "@effect/language-service",
+      "diagnostics": false,
+      "diagnosticSeverity": {
+        "abortControllerInEffect": "warning",
+        "asyncFunction": "warning",
+        "cryptoRandomUUID": "warning",
+        "cryptoRandomUUIDInEffect": "warning",
+        "extendsNativeError": "warning",
+        "globalConsole": "warning",
+        "globalConsoleInEffect": "warning",
+        "globalDate": "warning",
+        "globalDateInEffect": "warning",
+        "globalFetch": "warning",
+        "globalFetchInEffect": "warning",
+        "globalRandom": "warning",
+        "globalRandomInEffect": "warning",
+        "globalTimers": "warning",
+        "globalTimersInEffect": "warning",
+        "instanceOfSchema": "warning",
+        "newPromise": "warning",
+        "nodeBuiltinImport": "warning",
+        "preferSchemaOverJson": "warning",
+        "processEnv": "warning",
+        "processEnvInEffect": "warning"
       }
-    ]
+    }
+  ]
 }

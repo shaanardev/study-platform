@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": { "id": "focused-exam", "title": "Focused Exam", "version": "1" },
+    "pack": { "id": "focused-pack", "title": "Focused Pack", "version": "1", "synthetic": true },
+    "domains": [{ "id": "core", "title": "Core", "weight": 100 }]
+  },
+  "outputFile": "focused-pack.json",
+  "assetsDirectory": "assets",
+  "shuffle": { "answerSeed": "answers-v1", "orderSeed": 7 },
+  "questions": [
+    {
+      "id": "core-q1",
+      "type": "single_choice",
+      "domainId": "core",
+      "prompt": "Which value represents success?",
+      "options": [{ "id": "success", "text": "Success" }, { "id": "failure", "text": "Failure" }],
+      "correctOptionIds": ["success"],
+      "explanation": "Success is the successful result.",
+      "sources": [{ "path": "references/core.md", "label": "Core notes" }]
+    }
+  ]
+}
