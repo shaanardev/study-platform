@@ -1,7 +1,9 @@
 // oxlint-disable-next-line effecttsgo/node-builtin-import
 import { spawnSync } from 'node:child_process';
 // oxlint-disable-next-line effecttsgo/node-builtin-import
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+// oxlint-disable-next-line effecttsgo/node-builtin-import
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 // oxlint-disable-next-line effecttsgo/node-builtin-import
 import { basename, dirname, join, resolve } from 'node:path';
@@ -22,14 +24,13 @@ async function temporaryPack(): Promise<{ directory: string; path: string }> {
 }
 
 function runVerify(packPath: string) {
-  return spawnSync(
-    'pnpm',
-    ['--dir', join(root, 'cli'), 'exec', 'tsx', 'src/index.ts', 'verify', packPath],
-    {
-      cwd: root,
-      encoding: 'utf8',
-    },
-  );
+  return runVerifyWithProfile(packPath);
+}
+
+function runVerifyWithProfile(packPath: string, profilePath?: string) {
+  const args = ['--dir', join(root, 'cli'), 'exec', 'tsx', 'src/index.ts', 'verify', packPath];
+  if (profilePath) args.push('--profile', profilePath);
+  return spawnSync('pnpm', args, { cwd: root, encoding: 'utf8' });
 }
 
 // oxlint-disable-next-line effecttsgo/async-function
@@ -46,9 +47,9 @@ describe('pack verify command', () => {
   it('verifies the incoming Databricks sample through the app importer', async () => {
     const { path } = await temporaryPack();
     const result = runVerify(path);
-    expect(result.status, result.stderr).toBe(0);
+    expect(result.status, `${result.stderr}${result.stdout}`).toBe(0);
     expect(result.stdout).toContain('PASS:');
-    expect(result.stdout).toContain('app import passed');
+    expect(result.stdout).toContain('app import, practice, timed mock');
   });
 
   // oxlint-disable-next-line effecttsgo/async-function
@@ -65,8 +66,110 @@ describe('pack verify command', () => {
     await writeFile(path, JSON.stringify(pack));
 
     const result = runVerify(path);
-    expect(result.status, result.stderr).toBe(0);
+    expect(result.status, `${result.stderr}${result.stdout}`).toBe(0);
     expect(result.stdout).toContain('PASS:');
+  });
+
+  // oxlint-disable-next-line effecttsgo/async-function
+  it('applies an optional verification profile and writes its report', async () => {
+    const { directory, path } = await temporaryPack();
+    const pack = JSON.parse(await readFile(path, 'utf8')) as {
+      domains: { id: string; title: string; weight: number }[];
+      questions: { id: string; type: string; domainId: string; answerIds: string[] }[];
+    };
+    const domain = pack.domains[0];
+    const first = pack.questions[0];
+    const second = pack.questions[1];
+    if (!domain || !first || !second) throw new Error('Sample pack is incomplete');
+    second.type = 'single_choice';
+    second.answerIds = ['b'];
+    await writeFile(path, JSON.stringify(pack));
+
+    const firstQuestionObjectives = { [first.id]: ['O1'], [second.id]: ['O2'] };
+    await writeFile(
+      join(directory, 'assets', 'objective-coverage.json'),
+      JSON.stringify({ questionObjectives: firstQuestionObjectives, objectives: { O1: {}, O2: {} } }),
+    );
+    const material = 'snapshot material';
+    const baseline = 'baseline archive';
+    await mkdir(join(directory, 'assets', 'materials'));
+    await writeFile(join(directory, 'assets', 'materials', 'material.txt'), material);
+    await writeFile(join(directory, 'assets', 'materials', 'baseline.zip'), baseline);
+    const digest = (text: string) => createHash('sha256').update(text).digest('hex');
+    await writeFile(
+      join(directory, 'assets', 'provenance.json'),
+      JSON.stringify({
+        materialInventory: [{ path: 'material.txt', sha256: digest(material) }],
+        baselinePath: 'baseline.zip',
+        baselineSha256: digest(baseline),
+      }),
+    );
+    await writeFile(join(directory, 'assets', 'baseline-review.json'), '[]');
+    const profilePath = join(directory, 'verify-profile.json');
+    await writeFile(
+      profilePath,
+      JSON.stringify({
+        domains: {
+          [domain.id]: { count: 1, weight: 60 },
+          [pack.domains[1]?.id ?? 'missing']: { count: 1, weight: 40 },
+        },
+        objectives: {
+          path: 'assets/objective-coverage.json',
+          byDomain: { [domain.id]: ['O1'], [pack.domains[1]?.id ?? 'missing']: ['O2'] },
+        },
+        questionRules: {
+          type: 'single_choice',
+          optionCount: 3,
+          explanationMinWords: 1,
+          requiredSourcePathFragment: 'assets/synthetic-notes.md',
+        },
+        answerPositions: { a: 1, b: 1 },
+        baselineAudit: {
+          path: 'assets/baseline-review.json',
+          total: 0,
+          included: 0,
+          excluded: 0,
+          idPrefix: 'legacy-',
+        },
+        sourceIntegrity: { provenancePath: 'assets/provenance.json' },
+      }),
+    );
+
+    const result = runVerifyWithProfile(path, profilePath);
+    expect(result.status, `${result.stderr}${result.stdout}`).toBe(0);
+    expect(result.stdout).toContain('profile checks passed');
+    expect(result.stdout).toContain('Verification report:');
+    const report = JSON.parse(
+      await readFile(join(directory, 'assets', 'verification-report.json'), 'utf8'),
+    ) as { status: string; domains: { id: string; questionCount: number }[] };
+    expect(report.status).toBe('passed');
+    expect(report.domains).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: domain.id, questionCount: 1, guidePercent: 60 }),
+      ]),
+    );
+    expect(report.objectivesCovered).toBe(2);
+    expect(report.answerPositions).toEqual({ a: 1, b: 1 });
+  });
+
+  // oxlint-disable-next-line effecttsgo/async-function
+  it('rejects a verification profile whose exact domain count does not match', async () => {
+    const { directory, path } = await temporaryPack();
+    const pack = JSON.parse(await readFile(path, 'utf8')) as {
+      domains: { id: string; weight: number }[];
+      questions: { domainId: string }[];
+    };
+    const domain = pack.domains[0];
+    if (!domain) throw new Error('Sample pack has no domain');
+    pack.domains = [{ ...domain, weight: 100 }];
+    for (const question of pack.questions) question.domainId = domain.id;
+    await writeFile(path, JSON.stringify(pack));
+    const profilePath = join(directory, 'verify-profile.json');
+    await writeFile(profilePath, JSON.stringify({ domains: { [domain.id]: { count: 3, weight: 100 } } }));
+
+    const result = runVerifyWithProfile(path, profilePath);
+    expect(result.status).not.toBe(0);
+    expect(`${result.stderr}${result.stdout}`).toContain('expected 3 questions, got 2');
   });
 
   // oxlint-disable-next-line effecttsgo/async-function
@@ -103,7 +206,7 @@ describe('pack verify command', () => {
     const result = runVerify(path);
     expect(result.status).not.toBe(0);
     expect(`${result.stderr}${result.stdout}`).toContain(
-      `source escapes pack folder (${sourcePath})`,
+      'Exam pack JSON Schema validation failed',
     );
   });
 });

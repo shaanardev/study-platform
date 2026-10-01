@@ -25,7 +25,7 @@ const pack = JSON.parse(await readFile(packPath, 'utf8')) as {
   exam: { id: string; version: string };
   pack: { id: string; version: string };
   domains: { id: string; title: string; weight: number }[];
-  questions: { sources: { path: string }[] }[];
+  questions: { id: string; sources: { path: string; label: string }[] }[];
 };
 const { validateExamPack } = await import(
   pathToFileURL(join(root, 'src/lib/server/packs/validate.ts')).href
@@ -35,6 +35,12 @@ const { importPacksFromFolder, getPackIndex } = await import(
 );
 const { allocateWeightedQuestions, findCoverageGaps } = await import(
   pathToFileURL(join(root, 'src/lib/server/quiz/mock-selection.ts')).href
+);
+const { createPracticeSession, readQuestionSource } = await import(
+  pathToFileURL(join(root, 'src/lib/server/quiz/service.ts')).href
+);
+const { createMockAttempt } = await import(
+  pathToFileURL(join(root, 'src/lib/server/quiz/mock-service.ts')).href
 );
 const validation = validateExamPack(pack);
 assert.equal(validation.valid, true, JSON.stringify(validation.errors));
@@ -83,6 +89,44 @@ try {
   assert.equal(stored.questionCount, pack.questions.length);
   assert.equal(stored.examVersion, pack.exam.version);
 
+  const firstQuestion = pack.questions[0];
+  const firstSource = firstQuestion?.sources[0];
+  assert(firstQuestion && firstSource, 'Pack needs a question with a source for quiz verification');
+  const practice = createPracticeSession({
+    databasePath: options.databasePath,
+    examId: pack.exam.id,
+    packId: pack.pack.id,
+    packVersion: pack.pack.version,
+    questionCount: 1,
+    random: () => 0,
+  });
+  assert.equal(practice.status, 'in_progress');
+  assert.equal(practice.questions.length, 1);
+  const savedSource = await readQuestionSource(
+    options.databasePath,
+    pack.exam.id,
+    pack.pack.id,
+    pack.pack.version,
+    firstQuestion.id,
+    firstSource.path,
+  );
+  assert.equal(savedSource.label, firstSource.label);
+  assert(savedSource.text.trim().length > 0, 'Imported source excerpt is empty');
+
+  const mock = createMockAttempt({
+    databasePath: options.databasePath,
+    examId: pack.exam.id,
+    packId: pack.pack.id,
+    packVersion: pack.pack.version,
+    questionCount: 1,
+    durationMinutes: 30,
+    random: () => 0,
+    now: 1_800_000_000_000,
+  });
+  assert.equal(mock.status, 'in_progress');
+  assert.equal(mock.questions.length, 1);
+  assert.equal(mock.durationMinutes, 30);
+
   const available = Object.fromEntries(
     stored.domains.map((domain: { id: string; questionCount: number }) => [
       domain.id,
@@ -120,6 +164,9 @@ try {
       sqliteImport: 'passed',
       duplicateRejection: 'passed',
       allocatorSums: 'passed',
+      practiceSession: 'passed',
+      timedMockSession: 'passed',
+      savedSourceRead: 'passed',
       allocations,
     }),
   );

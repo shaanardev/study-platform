@@ -21,8 +21,9 @@
     "effect": "4.0.0-rc.118"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
     "@effect/tsgo": "0.44.0",
+    "@types/node": "^26.6.2",
+    "ajv": "^8.20.0",
     "oxlint": "1.82.0",
     "oxlint-tsgolint": "7.0.2001",
     "tsx": "^4.23.13",
