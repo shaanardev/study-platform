@@ -1,0 +1,586 @@
+[
+  {
+    "id": "dea26-baseline-176",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "Which services belong to the Databricks control plane?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Only the executors running customer transformations"
+      },
+      {
+        "id": "b",
+        "text": "The Spark shuffle partitions of each active query"
+      },
+      {
+        "id": "c",
+        "text": "Workspace UI, APIs, and job scheduling and compute management services"
+      },
+      {
+        "id": "d",
+        "text": "Only Parquet files belonging to external tables"
+      }
+    ],
+    "correctOptionIds": [
+      "c"
+    ],
+    "explanation": "The control plane provides workspace and orchestration services. Processing runs in a compute plane: classic compute uses customer cloud resources, whereas serverless compute uses Databricks-managed resources. Do not generalize the classic deployment location to serverless.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-176.md",
+        "label": "Archived third-party input databricks-engineer-q-176.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-002",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "What is a Delta Lake?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A proprietary cloud storage service from Databricks"
+      },
+      {
+        "id": "b",
+        "text": "A machine learning model management system"
+      },
+      {
+        "id": "c",
+        "text": "A real-time streaming processing engine"
+      },
+      {
+        "id": "d",
+        "text": "An open-source storage layer that brings ACID transactions to Apache Spark and big data workloads"
+      }
+    ],
+    "correctOptionIds": [
+      "d"
+    ],
+    "explanation": "Delta Lake is an open-source storage layer that runs on top of existing data lakes (like S3, ADLS, GCS). It provides ACID transactions, scalable metadata handling, and unified streaming/batch data processing. Delta Lake is not proprietary to Databricks and is a Linux Foundation project.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-002.md",
+        "label": "Archived third-party input databricks-engineer-q-002.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-163",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "Which Delta Lake feature lets you query a previous version of a table?",
+    "options": [
+      {
+        "id": "a",
+        "text": "ZORDER BY"
+      },
+      {
+        "id": "b",
+        "text": "Time travel using VERSION AS OF or TIMESTAMP AS OF"
+      },
+      {
+        "id": "c",
+        "text": "COPY INTO"
+      },
+      {
+        "id": "d",
+        "text": "VACUUM"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Delta Lake time travel lets you read an earlier table snapshot with SELECT ... VERSION AS OF n or TIMESTAMP AS OF '...'. It relies on the transaction log and on data files still being retained (not yet removed by VACUUM).",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-163.md",
+        "label": "Archived third-party input databricks-engineer-q-163.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-173",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "What is a SQL warehouse in Databricks primarily used for?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Running Structured Streaming jobs"
+      },
+      {
+        "id": "b",
+        "text": "Training machine learning models"
+      },
+      {
+        "id": "c",
+        "text": "Storing the Unity Catalog metastore"
+      },
+      {
+        "id": "d",
+        "text": "Providing compute to run SQL queries and power BI/dashboard workloads on the lakehouse"
+      }
+    ],
+    "correctOptionIds": [
+      "d"
+    ],
+    "explanation": "A SQL warehouse (formerly SQL endpoint) is compute optimized for running SQL queries against lakehouse data and serving BI tools and Databricks SQL dashboards. Serverless SQL warehouses start almost instantly and auto-scale.",
+    "sources": [
+      {
+        "path": "sources/references/compute.md",
+        "label": "Reviewed primary documentation digest: compute"
+      },
+      {
+        "path": "sources/references/sql.md",
+        "label": "Reviewed primary documentation digest: Databricks SQL"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-173.md",
+        "label": "Archived third-party input databricks-engineer-q-173.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-192",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "Which best describes the lakehouse architecture?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A replacement for cloud object storage"
+      },
+      {
+        "id": "b",
+        "text": "A purely in-memory analytics engine"
+      },
+      {
+        "id": "c",
+        "text": "An architecture that combines the low-cost, open storage of a data lake with the management, ACID transactions, and performance of a data warehouse"
+      },
+      {
+        "id": "d",
+        "text": "A data warehouse that cannot store unstructured data"
+      }
+    ],
+    "correctOptionIds": [
+      "c"
+    ],
+    "explanation": "The lakehouse stores data in open formats (Delta Lake) on cheap cloud object storage while adding warehouse-grade features: ACID transactions, schema enforcement, governance, and BI/ML performance. This removes the need for separate lake and warehouse systems.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-192.md",
+        "label": "Archived third-party input databricks-engineer-q-192.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-167",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "Which property of Delta Lake guarantees that a write either fully succeeds or has no effect, even with concurrent writers?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Eventual consistency"
+      },
+      {
+        "id": "b",
+        "text": "ACID transactions backed by optimistic concurrency control"
+      },
+      {
+        "id": "c",
+        "text": "Schema-on-read"
+      },
+      {
+        "id": "d",
+        "text": "At-least-once delivery"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Delta Lake provides ACID transactions using optimistic concurrency control on the transaction log. Commits are atomic and isolated, so a write fully succeeds or leaves the table unchanged, even when multiple jobs write concurrently.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-167.md",
+        "label": "Archived third-party input databricks-engineer-q-167.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-183",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "A BI team needs SQL compute with fast startup and infrastructure managed by Databricks. Which option fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A Git folder"
+      },
+      {
+        "id": "b",
+        "text": "A Unity Catalog volume"
+      },
+      {
+        "id": "c",
+        "text": "A serverless SQL warehouse"
+      },
+      {
+        "id": "d",
+        "text": "A classic jobs cluster for each dashboard query"
+      }
+    ],
+    "correctOptionIds": [
+      "c"
+    ],
+    "explanation": "A serverless SQL warehouse provides managed SQL compute with fast startup and scaling. It still uses Unity Catalog access controls. Total cost depends on workload and usage; serverless is not a guarantee of a lower bill.",
+    "sources": [
+      {
+        "path": "sources/references/compute.md",
+        "label": "Reviewed primary documentation digest: compute"
+      },
+      {
+        "path": "sources/references/sql.md",
+        "label": "Reviewed primary documentation digest: Databricks SQL"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-183.md",
+        "label": "Archived third-party input databricks-engineer-q-183.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-194",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "A team wants a single table that BI analysts query and that a streaming job continuously appends to. Which lakehouse capability makes this possible on one table?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Storing the table as raw JSON"
+      },
+      {
+        "id": "b",
+        "text": "Delta Lake's unified batch-and-streaming support with ACID transactions"
+      },
+      {
+        "id": "c",
+        "text": "Hive-style external partitioning"
+      },
+      {
+        "id": "d",
+        "text": "Disabling the transaction log"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Because Delta Lake provides ACID transactions and supports streaming writes and batch reads on the same table, a streaming job can append while analysts run consistent SQL queries against it concurrently, with no separate copies required.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-194.md",
+        "label": "Archived third-party input databricks-engineer-q-194.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-162",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "What does the Delta Lake transaction log (_delta_log) directory store?",
+    "options": [
+      {
+        "id": "a",
+        "text": "User access permissions for the table"
+      },
+      {
+        "id": "b",
+        "text": "A copy of every data file in the table"
+      },
+      {
+        "id": "c",
+        "text": "An ordered record of all commits (JSON files and periodic checkpoints) describing changes to the table"
+      },
+      {
+        "id": "d",
+        "text": "Cached query results for the table"
+      }
+    ],
+    "correctOptionIds": [
+      "c"
+    ],
+    "explanation": "The _delta_log directory holds an ordered series of JSON commit files (and periodic Parquet checkpoints) that record every transaction. Reading the log lets Delta reconstruct the current table state and provides ACID guarantees and time travel.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-162.md",
+        "label": "Archived third-party input databricks-engineer-q-162.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-007",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "What does Delta Lake add to a collection of ordinary Parquet files?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A requirement to process all data using Python"
+      },
+      {
+        "id": "b",
+        "text": "Schema changes that are always accepted without configuration"
+      },
+      {
+        "id": "c",
+        "text": "A transaction log supporting ACID writes, schema enforcement, and retained historical snapshots"
+      },
+      {
+        "id": "d",
+        "text": "A guarantee of smaller data files for every workload"
+      }
+    ],
+    "correctOptionIds": [
+      "c"
+    ],
+    "explanation": "Delta Lake adds table transaction semantics to the underlying data files. Schema enforcement is the default; schema evolution requires appropriate configuration. Historical reads require retained logs and data files.",
+    "sources": [
+      {
+        "path": "sources/references/delta.md",
+        "label": "Reviewed primary documentation digest: Delta Lake"
+      },
+      {
+        "path": "sources/references/architecture.md",
+        "label": "Reviewed primary documentation digest: Databricks architecture"
+      },
+      {
+        "path": "sources/references/uc.md",
+        "label": "Reviewed primary documentation digest: Unity Catalog"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-007.md",
+        "label": "Archived third-party input databricks-engineer-q-007.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-003",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "A scheduled PySpark ETL workload needs classic compute that is created for its run and released afterwards. Which compute should it use?",
+    "options": [
+      {
+        "id": "a",
+        "text": "An always-running all-purpose cluster"
+      },
+      {
+        "id": "b",
+        "text": "A SQL warehouse for Python execution"
+      },
+      {
+        "id": "c",
+        "text": "A Unity Catalog metastore"
+      },
+      {
+        "id": "d",
+        "text": "Jobs compute"
+      }
+    ],
+    "correctOptionIds": [
+      "d"
+    ],
+    "explanation": "Jobs compute is scoped to a job run and terminates when that run completes. Shared jobs compute can serve several tasks within that run. Interactive compute suits exploration; a SQL warehouse runs SQL. Cost depends on workload and configuration.",
+    "sources": [
+      {
+        "path": "sources/references/compute.md",
+        "label": "Reviewed primary documentation digest: compute"
+      },
+      {
+        "path": "sources/references/sql.md",
+        "label": "Reviewed primary documentation digest: Databricks SQL"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-003.md",
+        "label": "Archived third-party input databricks-engineer-q-003.md; reviewed answer is authoritative"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-009",
+    "type": "single_choice",
+    "domainId": "platform",
+    "prompt": "Several users need to share classic Unity Catalog-enabled compute with user isolation. Which access mode fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "No-isolation shared access mode"
+      },
+      {
+        "id": "b",
+        "text": "Dedicated access mode assigned to one user"
+      },
+      {
+        "id": "c",
+        "text": "Standard access mode"
+      },
+      {
+        "id": "d",
+        "text": "Single-node sizing without an access mode"
+      }
+    ],
+    "correctOptionIds": [
+      "c"
+    ],
+    "explanation": "Standard access mode supports shared compute with user isolation and Unity Catalog access controls. Dedicated compute is assigned to a user or group. Access mode and node count are different settings.",
+    "sources": [
+      {
+        "path": "sources/references/compute.md",
+        "label": "Reviewed primary documentation digest: compute"
+      },
+      {
+        "path": "sources/references/sql.md",
+        "label": "Reviewed primary documentation digest: Databricks SQL"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      },
+      {
+        "path": "sources/baseline/databricks-engineer-q-009.md",
+        "label": "Archived third-party input databricks-engineer-q-009.md; reviewed answer is authoritative"
+      }
+    ]
+  }
+]
