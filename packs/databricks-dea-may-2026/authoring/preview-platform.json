@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-platform-preview",
+      "title": "May 2026 Platform domain preview",
+      "version": "1.0.0",
+      "synthetic": true
+    },
+    "domains": [
+      {
+        "id": "platform",
+        "title": "Databricks Intelligence Platform",
+        "weight": 100
+      }
+    ]
+  },
+  "outputFile": "preview-platform-pack.json",
+  "assetsDirectory": "preview-platform-assets",
+  "shuffle": {
+    "answerSeed": "dea26-platform-preview-answers",
+    "orderSeed": "dea26-platform-preview-order"
+  },
+  "questionFiles": [
+    "questions/platform.json"
+  ],
+  "assetFiles": [
+    "baseline-review.json",
+    "objective-coverage.json"
+  ]
+}
