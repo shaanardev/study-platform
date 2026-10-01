@@ -1,0 +1,1142 @@
+[
+  {
+    "id": "dea26-baseline-008",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "In Databricks, what is the purpose of a Service Principal?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To provide interactive notebook access for human users"
+      },
+      {
+        "id": "b",
+        "text": "To enable automated processes and applications to authenticate and access Databricks resources securely"
+      },
+      {
+        "id": "c",
+        "text": "To monitor cluster performance metrics"
+      },
+      {
+        "id": "d",
+        "text": "To manage SQL warehouse queries"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Service Principals are security identities used by applications, services, or automation tools to access Databricks resources. Unlike user accounts, they are designed for non-interactive/automated scenarios like CI/CD pipelines, scheduled jobs, and application integrations. They can be assigned permissions and used with token-based authentication.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-031",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the difference between a managed table and an external table in Databricks?",
+    "options": [
+      {
+        "id": "a",
+        "text": "There is no difference"
+      },
+      {
+        "id": "b",
+        "text": "Unity Catalog manages data lifecycle for managed tables; external table files have a separately managed lifecycle"
+      },
+      {
+        "id": "c",
+        "text": "External tables are faster than managed tables"
+      },
+      {
+        "id": "d",
+        "text": "Managed tables can only use Delta format"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Both table types are catalog-governed. Managed tables use managed storage and lifecycle management, including recovery before purge after a drop. External tables reference customer-controlled locations, and dropping their metadata leaves the underlying data.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-117",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of cluster policies in Databricks?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To delete clusters automatically"
+      },
+      {
+        "id": "b",
+        "text": "To enforce constraints on cluster configurations (instance types, cost limits, auto-termination) for governance"
+      },
+      {
+        "id": "c",
+        "text": "To speed up queries"
+      },
+      {
+        "id": "d",
+        "text": "To create SQL dashboards"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Cluster policies enforce rules on cluster creation: allowed instance types, max DBU/hour, auto-termination requirements, enabled/disabled settings. They help control costs, ensure security compliance, and standardize configurations. Users must select from policy-compliant options when creating clusters.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-132",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of the Run as setting in a job?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To set the job owner email"
+      },
+      {
+        "id": "b",
+        "text": "The job Run as user or service principal"
+      },
+      {
+        "id": "c",
+        "text": "To configure the cluster type"
+      },
+      {
+        "id": "d",
+        "text": "To set the schedule timezone"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "The notebook workload uses the configured Run as identity for its data authorization. The job owner and viewers are distinct concepts. Other task types, such as dashboards published with shared data permissions, can have documented identity exceptions.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-143",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is Unity Catalog in Databricks?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A data visualization tool"
+      },
+      {
+        "id": "b",
+        "text": "A unified governance solution for data and AI across clouds with centralized access control and auditing"
+      },
+      {
+        "id": "c",
+        "text": "A machine learning framework"
+      },
+      {
+        "id": "d",
+        "text": "A cluster management service"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Unity Catalog provides unified governance across Databricks workspaces and clouds: Centralized metastore for all data assets, Fine-grained access control (RBAC), Data lineage and auditing, Data discovery and tagging, Cross-cloud data sharing. It is the recommended approach for data governance on Databricks.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-144",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of GRANT and REVOKE statements in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To create tables"
+      },
+      {
+        "id": "b",
+        "text": "Add and remove specified privileges for users, groups, or service principals"
+      },
+      {
+        "id": "c",
+        "text": "To delete data"
+      },
+      {
+        "id": "d",
+        "text": "To optimize queries"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "GRANT assigns privileges on securable objects; REVOKE removes a specified grant. Effective access can still come from groups or parent grants. Row filters and column masks are policies or functions and are not simply row-level GRANT statements.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-146",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of data classification and tagging in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To compress data"
+      },
+      {
+        "id": "b",
+        "text": "A classification attribute that can be used by discovery and suitably configured policies"
+      },
+      {
+        "id": "c",
+        "text": "To delete old data"
+      },
+      {
+        "id": "d",
+        "text": "To optimize queries"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Tags classify data. Security enforcement requires applicable privileges, masks, filters, or ABAC policies. ABAC policy conditions use governed tags, so a plain descriptive label should not be assumed to create access restrictions.",
+    "sources": [
+      {
+        "path": "sources/governance/abac.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-147",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of the metastore in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To store data files"
+      },
+      {
+        "id": "b",
+        "text": "To store metadata about data assets including schemas, tables, and permissions"
+      },
+      {
+        "id": "c",
+        "text": "To run queries"
+      },
+      {
+        "id": "d",
+        "text": "To create clusters"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "The Unity Catalog metastore stores: Table schemas and locations, Partition information, Column statistics, Access control lists, Data lineage, Tags and comments. It provides a unified view of data across cloud storage locations. Multiple workspaces can share a metastore.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-149",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is a three-level namespace in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Catalog, schema, table"
+      },
+      {
+        "id": "b",
+        "text": "catalog.database.table"
+      },
+      {
+        "id": "c",
+        "text": "schema.table.column"
+      },
+      {
+        "id": "d",
+        "text": "database.schema.table"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The three-part namespace is catalog.schema.table. A schema is also called a database in some interfaces, so those names are not mutually exclusive distractors. Using a fully qualified name avoids dependence on the current catalog and schema.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-150",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of row-level security in Databricks?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To encrypt data"
+      },
+      {
+        "id": "b",
+        "text": "Restrict the rows returned to a querying principal according to a predicate"
+      },
+      {
+        "id": "c",
+        "text": "To compress data"
+      },
+      {
+        "id": "d",
+        "text": "To optimize queries"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "A row filter determines row visibility at query time using a Boolean function. It can use account group membership or identity attributes. It does not physically delete filtered data, and users still need the necessary object privileges.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-151",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of column-level masking in Databricks?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To delete columns"
+      },
+      {
+        "id": "b",
+        "text": "To obfuscate sensitive column data (like showing only last 4 digits of SSN) based on user permissions"
+      },
+      {
+        "id": "c",
+        "text": "To add new columns"
+      },
+      {
+        "id": "d",
+        "text": "To rename columns"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Column masks dynamically transform column values based on the querying user's permissions. Examples: Show NULL for unauthorized users, Show partial data (XXX-XX-1234 for SSN), Show hashed values. Masks are applied automatically in queries without changing the underlying data.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-152",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the difference between MANAGE and ALL PRIVILEGES permissions?",
+    "options": [
+      {
+        "id": "a",
+        "text": "They are identical"
+      },
+      {
+        "id": "b",
+        "text": "ALL PRIVILEGES does not include MANAGE; MANAGE concerns administration such as privilege management and does not by itself grant data reads"
+      },
+      {
+        "id": "c",
+        "text": "MANAGE includes more permissions"
+      },
+      {
+        "id": "d",
+        "text": "ALL PRIVILEGES is deprecated"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "ALL PRIVILEGES expands to applicable privileges with documented exclusions, including MANAGE and external-use privileges. MANAGE is administrative. Reading table data still needs SELECT and the required parent usage privileges.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-153",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "How can you restrict access to specific rows based on user attributes in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "You cannot"
+      },
+      {
+        "id": "b",
+        "text": "is_account_group_member()"
+      },
+      {
+        "id": "c",
+        "text": "Delete the rows"
+      },
+      {
+        "id": "d",
+        "text": "Use only table-level permissions"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "is_account_group_member checks account-level group membership. is_member is associated with workspace-local groups and is not interchangeable for every Unity Catalog account group. Define the view predicate using the intended identity model.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-155",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of the Volumes feature in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To store Delta tables only"
+      },
+      {
+        "id": "b",
+        "text": "A volume"
+      },
+      {
+        "id": "c",
+        "text": "To create SQL queries"
+      },
+      {
+        "id": "d",
+        "text": "To configure clusters"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Volumes govern access to non-tabular files. The path convention is /Volumes/catalog/schema/volume/..., with appropriate parent usage and volume privileges. A volume is not a replacement for registering a managed Delta table through its table name.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-157",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the difference between external and managed tables in Unity Catalog?",
+    "options": [
+      {
+        "id": "a",
+        "text": "There is no difference"
+      },
+      {
+        "id": "b",
+        "text": "CREATE TABLE main.bronze.events USING DELTA LOCATION 's3://example-bucket/events/'"
+      },
+      {
+        "id": "c",
+        "text": "External tables are faster"
+      },
+      {
+        "id": "d",
+        "text": "Managed tables cannot use Delta format"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "An explicit supported external LOCATION creates an external table over data at that location. The creator needs the required parent and external-location privileges. A managed table without LOCATION uses managed storage; a volume governs files rather than registering a table.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-158",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the recommended way to handle PII (Personally Identifiable Information) in Databricks?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Store it in plain text"
+      },
+      {
+        "id": "b",
+        "text": "Use column masks, apply appropriate tags, restrict access, and consider pseudonymization"
+      },
+      {
+        "id": "c",
+        "text": "Delete all PII"
+      },
+      {
+        "id": "d",
+        "text": "Ignore it"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "PII handling: Tag columns with PII classification, Apply column masks to limit visibility (show NULL or masked values for unauthorized users), Restrict access through RLS or table permissions, Use encryption for storage, Consider pseudonymization/anonymization for analytics, Audit access to PII columns.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-160",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "What is the purpose of the table constraints CHECK and NOT NULL in the context of data governance?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To speed up queries"
+      },
+      {
+        "id": "b",
+        "text": "CHECK validates writes; a row filter or dynamic view is needed for identity-dependent row visibility"
+      },
+      {
+        "id": "c",
+        "text": "To grant permissions"
+      },
+      {
+        "id": "d",
+        "text": "To delete data"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "CHECK and NOT NULL constraints enforce data quality at write time. Row filters and dynamic views govern which stored rows readers can see. Quality validation and security policies solve different requirements and can be used together.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-170",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "When you run DROP TABLE on a Unity Catalog managed table, what happens to the underlying data files?",
+    "options": [
+      {
+        "id": "a",
+        "text": "They remain in cloud storage and must be deleted manually"
+      },
+      {
+        "id": "b",
+        "text": "The table has a recovery period, after which its managed data is eligible for asynchronous deletion"
+      },
+      {
+        "id": "c",
+        "text": "They are moved to DBFS root"
+      },
+      {
+        "id": "d",
+        "text": "They are converted to an external table"
+      }
+    ],
+    "correctOptionIds": [
+      "b"
+    ],
+    "explanation": "Managed tables include lifecycle handling and support recovery of recently dropped tables. Purge happens after the recovery period; do not assume immediate physical erasure. External table drops leave the external data files.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-read-parent-privileges",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "An account group has SELECT on main.silver.orders but cannot query it. It lacks privileges on the parents. Which privileges are also required?",
+    "options": [
+      {
+        "id": "a",
+        "text": "USE CATALOG on main and USE SCHEMA on main.silver"
+      },
+      {
+        "id": "b",
+        "text": "CREATE CATALOG and CREATE SHARE on the metastore"
+      },
+      {
+        "id": "c",
+        "text": "MANAGE on every SQL warehouse"
+      },
+      {
+        "id": "d",
+        "text": "MODIFY on the table instead of SELECT"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Reading a Unity Catalog table requires the table read privilege and usage of its containing catalog and schema. Grant to the intended account group or execution principal.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-revoke-inherited",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "A user can query a table through an account group that has SELECT on the parent schema. Removing a direct table grant did not remove access. Why?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The user still receives effective access through the group and inherited parent grant"
+      },
+      {
+        "id": "b",
+        "text": "REVOKE always creates a stronger SELECT grant"
+      },
+      {
+        "id": "c",
+        "text": "Row filters automatically assign table ownership"
+      },
+      {
+        "id": "d",
+        "text": "All table permissions are ignored by Unity Catalog"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Evaluate all effective grants, group membership, and privilege inheritance. Removing one direct grant does not cancel separate group or parent access. Adjust access at the level that supplies it.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-deny-scope",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "A proposed script uses the standalone DENY SELECT ON TABLE statement on a Unity Catalog table. Which statement is correct?",
+    "options": [
+      {
+        "id": "a",
+        "text": "That standalone DENY statement is documented for hive_metastore objects, not Unity Catalog tables"
+      },
+      {
+        "id": "b",
+        "text": "Standalone DENY SELECT is the standard Unity Catalog replacement for every REVOKE"
+      },
+      {
+        "id": "c",
+        "text": "DENY converts the table to managed storage"
+      },
+      {
+        "id": "d",
+        "text": "DENY changes the job Run as identity"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "The SQL DENY statement is not supported on Unity Catalog tables. Manage effective UC grants and use applicable security policies. ABAC DENY policies are a separate mechanism with their own supported scope; do not conflate them with standalone DENY SELECT.",
+    "sources": [
+      {
+        "path": "sources/governance/unity-catalog-privileges.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-mask-stored-values",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "A column mask returns a redacted value to an unauthorized querying group. What happens to the stored original value?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The mask changes query-visible values rather than automatically rewriting the stored column"
+      },
+      {
+        "id": "b",
+        "text": "The original is physically deleted from every file immediately"
+      },
+      {
+        "id": "c",
+        "text": "The table is automatically converted to CSV"
+      },
+      {
+        "id": "d",
+        "text": "The group receives the unmasked value through every query regardless of policy"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Column masks apply a function to values exposed during query evaluation. Stored original values and their lifecycle require separate controls. Users still need table access, and other access paths must be governed.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-row-filter-boolean",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "A region-based row filter UDF is attached to a table. What should its result represent?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A Boolean indicating whether the current principal may see the row"
+      },
+      {
+        "id": "b",
+        "text": "The table owner password"
+      },
+      {
+        "id": "c",
+        "text": "A new storage path for each row"
+      },
+      {
+        "id": "d",
+        "text": "A job schedule expression"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A row filter function evaluates a predicate for each row, potentially using identity or group information. Rows not permitted by the filter are excluded from query results.",
+    "sources": [
+      {
+        "path": "sources/governance/row-column-security.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-abac-central-policy",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "Many tables have salary columns tagged as sensitive. The team wants a central rule masking those columns for non-HR users. Which approach fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A Unity Catalog ABAC column mask policy scoped to the relevant catalog or schema using governed tags"
+      },
+      {
+        "id": "b",
+        "text": "A different manually hardcoded notebook filter for each analyst"
+      },
+      {
+        "id": "c",
+        "text": "A CHECK constraint requiring salaries to be positive"
+      },
+      {
+        "id": "d",
+        "text": "Only a tag with no access policy"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "ABAC uses governed tags and policies to apply consistent row or column security to matching objects within scope. A tag alone describes an attribute; a configured policy supplies the enforcement behavior.",
+    "sources": [
+      {
+        "path": "sources/governance/abac.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-abac-governed-tags",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "Why control who can assign the governed tags used by an ABAC policy?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Changing policy-relevant attributes can change which data the policy protects"
+      },
+      {
+        "id": "b",
+        "text": "Tags always change the physical Delta file format"
+      },
+      {
+        "id": "c",
+        "text": "Only tag authors can run SQL queries"
+      },
+      {
+        "id": "d",
+        "text": "A tag always grants SELECT by itself"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Governed tags standardize policy attributes and their assignment. Manage assignment rights so classification remains trustworthy. Policies and privileges establish enforcement; tagging is not itself a blanket data grant.",
+    "sources": [
+      {
+        "path": "sources/governance/abac.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-abac-scope",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "An ABAC mask policy is attached to one schema. A newly tagged column appears in a table in that schema and meets the policy conditions. What should happen?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The applicable policy covers the matching column within its scope"
+      },
+      {
+        "id": "b",
+        "text": "The policy must be pasted into every notebook manually"
+      },
+      {
+        "id": "c",
+        "text": "The policy applies only to tables that existed before it was created"
+      },
+      {
+        "id": "d",
+        "text": "Every table outside the schema automatically receives the same policy"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Policies are evaluated for objects within their configured scope and matching conditions. Central scope can include newly matching data. It is not automatically global to unrelated catalogs or schemas.",
+    "sources": [
+      {
+        "path": "sources/governance/abac.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-external-drop-data",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "An external Unity Catalog table points to files owned by a source system. If the table is dropped, what ordinarily happens to those files?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The table metadata is removed while the external files remain"
+      },
+      {
+        "id": "b",
+        "text": "Every source-system file is immediately deleted by the metastore"
+      },
+      {
+        "id": "c",
+        "text": "The files become encrypted notebook attachments"
+      },
+      {
+        "id": "d",
+        "text": "The external location becomes a SQL warehouse"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "External table lifecycle management does not delete source files when table metadata is dropped. Manage external data lifecycle separately and preserve required storage permissions.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-external-to-managed",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "An eligible Unity Catalog external Delta table must become managed while preserving its table identity and history. On supported compute, which operation should be evaluated?",
+    "options": [
+      {
+        "id": "a",
+        "text": "ALTER TABLE main.silver.orders SET MANAGED"
+      },
+      {
+        "id": "b",
+        "text": "CONVERT TO DELTA as a managed-lifecycle switch"
+      },
+      {
+        "id": "c",
+        "text": "GRANT SELECT ON TABLE main.silver.orders"
+      },
+      {
+        "id": "d",
+        "text": "CREATE TEMP VIEW orders AS SELECT 1"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "SET MANAGED converts eligible external Delta tables to managed storage with documented runtime, ownership, and compatibility prerequisites. CONVERT TO DELTA changes a file or table format and is not the same lifecycle operation.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-managed-conversion-rollback",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "A table was converted from external to managed using SET MANAGED. A rollback is required while the documented rollback conditions remain satisfied. Which operation applies?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The supported UNSET MANAGED rollback workflow for that converted table"
+      },
+      {
+        "id": "b",
+        "text": "A universal ALTER TABLE SET EXTERNAL for every managed table regardless of origin"
+      },
+      {
+        "id": "c",
+        "text": "VACUUM as a lifecycle conversion command"
+      },
+      {
+        "id": "d",
+        "text": "Changing the table comment to external"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "UNSET MANAGED is a conditional rollback of a prior supported conversion. It is not a universal conversion of arbitrary managed tables. Follow the documented eligibility and retained external-copy requirements.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-governance-managed-create",
+    "type": "single_choice",
+    "domainId": "governance",
+    "prompt": "A team creates main.silver.customers USING DELTA without LOCATION in a schema with configured managed storage. What kind of table is created?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A managed table"
+      },
+      {
+        "id": "b",
+        "text": "An external table merely because the storage is cloud object storage"
+      },
+      {
+        "id": "c",
+        "text": "A temporary view"
+      },
+      {
+        "id": "d",
+        "text": "A volume containing a table registration"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Omitting an external LOCATION creates a managed table using the applicable managed storage. Both managed and external tables can have cloud-backed files; lifecycle ownership and registration determine the table type.",
+    "sources": [
+      {
+        "path": "sources/governance/table-lifecycle.md",
+        "label": "Reviewed Databricks documentation digest (checked October 1, 2026)"
+      },
+      {
+        "path": "sources/governance/academy-notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  }
+]

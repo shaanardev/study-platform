@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-governance-preview",
+      "title": "May 2026 Governance and Security domain preview",
+      "version": "1.0.0",
+      "synthetic": true
+    },
+    "domains": [
+      {
+        "id": "governance",
+        "title": "Governance and Security",
+        "weight": 100
+      }
+    ]
+  },
+  "outputFile": "preview-governance-pack.json",
+  "assetsDirectory": "preview-governance-assets",
+  "shuffle": {
+    "answerSeed": "dea26-governance-preview-answers",
+    "orderSeed": "dea26-governance-preview-order"
+  },
+  "questionFiles": [
+    "questions/governance.json"
+  ],
+  "assetFiles": [
+    "baseline-review.json",
+    "objective-coverage.json"
+  ]
+}
