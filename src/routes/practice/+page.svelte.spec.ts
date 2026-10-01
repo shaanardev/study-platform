@@ -1,6 +1,5 @@
+import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import { page } from 'vitest/browser';
-import { render } from 'vitest-browser-svelte';
 import PracticePage from './+page.svelte';
 
 describe('practice page', () => {
@@ -41,15 +40,17 @@ describe('practice page', () => {
       form: null,
     });
 
-    await expect
-      .element(page.getByRole('group', { name: /Domains/ }).getByText('Storage'))
-      .toBeInTheDocument();
-    await page.getByRole('checkbox', { name: /Storage/ }).click();
-    await expect.element(page.getByLabelText('Number of questions')).toHaveAttribute('max', '2');
-    await page.getByLabelText('Exam pack version').selectOptions('exam-b|pack-b|2.0');
-    await expect.element(page.getByText('Jobs')).toBeInTheDocument();
-    await expect.element(page.getByText('Storage')).not.toBeInTheDocument();
-    await expect.element(page.getByLabelText('Number of questions')).toHaveAttribute('max', '5');
+    expect(
+      within(screen.getByRole('group', { name: /Domains/ })).getByText('Storage'),
+    ).toBeTruthy();
+    await fireEvent.click(screen.getByRole('checkbox', { name: /Storage/ }));
+    expect(screen.getByLabelText('Number of questions').getAttribute('max')).toBe('2');
+    await fireEvent.change(screen.getByLabelText('Exam pack version'), {
+      target: { value: 'exam-b|pack-b|2.0' },
+    });
+    expect(screen.getByText('Jobs')).toBeTruthy();
+    expect(screen.queryByText('Storage')).toBeNull();
+    expect(screen.getByLabelText('Number of questions').getAttribute('max')).toBe('5');
   });
 
   it('offers a saved session again after the practice page is loaded', async () => {
@@ -87,11 +88,11 @@ describe('practice page', () => {
       form: null,
     });
 
-    await expect
-      .element(page.getByRole('link', { name: 'Resume quiz' }))
-      .toHaveAttribute('href', '/practice?session=saved-session');
-    await expect
-      .element(page.getByRole('heading', { name: 'What does a transaction log record?' }))
-      .toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Resume quiz' }).getAttribute('href')).toBe(
+      '/practice?session=saved-session',
+    );
+    expect(
+      screen.getByRole('heading', { name: 'What does a transaction log record?' }),
+    ).toBeTruthy();
   });
 });

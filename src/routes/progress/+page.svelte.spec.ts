@@ -1,6 +1,5 @@
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import { page } from 'vitest/browser';
-import { render } from 'vitest-browser-svelte';
 import ProgressPage from './+page.svelte';
 import type { PageData } from './$types';
 
@@ -10,21 +9,15 @@ describe('progress page', () => {
   it('explains the empty state to a new learner', async () => {
     render(ProgressPage, { params: {}, data: emptyData, form: null });
 
-    await expect.element(page.getByRole('main')).toHaveClass('bg-[#f4f5f2]');
-    await expect
-      .element(page.getByRole('heading', { name: 'No attempts yet' }))
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByText('Domain scores will appear after you answer questions.'))
-      .toBeInTheDocument();
-    await expect
-      .element(
-        page.getByText('No missed questions to review. Any incorrect answers will appear here.'),
-      )
-      .toBeInTheDocument();
-    await expect
-      .element(page.getByRole('link', { name: 'Start a practice quiz' }))
-      .toHaveAttribute('href', '/practice');
+    expect(screen.getByRole('main').classList.contains('bg-[#f4f5f2]')).toBe(true);
+    expect(screen.getByRole('heading', { name: 'No attempts yet' })).toBeTruthy();
+    expect(screen.getByText('Domain scores will appear after you answer questions.')).toBeTruthy();
+    expect(
+      screen.getByText('No missed questions to review. Any incorrect answers will appear here.'),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Start a practice quiz' }).getAttribute('href')).toBe(
+      '/practice',
+    );
   });
 
   it('shows attempt and domain scores with the pack version and selectable missed questions', async () => {
@@ -80,24 +73,18 @@ describe('progress page', () => {
       form: null,
     });
 
-    await expect.element(page.getByRole('heading', { name: 'Practice quiz' })).toBeInTheDocument();
-    await expect
-      .element(page.getByText('Cloud foundations · pack 1.0', { exact: true }))
-      .toBeInTheDocument();
-    await expect.element(page.getByRole('heading', { name: 'Compute' })).toBeInTheDocument();
-    const missedQuestion = page.getByLabelText(/What runs the workload/);
-    await expect.element(missedQuestion).toBeInTheDocument();
-    await missedQuestion.click();
-    await expect.element(missedQuestion).toBeChecked();
-    const form = page
+    expect(screen.getByRole('heading', { name: 'Practice quiz' })).toBeTruthy();
+    expect(screen.getByText('Cloud foundations · pack 1.0', { exact: true })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Compute' })).toBeTruthy();
+    const missedQuestion = screen.getByLabelText(/What runs the workload/) as HTMLInputElement;
+    await fireEvent.click(missedQuestion);
+    expect(missedQuestion.checked).toBe(true);
+    const form = screen
       .getByRole('button', { name: 'Practice selected missed questions' })
-      .element()
       .closest('form');
     expect(form).not.toBeNull();
-    expect(form).toHaveAttribute('method', 'POST');
-    expect(form).toHaveAttribute('action', '/progress?/practiceMissed');
-    await expect
-      .element(page.getByRole('button', { name: 'Practice selected missed questions' }))
-      .toBeInTheDocument();
+    expect(form?.getAttribute('method')).toBe('POST');
+    expect(form?.getAttribute('action')).toBe('/progress?/practiceMissed');
+    expect(screen.getByRole('button', { name: 'Practice selected missed questions' })).toBeTruthy();
   });
 });
