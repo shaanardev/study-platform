@@ -1,0 +1,802 @@
+[
+  {
+    "id": "dea26-baseline-181",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A production job is taking longer than comparable earlier runs. Which evidence should the engineer check first?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Compare its run history and task durations with earlier comparable runs"
+      },
+      {
+        "id": "b",
+        "text": "Run DESCRIBE HISTORY on an unrelated Delta table"
+      },
+      {
+        "id": "c",
+        "text": "Increase the cluster size before inspecting any run details"
+      },
+      {
+        "id": "d",
+        "text": "Delete the job run history"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Job run history provides previous durations, statuses, and task details. Compare runs with similar inputs and configurations before attributing a slowdown. Delta DESCRIBE HISTORY describes table transactions and is not a replacement for job execution history.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-181.md",
+        "label": "Archived baseline databricks-engineer-q-181; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/job-monitoring.md",
+        "label": "Lakeflow Jobs monitoring"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-130",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A classic jobs cluster terminates after a failed run. What should be configured beforehand to retain its driver and executor logs for investigation?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Cluster log delivery to a supported durable location"
+      },
+      {
+        "id": "b",
+        "text": "Only an interactive notebook display"
+      },
+      {
+        "id": "c",
+        "text": "A new ephemeral local directory on that same cluster"
+      },
+      {
+        "id": "d",
+        "text": "A table row filter"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Configure log delivery to durable storage before the run. Retained logs help investigate failures after compute terminates. This is separate from Spark streaming checkpoints and Delta table history.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-130.md",
+        "label": "Archived baseline databricks-engineer-q-130; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/job-monitoring.md",
+        "label": "Lakeflow Jobs monitoring"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-136",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A production pipeline has a maximum acceptable duration. How should the team detect runs that exceed it?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Configure duration warning notifications and suitable task timeouts"
+      },
+      {
+        "id": "b",
+        "text": "Assume every slow task raises an exception automatically"
+      },
+      {
+        "id": "c",
+        "text": "Disable job run history"
+      },
+      {
+        "id": "d",
+        "text": "Use a SQL comment recording the target duration"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A duration warning signals slow execution, while a timeout limits how long a task is allowed to run. Monitor historical baselines and failure patterns. Notification delivery depends on its configured destinations.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-136.md",
+        "label": "Archived baseline databricks-engineer-q-136; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/job-monitoring.md",
+        "label": "Lakeflow Jobs monitoring"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-092",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A stateful streaming query slows down as its state grows. What can cause this?",
+    "options": [
+      {
+        "id": "a",
+        "text": "More state can increase memory use, state access work, and checkpoint overhead"
+      },
+      {
+        "id": "b",
+        "text": "State size only changes the SQL warehouse billing rate"
+      },
+      {
+        "id": "c",
+        "text": "State growth always reduces checkpoint time"
+      },
+      {
+        "id": "d",
+        "text": "A state store contains no persisted information"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Stateful operators retain information across batches. Growing state can increase resource pressure and checkpoint costs. Check the operator metrics and use valid watermark or timeout semantics to bound state when the business logic permits.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-092.md",
+        "label": "Archived baseline databricks-engineer-q-092; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/references/streaming-state.md",
+        "label": "Structured Streaming state and watermarks"
+      },
+      {
+        "path": "sources/monitoring/references/spark-ui.md",
+        "label": "Spark UI task and stage metrics"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-099",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "Why can dropDuplicates on a streaming DataFrame without a watermark become expensive over time?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Previously seen keys may need to remain in state indefinitely"
+      },
+      {
+        "id": "b",
+        "text": "Spark automatically deletes the output table each batch"
+      },
+      {
+        "id": "c",
+        "text": "It deduplicates only the first micro-batch"
+      },
+      {
+        "id": "d",
+        "text": "It disables all executor memory"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Without a valid state eviction rule, deduplication retains previously seen keys to detect later repeats, so state can grow without bound. A watermark-based design bounds state according to the lateness policy; it is not a promise to remember duplicates forever.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-099.md",
+        "label": "Archived baseline databricks-engineer-q-099; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/references/streaming-state.md",
+        "label": "Structured Streaming state and watermarks"
+      },
+      {
+        "path": "sources/monitoring/references/spark-ui.md",
+        "label": "Spark UI task and stage metrics"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-012",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A Delta table has many small files, increasing scan and metadata overhead. Which operation compacts its files?",
+    "options": [
+      {
+        "id": "a",
+        "text": "OPTIMIZE to compact files"
+      },
+      {
+        "id": "b",
+        "text": "VACUUM to compact the current files"
+      },
+      {
+        "id": "c",
+        "text": "Increase the cluster size without changing table layout"
+      },
+      {
+        "id": "d",
+        "text": "Recreate the table using one partition for every distinct key"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "OPTIMIZE compacts small files to reduce scan and metadata overhead. VACUUM removes eligible unreferenced old files; it does not compact the current table. Target file sizes depend on table and runtime settings, not a universal 128 MB default.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-012.md",
+        "label": "Archived baseline databricks-engineer-q-012; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/delta-layout.md",
+        "label": "Delta layout maintenance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-044",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "What happens when you run OPTIMIZE on a partitioned Delta table with ZORDER BY?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It compacts files within each partition AND applies Z-order clustering to improve query filtering on specified columns"
+      },
+      {
+        "id": "b",
+        "text": "It only optimizes the partition directories"
+      },
+      {
+        "id": "c",
+        "text": "It removes the partitioning"
+      },
+      {
+        "id": "d",
+        "text": "It converts the table to unpartitioned"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "OPTIMIZE with ZORDER BY compacts files and colocates related values within each partition to improve data skipping for supported Delta table layouts. It does not remove partitioning. Z-ordering is not compatible with liquid clustering on the same table.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-044.md",
+        "label": "Archived baseline databricks-engineer-q-044; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/delta-layout.md",
+        "label": "Delta layout maintenance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-190",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "How does liquid clustering differ from fixed Hive-style partitioning?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It organizes data using clustering keys without fixed partition directories and supports changing keys for future clustering"
+      },
+      {
+        "id": "b",
+        "text": "It requires one directory for every distinct key"
+      },
+      {
+        "id": "c",
+        "text": "It guarantees that all Spark join skew disappears"
+      },
+      {
+        "id": "d",
+        "text": "It automatically rewrites every existing file when a key is changed"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Liquid clustering provides flexible table layout for data skipping. Changing keys does not instantly recluster all old data; use the appropriate optimization operation when needed. Automatic key selection is a separate configured capability, not a property of every clustered table.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-190.md",
+        "label": "Archived baseline databricks-engineer-q-190; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/delta-layout.md",
+        "label": "Delta layout maintenance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-140",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A classic compute startup fails after an init script was added. What should the engineer inspect first?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Cluster events and init-script logs for the failing startup command"
+      },
+      {
+        "id": "b",
+        "text": "The notebook output from a successful earlier run"
+      },
+      {
+        "id": "c",
+        "text": "The SQL warehouse query history"
+      },
+      {
+        "id": "d",
+        "text": "The table clustering keys"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Init scripts run during classic compute initialization. A failing command or missing dependency can prevent startup, so inspect startup events and logs. Use supported governed script locations for the access mode; legacy DBFS script storage should not be assumed.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-140.md",
+        "label": "Archived baseline databricks-engineer-q-140; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/compute-troubleshooting.md",
+        "label": "Compute startup and libraries"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-141",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A job reports an import error after a library was configured for its compute. What should be verified?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The specified compute resource, subject to its runtime and access-mode support"
+      },
+      {
+        "id": "b",
+        "text": "That the library is automatically installed on every workspace compute"
+      },
+      {
+        "id": "c",
+        "text": "Only the job retry count"
+      },
+      {
+        "id": "d",
+        "text": "The destination table permissions"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Compute-scoped libraries are configured for a particular compute resource. Supported package sources and behavior depend on runtime and access mode. Specify compatible versions and inspect installation status if the workload reports missing or conflicting dependencies.",
+    "sources": [
+      {
+        "path": "sources/monitoring/baseline/databricks-engineer-q-141.md",
+        "label": "Archived baseline databricks-engineer-q-141; see reviewed answer"
+      },
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/compute-troubleshooting.md",
+        "label": "Compute startup and libraries"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-spark-skew",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "In the Spark UI most tasks finish in seconds, while one task reads far more shuffle data and takes many minutes. Which diagnosis is best supported?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Data skew in an oversized partition"
+      },
+      {
+        "id": "b",
+        "text": "A universal lack of CPU on every task"
+      },
+      {
+        "id": "c",
+        "text": "An invalid Git branch name"
+      },
+      {
+        "id": "d",
+        "text": "A SQL warehouse grant error"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Uneven shuffle reads and a long outlier task are evidence of skew. Check the join or aggregation keys and the execution plan. AQE skew handling or a suitable key strategy may help; simply adding workers does not automatically split the hot partition.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/spark-ui.md",
+        "label": "Spark UI task and stage metrics"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-spark-spill",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "Several Spark stage tasks show substantial disk spill during a shuffle. What does this indicate?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The operation exceeded available execution memory for some data and wrote intermediate data to disk"
+      },
+      {
+        "id": "b",
+        "text": "The query has no shuffle at all"
+      },
+      {
+        "id": "c",
+        "text": "The driver has granted every user ownership"
+      },
+      {
+        "id": "d",
+        "text": "All destination records are corrupt"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Spill indicates intermediate data could not remain fully in execution memory. Inspect partition sizes, skew, and memory pressure. Adjust partitioning, join strategy, or resources based on evidence and measure the result.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/spark-ui.md",
+        "label": "Spark UI task and stage metrics"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-spark-shuffle",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "After a large aggregation, a few large shuffle partitions spill heavily. Which setting is directly relevant when examining partition sizing?",
+    "options": [
+      {
+        "id": "a",
+        "text": "spark.sql.shuffle.partitions, with awareness of AQE behavior"
+      },
+      {
+        "id": "b",
+        "text": "The job cron time zone"
+      },
+      {
+        "id": "c",
+        "text": "The number of Git folders"
+      },
+      {
+        "id": "d",
+        "text": "The Unity Catalog table comment"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "SQL shuffle partition sizing can affect task memory pressure and parallelism. AQE may adapt the final partitioning. Increase or tune partitions based on measured sizes; more partitions can also add scheduling overhead.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/spark-tuning.md",
+        "label": "Shuffle partitions and adaptive execution"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-predictive-scope",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A team wants maintenance operations such as OPTIMIZE, VACUUM, and ANALYZE managed automatically for eligible tables. Which feature fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Predictive optimization for Unity Catalog managed tables"
+      },
+      {
+        "id": "b",
+        "text": "A Git pull"
+      },
+      {
+        "id": "c",
+        "text": "A row filter"
+      },
+      {
+        "id": "d",
+        "text": "An external table LOCATION by itself"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Predictive optimization runs maintenance for eligible managed tables. It is distinct from query-time AQE and does not apply identically to every external table. Check enablement and table eligibility.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/delta-layout.md",
+        "label": "Delta layout maintenance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-liquid-vs-zorder",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "An existing liquid-clustered table needs layout maintenance. Should the engineer add ZORDER BY to its OPTIMIZE command?",
+    "options": [
+      {
+        "id": "a",
+        "text": "No; liquid clustering and Z-ordering are different layout strategies and are not combined on the same table"
+      },
+      {
+        "id": "b",
+        "text": "Yes; ZORDER BY is mandatory for every liquid-clustered table"
+      },
+      {
+        "id": "c",
+        "text": "Yes; otherwise the table loses its access controls"
+      },
+      {
+        "id": "d",
+        "text": "Only if the table is queried from a Git folder"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Use the optimization operations supported by the table layout. Liquid clustering replaces fixed partitioning and Z-ordering for that layout. Do not apply mutually incompatible layout syntax.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/delta-layout.md",
+        "label": "Delta layout maintenance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-liquid-key-change",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A manually liquid-clustered table changes its clustering keys. What should be expected immediately?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The key definition changes, while existing data may require subsequent reclustering"
+      },
+      {
+        "id": "b",
+        "text": "Every historical snapshot is erased instantly"
+      },
+      {
+        "id": "c",
+        "text": "All old files are guaranteed to be rewritten synchronously by the metadata change"
+      },
+      {
+        "id": "d",
+        "text": "The table becomes a SQL warehouse"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Key changes do not themselves guarantee immediate physical reclustering of all files. Apply suitable supported optimization when the layout needs to catch up. Automatic key selection is a separate feature.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/delta-layout.md",
+        "label": "Delta layout maintenance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-driver-oom",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A job fails with a driver out-of-memory error immediately after df.collect() on a very large dataset. What is the most direct code improvement?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Keep the processing distributed and avoid collecting the complete dataset to the driver"
+      },
+      {
+        "id": "b",
+        "text": "Increase only executor count and keep the same unbounded collect()"
+      },
+      {
+        "id": "c",
+        "text": "Reduce the destination table permissions"
+      },
+      {
+        "id": "d",
+        "text": "Disable the job schedule time zone"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "collect returns all rows to the driver. A large result can exceed driver memory even when executors have capacity. Use distributed transformations and writes, or retrieve only a bounded sample needed by the application.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/spark-driver.md",
+        "label": "Spark driver collection guidance"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-library-conflict",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A task fails after a package upgrade with an import error involving incompatible dependency versions. What should be investigated?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The installed package versions and their compatibility with the runtime and other dependencies"
+      },
+      {
+        "id": "b",
+        "text": "Only the task retry interval"
+      },
+      {
+        "id": "c",
+        "text": "Only the destination row count"
+      },
+      {
+        "id": "d",
+        "text": "The table clustering key order"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Inspect installation status and logs, resolve incompatible or duplicate versions, and pin a compatible dependency set. Repeating the task on the same environment may reproduce a deterministic library conflict.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/compute-troubleshooting.md",
+        "label": "Compute startup and libraries"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-startup-network",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "Classic compute cannot start, and cluster events report an instance provisioning or network access failure. What is the appropriate investigation?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Inspect cloud capacity, permissions, and network prerequisites indicated by the events"
+      },
+      {
+        "id": "b",
+        "text": "Rewrite every silver aggregation before reading startup logs"
+      },
+      {
+        "id": "c",
+        "text": "Change the SQL CONCAT separator"
+      },
+      {
+        "id": "d",
+        "text": "Add a table mask to fix VM provisioning"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Startup event details identify whether failure occurred before Spark execution. Cloud instance capacity, instance permissions, and networking can prevent startup. Workload transformations are a separate stage of execution.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/compute-troubleshooting.md",
+        "label": "Compute startup and libraries"
+      }
+    ]
+  },
+  {
+    "id": "dea26-monitoring-dag-health",
+    "type": "single_choice",
+    "domainId": "monitoring",
+    "prompt": "A downstream task is blocked and has no Spark stages. An upstream task failed. Which evidence explains the blockage?",
+    "options": [
+      {
+        "id": "a",
+        "text": "The job task graph and upstream task run status"
+      },
+      {
+        "id": "b",
+        "text": "Only the downstream Spark UI, which must contain completed stages"
+      },
+      {
+        "id": "c",
+        "text": "A permanent view definition unrelated to the task"
+      },
+      {
+        "id": "d",
+        "text": "Only the Git commit author name"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A dependency blocker can prevent a task from starting at all. Inspect the DAG and upstream status before analyzing executor metrics. Spark UI metrics become relevant once the Spark workload is running.",
+    "sources": [
+      {
+        "path": "sources/monitoring/academy-learning-plan/notes.md",
+        "label": "Supplied academy performance-optimization notes"
+      },
+      {
+        "path": "sources/monitoring/references/job-monitoring.md",
+        "label": "Lakeflow Jobs monitoring"
+      }
+    ]
+  }
+]
