@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-monitoring-preview",
+      "title": "May 2026 Monitoring domain preview",
+      "version": "1.0.0",
+      "synthetic": true
+    },
+    "domains": [
+      {
+        "id": "monitoring",
+        "title": "Troubleshooting, Monitoring, and Optimization",
+        "weight": 100
+      }
+    ]
+  },
+  "outputFile": "preview-monitoring-pack.json",
+  "assetsDirectory": "preview-monitoring-assets",
+  "shuffle": {
+    "answerSeed": "dea26-monitoring-preview-answers",
+    "orderSeed": "dea26-monitoring-preview-order"
+  },
+  "questionFiles": [
+    "questions/monitoring.json"
+  ]
+}
