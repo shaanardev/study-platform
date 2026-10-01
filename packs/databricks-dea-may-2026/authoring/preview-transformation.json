@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "schemaVersion": 1,
+    "exam": {
+      "id": "databricks-data-engineer-associate",
+      "title": "Databricks Certified Data Engineer Associate",
+      "version": "2026-05-04"
+    },
+    "pack": {
+      "id": "databricks-dea-may-2026-transformation-preview",
+      "title": "May 2026 Transformation domain preview",
+      "version": "1.0.0",
+      "synthetic": true
+    },
+    "domains": [
+      {
+        "id": "transformation",
+        "title": "Data Transformation and Modeling",
+        "weight": 100
+      }
+    ]
+  },
+  "outputFile": "preview-transformation-pack.json",
+  "assetsDirectory": "preview-transformation-assets",
+  "shuffle": {
+    "answerSeed": "dea26-transformation-preview-answers",
+    "orderSeed": "dea26-transformation-preview-order"
+  },
+  "questionFiles": [
+    "questions/transformation.json"
+  ],
+  "assetFiles": [
+    "baseline-review.json",
+    "objective-coverage.json"
+  ]
+}
