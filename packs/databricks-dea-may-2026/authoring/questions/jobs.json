@@ -1,0 +1,1218 @@
+[
+  {
+    "id": "dea26-baseline-103",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "An ingestion task and a validation task must both finish successfully before a publish task runs. Which dependency should publish use?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Depend on both tasks with All succeeded"
+      },
+      {
+        "id": "b",
+        "text": "Depend only on ingestion with All done"
+      },
+      {
+        "id": "c",
+        "text": "Depend on validation with At least one failed"
+      },
+      {
+        "id": "d",
+        "text": "Add no dependencies and delay publish by five minutes"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Task dependencies and run-if conditions define the execution graph. All succeeded requires every dependency to succeed. Other run-if conditions support recovery or partial-success flows, so successful upstream execution is not required for every possible task configuration.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-105",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A Lakeflow notebook task fails transiently and has two retries configured. What does that setting permit?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Retry attempts after the initial attempt, up to the configured limit"
+      },
+      {
+        "id": "b",
+        "text": "An unlimited number of retries for any error"
+      },
+      {
+        "id": "c",
+        "text": "Changing the source code automatically to fix validation errors"
+      },
+      {
+        "id": "d",
+        "text": "Marking the task successful without executing it again"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Retry settings control additional task attempts and intervals. They can recover transient failures but do not fix deterministic data or code errors. Final job outcome also depends on downstream control flow and leaf tasks.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-106",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A downstream task needs a value computed by an upstream notebook during the same job run. What should the notebooks use?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Use taskValues (dbutils.jobs.taskValues) to set and get values between tasks in the same job run"
+      },
+      {
+        "id": "b",
+        "text": "Write the value to a local driver variable and read it in the next task"
+      },
+      {
+        "id": "c",
+        "text": "Use a job schedule parameter that is set after the run begins"
+      },
+      {
+        "id": "d",
+        "text": "Read the value from the upstream task log"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "dbutils.jobs.taskValues.set() and get() enable passing key-value pairs between tasks in a multi-task job. A task sets a value: dbutils.jobs.taskValues.set(\"key\", value). Downstream tasks retrieve it: dbutils.jobs.taskValues.get(\"upstream_task\", \"key\"). This enables dynamic workflows where later tasks use outputs from earlier tasks.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-123",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A multi-task job failed after its ingestion task succeeded. After fixing the failed transformation, how can an engineer recover without repeating successful ingestion?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Use Repair run to rerun failed or selected affected tasks and their required downstream work"
+      },
+      {
+        "id": "b",
+        "text": "Delete the job and recreate it"
+      },
+      {
+        "id": "c",
+        "text": "Use the cluster Restart button and assume all failed tasks rerun"
+      },
+      {
+        "id": "d",
+        "text": "Disable the ingestion table transaction log"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Repair run re-executes failed or selected tasks within the job run recovery workflow. Successful upstream work can be preserved. Compute restart and job run repair are different operations; validate the repaired result.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-127",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A job must run the same nested task for each value in an input array, with a controlled number of simultaneous iterations. Which task fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "For each with configured concurrency"
+      },
+      {
+        "id": "b",
+        "text": "If/else without an iteration task"
+      },
+      {
+        "id": "c",
+        "text": "A SQL warehouse without a job"
+      },
+      {
+        "id": "d",
+        "text": "A notebook revision restore"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "For each invokes a nested task for input array elements. Concurrency is configurable; iteration is not necessarily fully parallel. The nested task receives the current input value through a dynamic reference.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-131",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "Which Lakeflow Jobs task evaluates a condition and routes execution to a true or false branch?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A task that executes different branches based on the result of an IF/ELSE condition"
+      },
+      {
+        "id": "b",
+        "text": "A retry policy"
+      },
+      {
+        "id": "c",
+        "text": "A scheduled trigger"
+      },
+      {
+        "id": "d",
+        "text": "A SQL task"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Conditional (IF/ELSE) tasks enable branching logic - they evaluate a condition and execute the true or false branch accordingly. This enables dynamic pipelines that adapt based on: presence of data, quality check results, or previous task outcomes. Different downstream paths can be taken based on runtime conditions.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-137",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A For each task processes several regions. A final task must run only after that loop succeeds. Which dependency should it have?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Depend on the For each container with an all-succeeded condition"
+      },
+      {
+        "id": "b",
+        "text": "Depend only on the first region iteration"
+      },
+      {
+        "id": "c",
+        "text": "Run without dependencies at job start"
+      },
+      {
+        "id": "d",
+        "text": "Set a fixed delay and assume all regions have finished"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Downstream tasks depend on the For each container. An all-succeeded condition waits for successful completion, rather than relying on an individual iteration or an elapsed-time guess.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-101",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "What is the primary purpose of a Lakeflow Job?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To orchestrate and schedule data pipelines, jobs, and tasks with dependencies"
+      },
+      {
+        "id": "b",
+        "text": "To store source code and version history for notebooks"
+      },
+      {
+        "id": "c",
+        "text": "To provide a SQL warehouse for interactive queries"
+      },
+      {
+        "id": "d",
+        "text": "To grant table permissions to users"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Databricks Workflows is the orchestration service for scheduling and running jobs composed of tasks (notebooks, JARs, Python, SQL, Delta Live Tables). It supports task dependencies, retries, notifications, and monitoring. Workflows enables production deployment of data pipelines with reliable execution and error handling.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-108",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "Which description best fits a Lakeflow Job?",
+    "options": [
+      {
+        "id": "a",
+        "text": "An orchestration resource containing tasks and configuration for running workloads"
+      },
+      {
+        "id": "b",
+        "text": "A single Spark task with no configuration or scheduling"
+      },
+      {
+        "id": "c",
+        "text": "A catalog object that stores table rows"
+      },
+      {
+        "id": "d",
+        "text": "A compute cluster that remains available after the job run"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A job groups tasks with dependencies, parameters, and execution settings. It can be triggered manually, by a schedule, or by data events. Tasks can use supported serverless, jobs compute, or SQL warehouse options according to task type.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-110",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "In Lakeflow Jobs, what is a run?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A single execution of a job with a specific start time, status, and logs"
+      },
+      {
+        "id": "b",
+        "text": "The saved job definition before execution"
+      },
+      {
+        "id": "c",
+        "text": "A permanent table created by a task"
+      },
+      {
+        "id": "d",
+        "text": "A schedule shared by every job in the workspace"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A Run represents a single execution of a job. Each run has a unique run ID, start/end times, status (pending, running, succeeded, failed), and output logs. You can view run history, compare runs, and rerun specific runs. Runs enable tracking job execution history and debugging failures.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-111",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "What does max_concurrent_runs control?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To control how many instances of the same job can run simultaneously"
+      },
+      {
+        "id": "b",
+        "text": "How many tasks can exist in the job definition"
+      },
+      {
+        "id": "c",
+        "text": "How many retries each task receives"
+      },
+      {
+        "id": "d",
+        "text": "How many clusters are available to all workspace users"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "max_concurrent_runs limits simultaneous executions of the same job. Default is 1 (only one run at a time). If a new run is triggered while another is running, it queues or skips based on configuration. This prevents resource exhaustion and conflicting operations on the same data.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-114",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A notebook should process different date ranges on different job runs. What should the team configure?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Job parameters supplied to the notebook and read through the appropriate parameter interface"
+      },
+      {
+        "id": "b",
+        "text": "A separate notebook copy for each date range"
+      },
+      {
+        "id": "c",
+        "text": "The job time zone as the only date parameter"
+      },
+      {
+        "id": "d",
+        "text": "A task timeout containing the date range"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Job parameters make workload code reusable, and run-specific values can override defaults. Notebook code can read parameters through widgets; other task types have their own parameter interfaces. Configuration parameters are distinct from compute sizing.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-118",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A notebook selects one of several approved source tables from a job parameter. What should it do before reading the selected table?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Validate the source identifier against an allowlist, then read the selected named table"
+      },
+      {
+        "id": "b",
+        "text": "Concatenate arbitrary user input into SQL without validation"
+      },
+      {
+        "id": "c",
+        "text": "Grant the job owner access to every table automatically"
+      },
+      {
+        "id": "d",
+        "text": "Use the parameter as a filesystem path regardless of table permissions"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Use runtime parameters to reuse workload code. Validate any identifier against the intended catalog/schema or approved choices, and use the supported table reader or identifier parameterization. Parameterization does not grant access to otherwise unauthorized tables.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-119",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "What does a task timeout configure?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To define the maximum time a task can run before being automatically terminated"
+      },
+      {
+        "id": "b",
+        "text": "The maximum age of the job definition"
+      },
+      {
+        "id": "c",
+        "text": "The amount of time a job waits for a schedule to start"
+      },
+      {
+        "id": "d",
+        "text": "The duration for which task logs are retained"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Task timeout (in DLT and job tasks) sets the maximum duration before automatic termination. This prevents runaway tasks from consuming resources indefinitely. If timeout is reached, the task fails. Useful for: preventing hung queries, controlling costs, and ensuring SLAs are met.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-121",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A job is at its maximum concurrent runs and queuing is enabled. What happens to another eligible run?",
+    "options": [
+      {
+        "id": "a",
+        "text": "It waits in the queue for available capacity, subject to queue limits"
+      },
+      {
+        "id": "b",
+        "text": "It permanently replaces the running job definition"
+      },
+      {
+        "id": "c",
+        "text": "It always starts concurrently despite the configured limit"
+      },
+      {
+        "id": "d",
+        "text": "It changes the maximum concurrent runs setting"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Queuing lets eligible runs wait instead of being immediately skipped when capacity limits apply. Runs remain subject to queue lifetime and other platform limits. This is separate from the number of parallel tasks inside a run.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-126",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "Why use a fresh classic jobs compute environment for independent job runs?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To reduce interference from state or libraries left by previous interactive sessions"
+      },
+      {
+        "id": "b",
+        "text": "To guarantee different jobs cannot write to the same Delta table"
+      },
+      {
+        "id": "c",
+        "text": "To remove the need to configure dependency versions"
+      },
+      {
+        "id": "d",
+        "text": "To make every job run immune to data quality errors"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Run-scoped jobs compute reduces environmental interference from interactive use. It still needs explicit dependency configuration and data access permissions. Shared task compute within one run does not establish isolation between task code states.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-128",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "Why configure permissions on a Lakeflow Job?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To control which principals can view, trigger, or manage the orchestration resource"
+      },
+      {
+        "id": "b",
+        "text": "To grant every task automatic access to all governed data"
+      },
+      {
+        "id": "c",
+        "text": "To decide which rows a dashboard viewer can see"
+      },
+      {
+        "id": "d",
+        "text": "To select the cloud region for serverless compute"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Job permissions control access to the job resource. Data access during execution is checked against the Run as identity and the relevant data privileges. Permission labels and operations follow the current job ACL model; job ownership is separate from execution identity.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-104",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "Which Quartz cron expression, with the job time zone set to UTC, schedules a Lakeflow Job daily at 03:00?",
+    "options": [
+      {
+        "id": "a",
+        "text": "0 0 3 * * ?"
+      },
+      {
+        "id": "b",
+        "text": "0 3 * * *"
+      },
+      {
+        "id": "c",
+        "text": "0 0 * 3 * ?"
+      },
+      {
+        "id": "d",
+        "text": "0 0 15 * * ?"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Databricks advanced schedules use Quartz cron syntax with a seconds field. 0 0 3 * * ? means second 0, minute 0, hour 3, every day and month, with no specific day-of-week. Set the time zone explicitly.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-107",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "What does a scheduled trigger do for a Lakeflow Job?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To automatically run jobs at specified times or intervals"
+      },
+      {
+        "id": "b",
+        "text": "Starts the job only when a Unity Catalog table changes"
+      },
+      {
+        "id": "c",
+        "text": "Runs the job only when a new file arrives"
+      },
+      {
+        "id": "d",
+        "text": "Retries a task after a task-level error"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Job schedules automatically trigger job runs at defined times or intervals using cron expressions (e.g., daily at midnight, hourly). This enables automation of ETL pipelines, reports, and maintenance tasks without manual intervention. Schedules can be paused, modified, or triggered on-demand.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-baseline-113",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "What does Run now do for a Lakeflow Job?",
+    "options": [
+      {
+        "id": "a",
+        "text": "To manually trigger a job run immediately, regardless of schedule"
+      },
+      {
+        "id": "b",
+        "text": "Changes the next scheduled run time"
+      },
+      {
+        "id": "c",
+        "text": "Repairs only failed tasks in a previous run"
+      },
+      {
+        "id": "d",
+        "text": "Creates a new job without running it"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Run Now manually triggers a job execution immediately without waiting for the scheduled time. This is useful for: testing job changes, backfilling data, or ad-hoc execution. The run appears in the job history alongside scheduled runs with the same logging and monitoring.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-file-arrival-selection",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A partner delivers new files at irregular times. Processing should start when files arrive rather than run empty hourly jobs. Which trigger fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "File arrival on the governed landing location"
+      },
+      {
+        "id": "b",
+        "text": "An hourly schedule regardless of data availability"
+      },
+      {
+        "id": "c",
+        "text": "A Git commit without any job integration"
+      },
+      {
+        "id": "d",
+        "text": "A column mask on the destination"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A file arrival trigger responds to new files in a configured supported location. Configure the landing path and appropriate access. It starts a job; ingestion logic must still discover and track the files.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-table-update-selection",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A gold pipeline should start after a governed silver source table changes. Which trigger directly expresses that dependency between jobs?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A table update trigger watching the silver table"
+      },
+      {
+        "id": "b",
+        "text": "A file arrival trigger on an unrelated folder"
+      },
+      {
+        "id": "c",
+        "text": "A notebook comment saying run after silver"
+      },
+      {
+        "id": "d",
+        "text": "Changing max concurrent runs to zero"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A table update trigger responds to changes in selected tables. Configure the watched tables, trigger rule, and timing controls. It avoids relying on an arbitrary time gap between separate jobs.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-trigger-all-tables",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A job depends on fresh data in both customers and orders. How can a table update trigger avoid running after only one has changed?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Configure the trigger to require updates to all watched tables"
+      },
+      {
+        "id": "b",
+        "text": "Configure it to trigger when any watched table updates"
+      },
+      {
+        "id": "c",
+        "text": "Use only the alphabetical order of table names"
+      },
+      {
+        "id": "d",
+        "text": "Grant SELECT to the dashboard viewer"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Table update triggers can watch multiple tables with an all or any update condition. Choose all when every input must have changed; evaluate whether this matches the required freshness contract.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-trigger-batch-wait",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A source delivers a group of files over several minutes. The job should wait until arrivals settle. Which setting fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Wait after last change"
+      },
+      {
+        "id": "b",
+        "text": "Only increase the retry count"
+      },
+      {
+        "id": "c",
+        "text": "Only change the task language"
+      },
+      {
+        "id": "d",
+        "text": "Disable every job dependency"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Wait after last change delays triggering until a quiet interval after the latest arrival. Minimum time between triggers limits run frequency. Neither setting by itself establishes a transactional completeness guarantee for arbitrary file batches.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-trigger-clock",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A business report must run every weekday at 07:00 in a named local time zone, even if no new data arrives. Which trigger fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A scheduled trigger with the intended time zone"
+      },
+      {
+        "id": "b",
+        "text": "Only a file arrival trigger"
+      },
+      {
+        "id": "c",
+        "text": "Only a table update trigger"
+      },
+      {
+        "id": "d",
+        "text": "An Auto Loader rescue mode"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A scheduled trigger expresses a clock-based requirement. Configure the time zone and understand daylight saving behavior. Data-driven triggers are appropriate when fresh data, rather than clock time, determines execution.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-run-if-failure-handler",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A cleanup task should execute after all upstream tasks finish, including runs in which an upstream task failed. Which run-if condition fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "All done"
+      },
+      {
+        "id": "b",
+        "text": "All succeeded"
+      },
+      {
+        "id": "c",
+        "text": "At least one succeeded as a guarantee for every failure combination"
+      },
+      {
+        "id": "d",
+        "text": "No dependencies so cleanup starts before processing"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "All done supports cleanup after dependencies reach terminal states regardless of success. All succeeded is a success gate. Configure cleanup logic to handle partial outputs safely.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-run-if-business-branch",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "An upstream notebook publishes a row count. The job should skip an expensive enrichment branch when that count is zero. Which task expresses this logic?",
+    "options": [
+      {
+        "id": "a",
+        "text": "An If/else task comparing a task-value reference with zero"
+      },
+      {
+        "id": "b",
+        "text": "An OPTIMIZE task that changes table ownership"
+      },
+      {
+        "id": "c",
+        "text": "A retry count without any condition"
+      },
+      {
+        "id": "d",
+        "text": "A Git branch name used as the row count"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "If/else tasks evaluate conditions using parameters, task values, or supported dynamic references. Downstream tasks attach to the true or false outcome. Run-if conditions instead evaluate dependency execution outcomes.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-sql-task-compute",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A job must execute a saved SQL query against gold tables. Which task and compute pairing fits?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A SQL task using a SQL warehouse"
+      },
+      {
+        "id": "b",
+        "text": "A For each task without a nested workload"
+      },
+      {
+        "id": "c",
+        "text": "A Git folder used as the compute resource"
+      },
+      {
+        "id": "d",
+        "text": "A Unity Catalog metastore used as the executor"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "SQL tasks use SQL warehouses for SQL workload execution. Configure the query or file reference and execution privileges. Control-flow containers do not replace workload compute.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-pipeline-task",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A job must refresh a Lakeflow Spark Declarative Pipeline after an upstream landing task succeeds. Which task should it contain?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A pipeline task referencing that pipeline and depending on the landing task"
+      },
+      {
+        "id": "b",
+        "text": "Only a notebook revision restore"
+      },
+      {
+        "id": "c",
+        "text": "A table grant with no execution step"
+      },
+      {
+        "id": "d",
+        "text": "A SQL warehouse declaration without a task"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A pipeline task runs an existing pipeline as part of job orchestration. Task dependencies determine the order. Pipeline dataset dependencies and job task dependencies are related but distinct graphs.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-dashboard-task",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A nightly job should refresh a Databricks dashboard after its gold data is published. Which task is designed for this?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A dashboard task that depends on the publish task"
+      },
+      {
+        "id": "b",
+        "text": "An Auto Loader schema location"
+      },
+      {
+        "id": "c",
+        "text": "A service principal with no job task"
+      },
+      {
+        "id": "d",
+        "text": "A clustering-key alteration"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A dashboard task performs the supported dashboard refresh or publication workload. Set the dependency so the dashboard uses the intended completed data. Data table updates alone do not define that orchestration step.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-dag-parallelism",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "Tasks A and B read independent sources. Task C requires both results. Which graph permits useful parallelism while preserving correctness?",
+    "options": [
+      {
+        "id": "a",
+        "text": "A and B can run independently; C depends on both with All succeeded"
+      },
+      {
+        "id": "b",
+        "text": "B depends on A even though there is no data dependency, and C starts at job creation"
+      },
+      {
+        "id": "c",
+        "text": "C starts before A and B and sleeps a fixed duration"
+      },
+      {
+        "id": "d",
+        "text": "All three run without dependencies"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "Independent source tasks can execute in parallel if compute capacity permits. The fan-in task waits for both required results. Correct dependencies encode data readiness rather than relying on elapsed time.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  },
+  {
+    "id": "dea26-jobs-retry-idempotency",
+    "type": "single_choice",
+    "domainId": "jobs",
+    "prompt": "A notebook task can be retried after writing output and then failing. What property should its write logic have?",
+    "options": [
+      {
+        "id": "a",
+        "text": "Retries should not create duplicate business effects"
+      },
+      {
+        "id": "b",
+        "text": "Every retry should blindly append the same rows"
+      },
+      {
+        "id": "c",
+        "text": "The task should delete its checkpoint after writing"
+      },
+      {
+        "id": "d",
+        "text": "The task should change its Run as user on each attempt"
+      }
+    ],
+    "correctOptionIds": [
+      "a"
+    ],
+    "explanation": "A retry can repeat code that already committed some output. Use suitable idempotent writes or a transaction design. Retry settings handle execution recovery; they do not automatically deduplicate application-level side effects.",
+    "sources": [
+      {
+        "path": "sources/jobs/lakeflow-jobs.md",
+        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
+      },
+      {
+        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+      }
+    ]
+  }
+]
