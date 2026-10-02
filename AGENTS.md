@@ -10,6 +10,13 @@
 - For small isolated code changes, use `worker` agents with explicit file ownership and acceptance criteria. Tell workers that others share the checkout and not to revert their changes.
 - Use `gpt-6-luna` at high reasoning for general delegated agents. Keep quick or dependent steps with the parent agent, which integrates the results.
 
+## Code Verification
+
+- For changes to the frontend app (`src/` and its root configuration), run `pnpm verify` from the repository root before completing the task.
+- For changes confined to `cli/`, run `pnpm --dir cli verify` before completing the task.
+- For changes affecting both apps or shared tooling, run `pnpm verify:all` from the repository root.
+- Each verify command may rewrite files through `lint:fix`. Review the resulting diff and include only changes that belong to the task. Report any failed or blocked verification in the task handoff.
+
 ## Svelte Work
 
 - Use the `$svelte-best-practices` skill when writing, editing, or reviewing Svelte components or modules.
