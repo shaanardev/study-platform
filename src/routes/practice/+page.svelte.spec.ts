@@ -95,4 +95,82 @@ describe('practice page', () => {
       screen.getByRole('heading', { name: 'What does a transaction log record?' }),
     ).toBeTruthy();
   });
+
+  it('shows both academy-note links and their Databricks documentation after an answer', () => {
+    const { container } = render(PracticePage, {
+      params: {},
+      data: {
+        packs: [],
+        session: {
+          id: 'completed-session',
+          examId: 'exam-a',
+          packId: 'pack-a',
+          packVersion: '1.0',
+          domainIds: [],
+          questionIds: ['question-a', 'question-b'],
+          status: 'in_progress',
+          createdAt: 'now',
+          updatedAt: 'now',
+          answers: [
+            {
+              questionId: 'question-a',
+              answerIds: ['a'],
+              correct: true,
+              answerIdsCorrect: ['a'],
+              explanation: 'Correct.',
+              answeredAt: 'now',
+              sources: [
+                { path: 'assets/notes.md', label: 'Bundled notes' },
+                {
+                  kind: 'academy_note',
+                  path: 'streaming/checkpoints.md',
+                  label: 'Streaming academy note',
+                  section: 'Checkpointing',
+                  documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
+                },
+              ],
+            },
+          ],
+          questions: [
+            {
+              id: 'question-a',
+              type: 'single_choice',
+              domainId: 'storage',
+              prompt: 'What does a transaction log record?',
+              options: [
+                { id: 'a', text: 'Table changes' },
+                { id: 'b', text: 'Passwords' },
+              ],
+              explanation: 'Correct.',
+              sources: [],
+            },
+            {
+              id: 'question-b',
+              type: 'single_choice',
+              domainId: 'storage',
+              prompt: 'What is a table?',
+              options: [
+                { id: 'a', text: 'Data' },
+                { id: 'b', text: 'Code' },
+              ],
+              explanation: 'A table holds data.',
+              sources: [],
+            },
+          ],
+        },
+      },
+      form: null,
+    });
+    const links = [...container.querySelectorAll('a')];
+    const noteLink = links.find((link) => link.textContent?.includes('Streaming academy note'));
+    expect(noteLink?.getAttribute('href')).toContain(
+      encodeURIComponent('streaming/checkpoints.md'),
+    );
+    expect(
+      links
+        .find((link) => link.textContent?.includes('Databricks documentation'))
+        ?.getAttribute('href'),
+    ).toBe('https://docs.databricks.com/streams/checkpoints.html');
+    expect(links.some((link) => link.textContent?.includes('Bundled notes'))).toBe(true);
+  });
 });

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import { readFile, realpath, stat } from 'node:fs/promises';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
 import { getImportedPack, getImportedSourceAsset, openPackDatabase } from '#lib/server/db/packs.js';
@@ -13,7 +14,7 @@ export type QuizAnswer = {
   correct: boolean;
   answerIdsCorrect: string[];
   explanation: string;
-  sources: { path: string; label: string }[];
+  sources: PackQuestion['sources'];
   answeredAt: string;
 };
 
@@ -357,12 +358,48 @@ export async function readQuestionSource(
   packVersion: string,
   questionId: string,
   sourcePath: string,
+  sourceKind?: 'academy_note' | 'bundled',
 ) {
   const pack = getImportedPack(examId, packId, packVersion, dbPath(databasePath));
   const source = pack?.questions
     .find((question) => question.id === questionId)
-    ?.sources.find((item) => item.path === sourcePath);
+    ?.sources.find(
+      (item) =>
+        item.path === sourcePath &&
+        (sourceKind === undefined ||
+          (sourceKind === 'academy_note' ? 'kind' in item : !('kind' in item))),
+    );
   if (!source) error(404, 'Source excerpt not found.');
+  if ('kind' in source) {
+    const configuredRoot = process.env['ACADEMY_SOURCE_ROOT'];
+    if (!configuredRoot) error(503, 'Academy source root is not configured.');
+    const root = await realpath(resolve(configuredRoot)).catch(() => undefined);
+    if (!root) error(404, 'Academy source root is unavailable.');
+    const candidate = resolve(root, source.path);
+    const relativePath = relative(root, candidate);
+    if (
+      source.path.startsWith('/') ||
+      /^[a-zA-Z]:/.test(source.path) ||
+      source.path.includes('\\') ||
+      source.path.includes('\0') ||
+      source.path.split('/').some((part) => !part || part === '.' || part === '..') ||
+      relativePath === '..' ||
+      relativePath.startsWith(`..${sep}`) ||
+      isAbsolute(relativePath)
+    )
+      error(404, 'Academy note is outside the configured source root.');
+    const actual = await realpath(candidate).catch(() => undefined);
+    if (!actual) error(404, 'Academy note is unavailable.');
+    const resolvedRelative = relative(root, actual);
+    if (
+      resolvedRelative === '..' ||
+      resolvedRelative.startsWith(`..${sep}`) ||
+      isAbsolute(resolvedRelative) ||
+      !(await stat(actual)).isFile()
+    )
+      error(404, 'Academy note is outside the configured source root.');
+    return { label: source.label, text: await readFile(actual, 'utf8'), section: source.section };
+  }
   const asset = getImportedSourceAsset(
     dbPath(databasePath),
     examId,

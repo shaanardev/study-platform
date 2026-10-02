@@ -41,6 +41,26 @@ const Source = Schema.Struct({
   path: SourcePath,
   label: Text,
 });
+const AcademyNoteSource = Schema.Struct({
+  kind: Schema.Literal('academy_note'),
+  path: Text,
+  label: Text,
+  section: Schema.optionalKey(Text),
+  documentationUrls: Schema.Array(
+    Schema.String.check(
+      Schema.isPattern(/^https:\/\//),
+      Schema.makeFilter((value) => {
+        try {
+          return new URL(value).protocol === 'https:' && new URL(value).hostname
+            ? undefined
+            : 'Documentation URLs must use HTTPS';
+        } catch {
+          return 'Documentation URLs must be valid HTTPS URLs';
+        }
+      }),
+    ),
+  ).check(Schema.isMinLength(1)),
+});
 
 const Question = Schema.Struct({
   id: Id,
@@ -50,7 +70,7 @@ const Question = Schema.Struct({
   options: Schema.Array(Option).check(Schema.isMinLength(2)),
   answerIds: Schema.Array(Id).check(Schema.isMinLength(1)),
   explanation: Text,
-  sources: Schema.Array(Source).check(Schema.isMinLength(1)),
+  sources: Schema.Array(Schema.Union([Source, AcademyNoteSource])).check(Schema.isMinLength(1)),
 });
 
 export const BuiltExamPackSchema = Schema.Struct({

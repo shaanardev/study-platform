@@ -1,4 +1,4 @@
-import { Data, Effect, FileSystem, Path, Schema } from 'effect';
+import { Config, Data, Effect, FileSystem, Option, Path, Schema } from 'effect';
 import { verifyProfile } from './profile.js';
 import type { PackForVerification } from './schema.js';
 import { BuiltExamPackSchema } from './schema.js';
@@ -141,6 +141,54 @@ const verifySourceFiles = Effect.fn(function* (packPath: string, pack: PackForVe
     .pipe(Effect.mapError(toVerifyError('Unable to resolve pack directory')));
   for (const question of pack.questions) {
     for (const source of question.sources) {
+      if ('kind' in source) {
+        const configuredRoot = Option.getOrUndefined(
+          yield* Config.String('ACADEMY_SOURCE_ROOT').pipe(Config.option),
+        );
+        if (!configuredRoot)
+          return yield* new VerifyError({
+            message: 'ACADEMY_SOURCE_ROOT must be set to verify academy-note citations',
+          });
+        const root = yield* fs
+          .realPath(path.resolve(configuredRoot))
+          .pipe(Effect.mapError(toVerifyError('Unable to resolve academy source root')));
+        const segments = source.path.split('/');
+        if (
+          path.isAbsolute(source.path) ||
+          /^[a-zA-Z]:/.test(source.path) ||
+          source.path.includes('\\') ||
+          source.path.includes('\0') ||
+          segments.some((segment) => segment === '' || segment === '.' || segment === '..')
+        )
+          return yield* new VerifyError({
+            message: `${question.id}: academy note path must be relative to configured source root (${source.path})`,
+          });
+        const candidate = path.resolve(root, source.path);
+        const actual = yield* fs
+          .realPath(candidate)
+          .pipe(
+            Effect.mapError(
+              () => new VerifyError({ message: `${question.id}: missing academy note ${source.path}` }),
+            ),
+          );
+        const relativePath = path.relative(root, actual);
+        if (
+          relativePath === '..' ||
+          relativePath.startsWith(`..${path.sep}`) ||
+          path.isAbsolute(relativePath)
+        )
+          return yield* new VerifyError({
+            message: `${question.id}: academy note escapes configured source root (${source.path})`,
+          });
+        const info = yield* fs
+          .stat(actual)
+          .pipe(Effect.mapError(toVerifyError(`Unable to inspect academy note ${source.path}`)));
+        if (info.type !== 'File')
+          return yield* new VerifyError({
+            message: `${question.id}: academy note is not a file (${source.path})`,
+          });
+        continue;
+      }
       const actual = yield* sourceFileExists(packPath, question.id, source.path);
       yield* sourceIsContained(packDirectory, actual, question.id, source.path);
     }

@@ -31,6 +31,14 @@
   let latestQuestion = $derived(
     data.session?.questions.find((question) => question.id === latestAnswer?.questionId),
   );
+
+  function resetDomains() {
+    selectedDomainIds = [];
+  }
+
+  function packKey(pack: { examId: string; packId: string; packVersion: string }) {
+    return `${pack.examId}|${pack.packId}|${pack.packVersion}`;
+  }
 </script>
 
 <svelte:head>
@@ -110,9 +118,9 @@
             id="pack"
             name="packChoice"
             bind:value={selectedPackKey}
-            onchange={() => (selectedDomainIds = [])}
+            onchange={resetDomains}
           >
-            {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
+            {#each data.packs as pack (packKey(pack))}
               <option value={`${pack.examId}|${pack.packId}|${pack.packVersion}`}>
                 {pack.examTitle}
                 · {pack.packTitle} · v{pack.packVersion}{pack.synthetic ? ' · synthetic' : ''}
@@ -203,16 +211,41 @@
             </p>
             <p class="mb-4">{latestAnswer.explanation}</p>
             <div class="flex flex-wrap gap-x-5 gap-y-3">
-              {#each latestAnswer.sources as source (source.path)}
-                <a
-                  href={resolve(
-    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`,
+              {#each latestAnswer.sources as source (('kind' in source ? 'academy:' : 'bundled:') + source.path)}
+                {#if 'kind' in source}
+                  <a
+                    href={resolve(
+    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}&kind=academy_note`,
   )}
-                  target="_blank"
-                  rel="noopener"
-                  class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
-                  >{source.label} <span aria-hidden="true">↗</span></a
-                >
+                    target="_blank"
+                    rel="noopener"
+                    class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
+                    >{source.label}
+                    {#if source.section}
+                      · {source.section}
+                    {/if}
+                    <span aria-hidden="true"> ↗</span></a
+                  >
+                  {#each source.documentationUrls as documentationUrl (documentationUrl)}
+                    <a
+                      href={documentationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
+                      >Databricks documentation <span aria-hidden="true">↗</span></a
+                    >
+                  {/each}
+                {:else}
+                  <a
+                    href={resolve(
+    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}&kind=bundled`,
+  )}
+                    target="_blank"
+                    rel="noopener"
+                    class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
+                    >{source.label} <span aria-hidden="true">↗</span></a
+                  >
+                {/if}
               {/each}
             </div>
           </div>

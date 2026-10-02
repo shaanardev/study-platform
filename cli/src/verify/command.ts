@@ -18,7 +18,7 @@ export const verifyCommand = Command.make(
       Option.getOrUndefined(profilePath),
     );
     yield* Console.log(
-      `PASS: ${pack.questions.length} ${pack.questions.length === 1 ? 'question' : 'questions'}; structural checks and source-file checks passed${Option.isSome(profilePath) ? '; profile checks passed' : ''}.`,
+      `PASS: ${pack.questions.length} ${pack.questions.length === 1 ? 'question' : 'questions'}; structural checks and citation checks passed${Option.isSome(profilePath) ? '; profile checks passed' : ''}.`,
     );
     if (profileReportPath) yield* Console.log(`Verification report: ${profileReportPath}`);
   }),

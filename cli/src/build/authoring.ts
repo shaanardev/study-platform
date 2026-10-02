@@ -2,6 +2,19 @@ import { Schema } from 'effect';
 
 const Id = Schema.String.pipe(Schema.check(Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/)));
 const Text = Schema.String.pipe(Schema.check(Schema.isPattern(/\S/)));
+const HttpsUrl = Schema.String.check(
+  Schema.isPattern(/^https:\/\//),
+  Schema.makeFilter((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && url.hostname
+        ? undefined
+        : 'Documentation URLs must use HTTPS';
+    } catch {
+      return 'Documentation URLs must be valid HTTPS URLs';
+    }
+  }),
+);
 const Seed = Schema.Union([
   Schema.String,
   Schema.Number.pipe(
@@ -31,7 +44,15 @@ const Metadata = Schema.Struct({
   ),
 });
 const Option = Schema.Struct({ id: Id, text: Text });
-const Source = Schema.Struct({ path: Text, label: Text });
+const BundledSource = Schema.Struct({ path: Text, label: Text });
+const AcademyNoteSource = Schema.Struct({
+  kind: Schema.Literal('academy_note'),
+  path: Text,
+  label: Text,
+  section: Schema.optional(Text),
+  documentationUrls: Schema.Array(HttpsUrl).pipe(Schema.check(Schema.isMinLength(1))),
+});
+const Source = Schema.Union([BundledSource, AcademyNoteSource]);
 const Question = Schema.Struct({
   id: Id,
   type: Schema.Literals(['single_choice', 'multiple_choice']),

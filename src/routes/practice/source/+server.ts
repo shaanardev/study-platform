@@ -11,8 +11,10 @@ export const GET: RequestHandler = async ({ url }) => {
     get('packVersion'),
     get('questionId'),
     get('path'),
+    get('kind') === 'academy_note' ? 'academy_note' : 'bundled',
   );
-  return text(`${source.label}\n\n${source.text}`, {
+  const section = 'section' in source && source.section ? ` · ${source.section}` : '';
+  return text(`${source.label}${section}\n\n${source.text}`, {
     headers: { 'cache-control': 'private, max-age=3600' },
   });
 };

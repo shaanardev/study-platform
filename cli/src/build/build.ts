@@ -125,7 +125,7 @@ function validateAuthoring(input: AssembledAuthoring): void {
       throw new Error(`Question ${question.id} has invalid options or correct answer IDs`);
     }
     for (const source of question.sources)
-      safeRelativePath(source.path, `Question ${question.id} source path`);
+      if (!('kind' in source)) safeRelativePath(source.path, `Question ${question.id} source path`);
   }
 }
 
@@ -180,10 +180,11 @@ function shuffleQuestions(input: AssembledAuthoring): Record<string, unknown>[] 
       options: letters,
       answerIds: letters.slice(position, position + correct.length).map((option) => option.id),
       explanation: question.explanation,
-      sources: question.sources.map((source) => ({
-        ...source,
-        path: `${input.assetsDirectory}/${source.path}`,
-      })),
+      sources: question.sources.map((source) =>
+        'kind' in source
+          ? source
+          : { ...source, path: `${input.assetsDirectory}/${source.path}` },
+      ),
     };
   });
   return Effect.runSync(Random.shuffle(result).pipe(Random.withSeed(input.shuffle.orderSeed)));
@@ -226,7 +227,9 @@ export const buildPack = (authoringPath: string, outputDirectory: string) =>
     const outputRoot = path.resolve(outputDirectory);
     const assetsRoot = path.resolve(outputRoot, input.assetsDirectory);
     const assetPaths = new Set([
-      ...questions.flatMap((question) => question.sources.map((source) => source.path)),
+      ...questions.flatMap((question) =>
+        question.sources.flatMap((source) => ('kind' in source ? [] : [source.path])),
+      ),
       ...(input.assetFiles ?? []),
     ]);
     const artifacts = yield* Effect.forEach(assetPaths, (asset) =>

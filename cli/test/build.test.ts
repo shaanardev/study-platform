@@ -335,6 +335,102 @@ describe('build command', () => {
       }),
     ));
 
+  it('keeps academy-note citations as metadata without copying the note into pack assets', () =>
+    run(
+      Effect.gen(function* () {
+        const fixture = yield* mutablePreview;
+        const fs = yield* FileSystem.FileSystem;
+        const academyRoot = `${fixture.root}/academy`;
+        yield* fs.makeDirectory(`${academyRoot}/engineering`, { recursive: true });
+        yield* fs.writeFileString(`${academyRoot}/engineering/streaming.md`, 'Checkpointing notes.\n');
+        yield* fs.writeFileString(`${fixture.root}/outside.md`, 'outside\n');
+        const first = fixture.questions[0];
+        if (!first) throw new Error('Missing preview question');
+        const citation = {
+          kind: 'academy_note',
+          path: 'engineering/streaming.md',
+          label: 'Streaming guide',
+          section: 'Checkpointing',
+          documentationUrls: ['https://docs.databricks.com/streams/checkpointing.html'],
+        };
+        yield* writeJson(fixture.authoringPath, {
+          ...fixture.input,
+          questions: [{ ...first, sources: [first.sources[0], citation] }],
+          questionFiles: [],
+        });
+
+        const previousRoot = process.env['ACADEMY_SOURCE_ROOT'];
+        process.env['ACADEMY_SOURCE_ROOT'] = academyRoot;
+        try {
+          yield* buildPack(fixture.authoringPath, fixture.output);
+          const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`);
+
+          expect(pack.questions[0]?.sources).toEqual([
+            { path: 'preview-assets/references/core.md', label: 'Core notes' },
+            citation,
+          ]);
+          expect(yield* fs.exists(`${fixture.output}/preview-assets/engineering/streaming.md`)).toBe(
+            false,
+          );
+          const packPath = `${fixture.output}/preview-pack.json`;
+          const built = (yield* Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(
+            yield* fs.readFileString(packPath),
+          )) as {
+            questions: { sources: { kind?: string; path: string }[] }[];
+          };
+          const academySource = built.questions[0]?.sources.find(
+            (source) => source.kind === 'academy_note',
+          );
+          if (!academySource) throw new Error('Expected academy-note metadata in the built pack');
+          academySource.path = '../outside.md';
+          yield* fs.writeFileString(
+            packPath,
+            yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown))(built),
+          );
+          const escaped = yield* Effect.result(verifyPack(packPath));
+          expect(Result.isFailure(escaped)).toBe(true);
+          if (Result.isFailure(escaped))
+            expect(escaped.failure.message).toContain(
+              'academy note path must be relative to configured source root',
+            );
+        } finally {
+          if (previousRoot === undefined) delete process.env['ACADEMY_SOURCE_ROOT'];
+          else process.env['ACADEMY_SOURCE_ROOT'] = previousRoot;
+        }
+      }),
+    ));
+
+  it('rejects non-HTTPS academy documentation URLs before building', () =>
+    run(
+      Effect.gen(function* () {
+        const fixture = yield* mutablePreview;
+        const first = fixture.questions[0];
+        if (!first) throw new Error('Missing preview question');
+        yield* writeJson(fixture.authoringPath, {
+          ...fixture.input,
+          questionFiles: [],
+          questions: [
+            {
+              ...first,
+              sources: [
+                {
+                  kind: 'academy_note',
+                  path: 'engineering/streaming.md',
+                  label: 'Streaming guide',
+                  documentationUrls: ['http://docs.databricks.com/streams/checkpointing.html'],
+                },
+              ],
+            },
+          ],
+        });
+
+        const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
+
+        expect(Result.isFailure(result)).toBe(true);
+        if (Result.isFailure(result)) expect(result.failure.message).toContain('Invalid authoring file');
+      }),
+    ));
+
   it('builds reproducible multi-domain output and copies local sources', () =>
     run(
       Effect.gen(function* () {

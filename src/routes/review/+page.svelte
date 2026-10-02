@@ -163,19 +163,48 @@
                 <legend class="mb-3 w-full font-semibold">
                   Sources · pack v{selectedPack.pack.version}
                 </legend>
-                {#each question.sources as source (source.path)}
-                  <a
-                    href={resolve(
-    `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}`,
+                {#each question.sources as source (('kind' in source ? 'academy:' : 'bundled:') + source.path)}
+                  {#if 'kind' in source}
+                    <div class="grid gap-1">
+                      <a
+                        href={resolve(
+    `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}&kind=academy_note`,
   )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="grid gap-1 font-semibold text-primary-700-300 underline-offset-4 hover:underline"
-                    >{source.label} <span aria-hidden="true">↗</span
-                    ><small class="break-all font-normal text-surface-600-400"
-                      >{source.path}</small
-                    ></a
-                  >
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="grid gap-1 font-semibold text-primary-700-300 underline-offset-4 hover:underline"
+                        >{source.label}
+                        {#if source.section}
+                          · {source.section}
+                        {/if}
+                        <small class="break-all font-normal text-surface-600-400"
+                          >{source.path}</small
+                        ></a
+                      >
+                      {#each source.documentationUrls as documentationUrl (documentationUrl)}
+                        <a
+                          href={documentationUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="font-semibold text-primary-700-300 underline-offset-4 hover:underline"
+                          >Databricks documentation ↗</a
+                        >
+                      {/each}
+                    </div>
+                  {:else}
+                    <a
+                      href={resolve(
+    `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}&kind=bundled`,
+  )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="grid gap-1 font-semibold text-primary-700-300 underline-offset-4 hover:underline"
+                      >{source.label} <span aria-hidden="true">↗</span
+                      ><small class="break-all font-normal text-surface-600-400"
+                        >{source.path}</small
+                      ></a
+                    >
+                  {/if}
                 {/each}
               </fieldset>
               {#if feedbackByQuestion.get(question.id)?.flags.length}

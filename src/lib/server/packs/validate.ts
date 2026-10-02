@@ -157,18 +157,57 @@ export function validateExamPack(input: unknown): PackValidation {
       const rawSources = getProperty(value, 'sources');
       if (Array.isArray(rawSources)) {
         for (const [sourceIndex, source] of rawSources.entries()) {
-          if (isRecord(source)) {
-            rejectUnknownKeys(
-              source,
-              ['path', 'label'],
-              `questions[${index}].sources[${sourceIndex}]`,
-              errors,
-            );
-          }
+          const kind = isRecord(source) ? getProperty(source, 'kind') : undefined;
+          const sourceKeys = isRecord(source) ? Object.keys(source) : [];
           const path = isRecord(source) ? getProperty(source, 'path') : undefined;
           const label = isRecord(source) ? getProperty(source, 'label') : undefined;
-          if (isText(path) && isText(label)) {
+          const section = isRecord(source) ? getProperty(source, 'section') : undefined;
+          const documentationUrls = isRecord(source)
+            ? getProperty(source, 'documentationUrls')
+            : undefined;
+          if (kind === 'academy_note') {
+            const exactFields = sourceKeys.every((key) =>
+              ['kind', 'path', 'label', 'section', 'documentationUrls'].includes(key),
+            );
+            const validUrls =
+              Array.isArray(documentationUrls) &&
+              documentationUrls.length > 0 &&
+              documentationUrls.every((url) => {
+                if (typeof url !== 'string') return false;
+                try {
+                  return new URL(url).protocol === 'https:' && Boolean(new URL(url).hostname);
+                } catch {
+                  return false;
+                }
+              });
+            if (!validUrls)
+              errors.push(
+                `questions[${index}].sources[${sourceIndex}].documentationUrls must contain HTTPS URLs.`,
+              );
+            if (
+              isText(path) &&
+              isText(label) &&
+              exactFields &&
+              (section === undefined || isText(section)) &&
+              validUrls
+            ) {
+              sources.push({
+                kind,
+                path,
+                label,
+                ...(section === undefined ? {} : { section }),
+                documentationUrls,
+              });
+            }
+          } else if (
+            kind === undefined &&
+            sourceKeys.every((key) => key === 'path' || key === 'label') &&
+            isText(path) &&
+            isText(label)
+          ) {
             sources.push({ path, label });
+          } else {
+            errors.push(`questions[${index}].sources[${sourceIndex}] is not a valid citation.`);
           }
         }
       }
@@ -197,10 +236,13 @@ export function validateExamPack(input: unknown): PackValidation {
       }
       for (const source of sources) {
         if (
-          source.path.startsWith('/') ||
-          source.path.includes('\\') ||
-          source.path.includes('\0') ||
-          source.path.split('/').includes('..')
+          !('kind' in source) &&
+          (source.path.startsWith('/') ||
+            source.path.includes('\\') ||
+            source.path.includes('\0') ||
+            source.path
+              .split('/')
+              .some((segment) => segment === '..' || segment === '.' || !segment))
         ) {
           errors.push(
             `questions[${index}] source path "${source.path}" must be a safe relative path.`,
