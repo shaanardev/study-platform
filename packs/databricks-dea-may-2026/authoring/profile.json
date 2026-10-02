@@ -1,0 +1,38 @@
+{
+  "domains": {
+    "platform": { "count": 12, "weight": 6 },
+    "ingestion": { "count": 42, "weight": 21 },
+    "transformation": { "count": 44, "weight": 22 },
+    "jobs": { "count": 32, "weight": 16 },
+    "cicd": { "count": 20, "weight": 10 },
+    "monitoring": { "count": 20, "weight": 10 },
+    "governance": { "count": 30, "weight": 15 }
+  },
+  "objectives": {
+    "path": "assets/databricks-dea-may-2026-v1.1.0/objective-coverage.json",
+    "byDomain": {
+      "platform": ["P1", "P2"],
+      "ingestion": ["I1", "I2", "I3", "I4", "I5", "I6", "I7"],
+      "transformation": ["T1", "T2", "T3", "T4", "T5", "T6", "T7"],
+      "jobs": ["J1", "J2", "J3", "J4"],
+      "cicd": ["C1", "C2", "C3", "C4"],
+      "monitoring": ["M1", "M2", "M3", "M4", "M5"],
+      "governance": ["G1", "G2", "G3", "G4"]
+    }
+  },
+  "questionRules": {
+    "type": "single_choice",
+    "optionCount": 4,
+    "explanationMinWords": 15,
+    "requiredSourcePathFragment": "/sources/"
+  },
+  "answerPositions": { "a": 50, "b": 50, "c": 50, "d": 50 },
+  "baselineAudit": {
+    "path": "assets/databricks-dea-may-2026-v1.1.0/baseline-review.json",
+    "total": 194,
+    "included": 128,
+    "excluded": 66,
+    "idPrefix": "dea26-baseline-"
+  },
+  "reportPath": "assets/databricks-dea-may-2026-v1.1.0/verification-report.json"
+}
