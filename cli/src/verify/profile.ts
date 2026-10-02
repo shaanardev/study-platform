@@ -1,6 +1,5 @@
 import { Crypto, Data, Effect, FileSystem, Path, Schema } from 'effect';
 import { Hex } from 'effect/encoding';
-import { normalizeReviewedAnswer } from './legacy.js';
 import type { PackForVerification } from './verify.js';
 
 const NonEmptyText = Schema.String.check(Schema.isMinLength(1));
@@ -36,13 +35,24 @@ const CoverageSchema = Schema.Struct({
   questionObjectives: Schema.Record(Schema.String, Schema.Array(Schema.String)),
   objectives: Schema.Record(Schema.String, Schema.Unknown),
 });
-const BaselineEntrySchema = Schema.Struct({
+const IncludedBaselineEntrySchema = Schema.Struct({
+  baselineId: NonEmptyText,
   number: NonNegativeInteger,
-  status: NonEmptyText,
+  status: Schema.Literals(['rewritten', 'retained-with-terminology-normalization']),
   packQuestionId: NonEmptyText,
-  reviewedAnswer: Schema.String,
-  reason: Schema.optionalKey(Schema.String),
+  domainId: NonEmptyText,
+  objective: NonEmptyText,
 });
+const ExcludedBaselineEntrySchema = Schema.Struct({
+  baselineId: NonEmptyText,
+  number: NonNegativeInteger,
+  status: Schema.Literal('excluded'),
+  reason: NonEmptyText,
+});
+const BaselineEntrySchema = Schema.Union([
+  IncludedBaselineEntrySchema,
+  ExcludedBaselineEntrySchema,
+]);
 const ProvenanceSchema = Schema.Struct({
   materialInventory: Schema.Array(Schema.Struct({ path: NonEmptyText, sha256: NonEmptyText })),
   baselinePath: NonEmptyText,
@@ -50,6 +60,8 @@ const ProvenanceSchema = Schema.Struct({
 });
 
 type BaselineEntry = typeof BaselineEntrySchema.Type;
+type IncludedBaselineEntry = typeof IncludedBaselineEntrySchema.Type;
+type ExcludedBaselineEntry = typeof ExcludedBaselineEntrySchema.Type;
 
 export class ProfileError extends Data.TaggedError('ProfileError')<{ readonly message: string }> {}
 
@@ -183,13 +195,14 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       report.domains = domains;
     }
 
+    let coverageQuestions: Record<string, ReadonlyArray<string>> | undefined;
     if (profile.objectives) {
       const coveragePath = yield* resolveWithin(base, profile.objectives.path, 'Objective mapping');
       const coverage = yield* readJson(coveragePath, CoverageSchema, 'Objective mapping');
-      const coverageQuestions = coverage.questionObjectives;
+      const coverageQuestionObjectives = coverage.questionObjectives;
       yield* ensure(
-        Object.keys(coverageQuestions).length === pack.questions.length &&
-          pack.questions.every(({ id }) => Object.hasOwn(coverageQuestions, id)),
+        Object.keys(coverageQuestionObjectives).length === pack.questions.length &&
+          pack.questions.every(({ id }) => Object.hasOwn(coverageQuestionObjectives, id)),
         'Objective mapping does not exactly match questions',
       );
       const expectedObjectives = new Set(Object.values(profile.objectives.byDomain).flat());
@@ -200,7 +213,7 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       );
       const observed = new Set<string>();
       for (const question of pack.questions) {
-        const mapped = coverageQuestions[question.id];
+        const mapped = coverageQuestionObjectives[question.id];
         const permitted = profile.objectives.byDomain[question.domainId];
         if (
           !mapped ||
@@ -220,8 +233,9 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       );
       report.objectivesCovered = observed.size;
       report.objectiveCounts = sortedObject(
-        countBy(pack.questions.flatMap(({ id }) => coverageQuestions[id] ?? [])),
+        countBy(pack.questions.flatMap(({ id }) => coverageQuestionObjectives[id] ?? [])),
       );
+      coverageQuestions = coverageQuestionObjectives;
     }
 
     if (profile.questionRules) {
@@ -299,14 +313,27 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       yield* ensure(
         review.length === audit.total &&
           new Set(review.map(({ number }) => number)).size === review.length &&
-          review.every((item, index) => item.number === index + 1),
+          review.every(
+            (item, index) =>
+              item.number === index + 1 &&
+              Number(item.baselineId.match(/(\d+)$/)?.[1]) === item.number,
+          ) &&
+          new Set(review.map(({ baselineId }) => baselineId)).size === review.length,
         'Incomplete baseline audit',
       );
-      const included = review.filter(({ status }) => status !== 'excluded');
-      const excluded = review.filter(({ status }) => status === 'excluded');
+      const included = review.filter(
+        (item): item is IncludedBaselineEntry => item.status !== 'excluded',
+      );
+      const excluded = review.filter(
+        (item): item is ExcludedBaselineEntry => item.status === 'excluded',
+      );
       yield* ensure(
         included.length === audit.included && excluded.length === audit.excluded,
         'Baseline audit disposition totals do not match profile',
+      );
+      yield* ensure(
+        excluded.every(({ reason }) => reason.trim().length > 0),
+        'Baseline exclusion without rationale',
       );
       const prefix = audit.idPrefix ?? '';
       const baselineIds = new Set(
@@ -315,23 +342,27 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
           .filter((id) => prefix.length === 0 || id.startsWith(prefix)),
       );
       yield* ensure(
-        new Set(included.map(({ packQuestionId }) => packQuestionId)).size === baselineIds.size &&
-          [...baselineIds].every((id) => included.some((item) => item.packQuestionId === id)),
-        'Baseline audit and pack differ',
+        new Set(included.map(({ packQuestionId }) => packQuestionId)).size === included.length,
+        'Baseline audit mappings must be unique',
       );
       const byId = new Map(pack.questions.map((question) => [question.id, question]));
       for (const item of included) {
         const question = byId.get(item.packQuestionId);
         if (!question) return yield* fail(`Missing baseline question ${item.packQuestionId}`);
-        const answer = question.options.find(({ id }) => id === question.answerIds[0])?.text;
         yield* ensure(
-          answer === normalizeReviewedAnswer(item.reviewedAnswer),
-          `${question.id}: reviewed key changed`,
+          question.domainId === item.domainId,
+          `${question.id}: baseline domain mismatch`,
         );
+        if (coverageQuestions)
+          yield* ensure(
+            coverageQuestions[question.id]?.includes(item.objective) === true,
+            `${question.id}: baseline objective mismatch`,
+          );
       }
       yield* ensure(
-        excluded.every(({ reason }) => Boolean(reason)),
-        'Baseline exclusion without rationale',
+        included.length === baselineIds.size &&
+          [...baselineIds].every((id) => included.some((item) => item.packQuestionId === id)),
+        'Baseline audit and pack differ',
       );
       report.baselineAuditCount = review.length;
       report.baselineAdapted = included.length;

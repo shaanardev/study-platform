@@ -194,7 +194,7 @@ describe('verifyPack', () => {
       }),
     ));
 
-  it('rejects malformed profile data and validates the isolated legacy answer baseline', () =>
+  it('rejects malformed profile data and validates compact baseline metadata', () =>
     run(
       Effect.gen(function* () {
         const { directory, packPath } = yield* makePack;
@@ -222,7 +222,15 @@ describe('verifyPack', () => {
         };
         const baselinePackPath = path.join(directory, 'baseline.json');
         yield* writeJson(baselinePackPath, baselinePack);
+        yield* writeJson(path.join(directory, 'assets', 'objective-coverage.json'), {
+          questionObjectives: { 'core-q1': ['C1'] },
+          objectives: { C1: { title: 'Core objective' } },
+        });
         yield* writeJson(profilePath, {
+          objectives: {
+            path: 'assets/objective-coverage.json',
+            byDomain: { core: ['C1'] },
+          },
           baselineAudit: {
             path: 'assets/baseline.json',
             total: 1,
@@ -232,10 +240,99 @@ describe('verifyPack', () => {
           },
         });
         yield* writeJson(path.join(directory, 'assets', 'baseline.json'), [
-          { number: 1, status: 'included', packQuestionId: 'core-q1', reviewedAnswer: 'DLT' },
+          {
+            baselineId: 'baseline-q-001',
+            number: 1,
+            status: 'rewritten',
+            packQuestionId: 'core-q1',
+            domainId: 'core',
+            objective: 'C1',
+          },
         ]);
         const baseline = yield* verifyPack(baselinePackPath, profilePath);
         expect(baseline.profileReportPath).toBeDefined();
+
+        const compactEntry = {
+          baselineId: 'baseline-q-001',
+          number: 1,
+          status: 'rewritten',
+          packQuestionId: 'core-q1',
+          domainId: 'core',
+          objective: 'C1',
+        };
+        const malformedAudits: Array<{
+          audit: unknown;
+          message: string;
+          total?: number;
+          included?: number;
+          excluded?: number;
+        }> = [
+          {
+            audit: [{ ...compactEntry, domainId: 'operations' }],
+            message: 'baseline domain mismatch',
+          },
+          {
+            audit: [{ ...compactEntry, objective: 'other' }],
+            message: 'baseline objective mismatch',
+          },
+          {
+            audit: [{ ...compactEntry, packQuestionId: 'missing-q' }],
+            message: 'Missing baseline question missing-q',
+          },
+          {
+            audit: [{ ...compactEntry, baselineId: 'baseline-q-002' }],
+            message: 'Incomplete baseline audit',
+          },
+          {
+            audit: [{ ...compactEntry, status: 'unknown' }],
+            message: 'Baseline audit schema validation failed',
+          },
+          {
+            audit: [{ ...compactEntry, reviewedAnswer: 'duplicated prose' }],
+            message: 'Baseline audit schema validation failed',
+          },
+          {
+            audit: [
+              compactEntry,
+              { ...compactEntry, baselineId: 'baseline-q-002', number: 2 },
+            ],
+            message: 'Baseline audit mappings must be unique',
+            total: 2,
+          },
+          {
+            audit: [
+              {
+                baselineId: 'baseline-q-001',
+                number: 1,
+                status: 'excluded',
+                reason: '   ',
+              },
+            ],
+            message: 'Baseline exclusion without rationale',
+            included: 0,
+            excluded: 1,
+          },
+        ];
+        for (const scenario of malformedAudits) {
+          yield* writeJson(path.join(directory, 'assets', 'baseline.json'), scenario.audit);
+          yield* writeJson(profilePath, {
+            objectives: {
+              path: 'assets/objective-coverage.json',
+              byDomain: { core: ['C1'] },
+            },
+            baselineAudit: {
+              path: 'assets/baseline.json',
+              total: scenario.total ?? 1,
+              included: scenario.included ?? scenario.total ?? 1,
+              excluded: scenario.excluded ?? 0,
+              idPrefix: 'core-',
+            },
+          });
+          const invalidAudit = yield* Effect.result(verifyPack(baselinePackPath, profilePath));
+          expect(Result.isFailure(invalidAudit)).toBe(true);
+          if (Result.isFailure(invalidAudit))
+            expect(invalidAudit.failure.message).toContain(scenario.message);
+        }
       }),
     ));
 

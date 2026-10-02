@@ -11,10 +11,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-002",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "An open-source storage layer that brings ACID transactions to Apache Spark and big data workloads",
-    "reviewedAnswer": "An open-source storage layer that brings ACID transactions to Apache Spark and big data workloads",
-    "reviewedExplanation": "Delta Lake is an open-source storage layer that runs on top of existing data lakes (like S3, ADLS, GCS). It provides ACID transactions, scalable metadata handling, and unified streaming/batch data processing. Delta Lake is not proprietary to Databricks and is a Linux Foundation project."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-003",
@@ -22,10 +19,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-003",
     "domainId": "platform",
-    "objective": "P2",
-    "originalAnswer": "A jobs compute cluster (job cluster)",
-    "reviewedAnswer": "Jobs compute",
-    "reviewedExplanation": "Jobs compute is scoped to a job run and terminates when that run completes. Shared jobs compute can serve several tasks within that run. Interactive compute suits exploration; a SQL warehouse runs SQL. Cost depends on workload and configuration."
+    "objective": "P2"
   },
   {
     "baselineId": "databricks-engineer-q-004",
@@ -39,10 +33,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-005",
     "domainId": "cicd",
-    "objective": "C1",
-    "originalAnswer": "Databricks Repos",
-    "reviewedAnswer": "Databricks Git folders",
-    "reviewedExplanation": "Git folders, formerly Repos, support Git-based branches, commits, pulls, and pushes. Table history tracks data changes rather than code changes. Commit and push code before creating a pull request in the Git provider."
+    "objective": "C1"
   },
   {
     "baselineId": "databricks-engineer-q-006",
@@ -56,10 +47,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-007",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "Delta Lake provides ACID transactions, time travel, and automatic schema evolution",
-    "reviewedAnswer": "A transaction log supporting ACID writes, schema enforcement, and retained historical snapshots",
-    "reviewedExplanation": "Delta Lake adds table transaction semantics to the underlying data files. Schema enforcement is the default; schema evolution requires appropriate configuration. Historical reads require retained logs and data files."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-008",
@@ -67,10 +55,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-008",
     "domainId": "governance",
-    "objective": "G2",
-    "originalAnswer": "To enable automated processes and applications to authenticate and access Databricks resources securely",
-    "reviewedAnswer": "To enable automated processes and applications to authenticate and access Databricks resources securely",
-    "reviewedExplanation": "Service Principals are security identities used by applications, services, or automation tools to access Databricks resources. Unlike user accounts, they are designed for non-interactive/automated scenarios like CI/CD pipelines, scheduled jobs, and application integrations. They can be assigned permissions and used with token-based authentication."
+    "objective": "G2"
   },
   {
     "baselineId": "databricks-engineer-q-009",
@@ -78,10 +63,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-009",
     "domainId": "platform",
-    "objective": "P2",
-    "originalAnswer": "Standard access mode (formerly High Concurrency / Shared)",
-    "reviewedAnswer": "Standard access mode",
-    "reviewedExplanation": "Standard access mode supports shared compute with user isolation and Unity Catalog access controls. Dedicated compute is assigned to a user or group. Access mode and node count are different settings."
+    "objective": "P2"
   },
   {
     "baselineId": "databricks-engineer-q-010",
@@ -101,10 +83,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-012",
     "domainId": "monitoring",
-    "objective": "M4",
-    "originalAnswer": "Run OPTIMIZE to compact small files into larger ones",
-    "reviewedAnswer": "OPTIMIZE to compact files",
-    "reviewedExplanation": "OPTIMIZE compacts small files to reduce scan and metadata overhead. VACUUM removes eligible unreferenced old files; it does not compact the current table. Target file sizes depend on table and runtime settings, not a universal 128 MB default."
+    "objective": "M4"
   },
   {
     "baselineId": "databricks-engineer-q-013",
@@ -112,10 +91,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-013",
     "domainId": "transformation",
-    "objective": "T6",
-    "originalAnswer": "CREATE TABLE AS SELECT (CTAS)",
-    "reviewedAnswer": "CREATE TABLE AS SELECT (CTAS)",
-    "reviewedExplanation": "CREATE TABLE AS SELECT (CTAS) creates a new table and populates it with the results of a SELECT query. INSERT INTO adds data to an existing table. MERGE INTO performs upserts (update/insert). CTAS is the standard way to create a table from query results in Spark SQL."
+    "objective": "T6"
   },
   {
     "baselineId": "databricks-engineer-q-014",
@@ -123,10 +99,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-014",
     "domainId": "transformation",
-    "objective": "T1",
-    "originalAnswer": "Delta",
-    "reviewedAnswer": "Delta",
-    "reviewedExplanation": "In Databricks, the default table format is Delta Lake. When you run CREATE TABLE without specifying a format (like USING PARQUET or USING CSV), Databricks automatically creates a Delta table. This default can be changed but Delta is the recommended and default format for its ACID guarantees and performance features."
+    "objective": "T1"
   },
   {
     "baselineId": "databricks-engineer-q-015",
@@ -134,10 +107,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-015",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "show()",
-    "reviewedAnswer": "show()",
-    "reviewedExplanation": "The show() method displays the contents of a DataFrame in a tabular format (df.show()). write() and save() are for writing DataFrames to storage. collect() retrieves all data to the driver as a Python list, which can cause out-of-memory errors on large datasets. show() is the safe way to view sample data."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-016",
@@ -145,10 +115,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-016",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "Adds a new column to an existing Delta table",
-    "reviewedAnswer": "Adds a new column to an existing Delta table",
-    "reviewedExplanation": "ALTER TABLE ... ADD COLUMN adds a new column to an existing table. Delta Lake supports schema evolution, allowing columns to be added without rewriting existing data. The new column will have NULL values for existing rows. To rename, use RENAME COLUMN; to change type, use ALTER COLUMN."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-017",
@@ -156,10 +123,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-017",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "current_date()",
-    "reviewedAnswer": "current_date()",
-    "reviewedExplanation": "current_date returns a DATE. current_timestamp, now, and getdate return current timestamp values in Databricks SQL. Select the function matching the required type, rather than assuming every timestamp alias is unsupported."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-018",
@@ -167,10 +131,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-018",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "To perform an upsert operation - updating existing rows and inserting new ones based on a condition",
-    "reviewedAnswer": "To perform an upsert operation - updating existing rows and inserting new ones based on a condition",
-    "reviewedExplanation": "MERGE INTO (also called UPSERT) atomically updates existing rows and inserts new rows based on a match condition. It's commonly used for slowly changing dimensions (SCD Type 1/2) and incrementally updating tables. The statement uses WHEN MATCHED for updates/deletes and WHEN NOT MATCHED for inserts."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-019",
@@ -178,10 +139,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-019",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "explode()",
-    "reviewedAnswer": "explode()",
-    "reviewedExplanation": "explode() takes a column containing arrays and creates a new row for each element in the array. groupBy() aggregates rows, pivot() rotates data from rows to columns, and join() combines DataFrames. explode() and explode_outer() are essential for working with nested/variant data."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-020",
@@ -189,10 +147,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-020",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "Hello World",
-    "reviewedAnswer": "Hello World",
-    "reviewedExplanation": "concat accepts multiple string arguments. The middle argument contains a space, so the result is Hello World. Single quotes avoid ambiguity with identifier quoting settings."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-021",
@@ -200,10 +155,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-021",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "HAVING",
-    "reviewedAnswer": "HAVING",
-    "reviewedExplanation": "HAVING filters rows after GROUP BY aggregation, while WHERE filters rows before aggregation. HAVING can reference aggregate functions (COUNT, SUM, AVG) in its condition, which WHERE cannot do. This is standard SQL behavior: WHERE filters input rows, HAVING filters grouped results."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-022",
@@ -211,10 +163,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-022",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "To view the column names, data types, and comments of a table",
-    "reviewedAnswer": "To view the column names, data types, and comments of a table",
-    "reviewedExplanation": "DESCRIBE TABLE (or DESC TABLE) displays the schema information of a table including column names, data types, and any comments. It's useful for understanding table structure without querying data. For extended metadata including partitioning, use DESCRIBE TABLE EXTENDED or DESCRIBE DETAIL for Delta tables."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-023",
@@ -222,10 +171,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-023",
     "domainId": "transformation",
-    "objective": "T1",
-    "originalAnswer": "df.write.format(\"delta\").save()",
-    "reviewedAnswer": "df.write.format(\"delta\").saveAsTable(\"main.silver.orders\")",
-    "reviewedExplanation": "saveAsTable writes a named table and registers it in the catalog. save requires a filesystem path; load is a reader operation. The writer needs the appropriate catalog and schema privileges."
+    "objective": "T1"
   },
   {
     "baselineId": "databricks-engineer-q-024",
@@ -233,10 +179,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-024",
     "domainId": "transformation",
-    "objective": "T1",
-    "originalAnswer": "df.select(col(\"col_name\").cast(\"int\")) or df.select(expr(\"CAST(col_name AS INT)\"))",
-    "reviewedAnswer": "df.select(col(\"col_name\").cast(\"int\")) or df.select(expr(\"CAST(col_name AS INT)\"))",
-    "reviewedExplanation": "In PySpark, use the cast() method: col(\"column_name\").cast(\"int\") or cast(\"integer\"). You can also use SQL-style casting with expr(\"CAST(col AS INT)\"). The cast() function is the standard way to convert data types in DataFrame operations."
+    "objective": "T1"
   },
   {
     "baselineId": "databricks-engineer-q-025",
@@ -244,10 +187,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-025",
     "domainId": "transformation",
-    "objective": "T2",
-    "originalAnswer": "INNER JOIN returns only matching rows from both tables; LEFT OUTER JOIN returns all rows from the left table and matching rows from the right",
-    "reviewedAnswer": "INNER JOIN returns only matching rows from both tables; LEFT OUTER JOIN returns all rows from the left table and matching rows from the right",
-    "reviewedExplanation": "INNER JOIN returns only rows that have matching values in both tables. LEFT OUTER JOIN (or LEFT JOIN) returns all rows from the left table and matched rows from the right; if no match exists, NULL values are returned for right table columns. RIGHT OUTER JOIN and FULL OUTER JOIN follow similar logic for the right table or both tables respectively."
+    "objective": "T2"
   },
   {
     "baselineId": "databricks-engineer-q-026",
@@ -255,10 +195,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-026",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "distinct() and dropDuplicates() both remove duplicate rows",
-    "reviewedAnswer": "distinct() and dropDuplicates() both remove duplicate rows",
-    "reviewedExplanation": "Both distinct() and dropDuplicates() remove duplicate rows from a DataFrame. dropDuplicates() can also take a list of columns to consider when identifying duplicates (df.dropDuplicates([\"col1\", \"col2\"])). distinct() considers all columns. Both return a new DataFrame with duplicates removed."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-027",
@@ -272,10 +209,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-028",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "RANK()",
-    "reviewedAnswer": "RANK()",
-    "reviewedExplanation": "RANK gives tied rows the same rank and skips subsequent positions. ROW_NUMBER gives each row a unique number; DENSE_RANK leaves no gaps. Specify the intended window ordering."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-029",
@@ -283,10 +217,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-029",
     "domainId": "transformation",
-    "objective": "T1",
-    "originalAnswer": "Replaces NULL values in specific columns with specified default values",
-    "reviewedAnswer": "Replaces NULL values in specific columns with specified default values",
-    "reviewedExplanation": "na.fill() replaces NULL values with specified values. The dictionary format allows different fill values for different columns - age NULLs become 0, name NULLs become \"Unknown\". To drop NULLs, use na.drop(). To replace specific values (not just NULLs), use na.replace()."
+    "objective": "T1"
   },
   {
     "baselineId": "databricks-engineer-q-030",
@@ -294,10 +225,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-030",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "Use MERGE INTO with WHEN MATCHED UPDATE to overwrite existing records and WHEN NOT MATCHED INSERT for new records",
-    "reviewedAnswer": "Use MERGE INTO with WHEN MATCHED UPDATE to overwrite existing records and WHEN NOT MATCHED INSERT for new records",
-    "reviewedExplanation": "MERGE INTO is the standard approach for SCD Type 1 (overwrite) and Type 2 (history tracking). For SCD Type 1: WHEN MATCHED UPDATE overwrites existing records, WHEN NOT MATCHED INSERT adds new records. This is atomic, efficient, and handles both updates and inserts in a single operation."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-031",
@@ -305,10 +233,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-031",
     "domainId": "governance",
-    "objective": "G1",
-    "originalAnswer": "Managed tables store data in the Databricks-managed location and are dropped with the table; external tables reference data in external storage",
-    "reviewedAnswer": "Unity Catalog manages data lifecycle for managed tables; external table files have a separately managed lifecycle",
-    "reviewedExplanation": "Both table types are catalog-governed. Managed tables use managed storage and lifecycle management, including recovery before purge after a drop. External tables reference customer-controlled locations, and dropping their metadata leaves the underlying data."
+    "objective": "G1"
   },
   {
     "baselineId": "databricks-engineer-q-032",
@@ -322,10 +247,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-033",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "It rotates data from rows into columns, aggregating values",
-    "reviewedAnswer": "It rotates data from rows into columns, aggregating values",
-    "reviewedExplanation": "PIVOT rotates row values into column headers, typically with aggregation. For example, converting month rows (Jan, Feb, Mar) into columns with SUM(sales) as values. UNPIVOT does the reverse (columns to rows). PIVOT is useful for cross-tab reports and transforming data for analysis."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-034",
@@ -333,10 +255,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-034",
     "domainId": "ingestion",
-    "objective": "I7",
-    "originalAnswer": ".option(\"inferSchema\", \"true\") or .option(\"multiline\", \"true\") for nested objects",
-    "reviewedAnswer": "spark.read.option(\"multiLine\", \"true\").json(path)",
-    "reviewedExplanation": "The Spark JSON reader infers a schema when none is supplied. multiLine permits a JSON document to span lines; nesting alone does not require it. For repeatable production loads, supply an explicit schema. inferSchema is not needed for the JSON reader."
+    "objective": "I7"
   },
   {
     "baselineId": "databricks-engineer-q-035",
@@ -350,10 +269,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-036",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "date_format()",
-    "reviewedAnswer": "date_format(ts, 'yyyy-MM-dd')",
-    "reviewedExplanation": "date_format returns a string in the specified pattern. to_timestamp parses or converts to a timestamp; current_date supplies the current date. from_unixtime expects epoch seconds and is not the direct formatter for a timestamp column."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-037",
@@ -361,10 +277,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-037",
     "domainId": "transformation",
-    "objective": "T2",
-    "originalAnswer": "5,000 rows (Cartesian product of all combinations)",
-    "reviewedAnswer": "5,000 rows (Cartesian product of all combinations)",
-    "reviewedExplanation": "CROSS JOIN produces the Cartesian product - every row from the first table paired with every row from the second table (100 × 50 = 5,000). Use with caution on large tables as it can produce massive results. CROSS JOIN is used when you need all possible combinations."
+    "objective": "T2"
   },
   {
     "baselineId": "databricks-engineer-q-038",
@@ -378,10 +291,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-039",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "To return a list of non-unique values from a group (aggregate function)",
-    "reviewedAnswer": "To return a list of non-unique values from a group (aggregate function)",
-    "reviewedExplanation": "COLLECT_LIST() is an aggregate function that returns a list of values (allows duplicates) from grouped rows. COLLECT_SET() returns unique values only. Both are useful for creating arrays from grouped data. Use with caution on large groups as it can create very large arrays."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-040",
@@ -389,10 +299,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-040",
     "domainId": "transformation",
-    "objective": "T6",
-    "originalAnswer": "CREATE VIEW (permanent view) or CREATE TEMPORARY VIEW (session-scoped)",
-    "reviewedAnswer": "CREATE VIEW main.gold.orders_v AS SELECT * FROM main.silver.orders",
-    "reviewedExplanation": "CREATE VIEW stores a permanent query definition. A temporary view is session scoped, a table stores rows, and a materialized view maintains stored results through refresh processing."
+    "objective": "T6"
   },
   {
     "baselineId": "databricks-engineer-q-041",
@@ -400,10 +307,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-041",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "Start date, end date (or NULL for current), and a current flag column",
-    "reviewedAnswer": "Validity start and end fields, optionally with an is_current flag",
-    "reviewedExplanation": "SCD Type 2 retains version rows with validity intervals. A current flag can simplify access but is not mandatory. Apply a correct staged MERGE or supported declarative CDC design; one matched source row cannot simply both update and insert through ordinary MERGE clauses."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-042",
@@ -411,10 +315,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-042",
     "domainId": "ingestion",
-    "objective": "I5",
-    "originalAnswer": "Use a JDBC query with a WHERE clause filtering on the timestamp column, and track the last processed timestamp",
-    "reviewedAnswer": "Read rows above the saved sequence, commit them to Delta, and then advance the saved sequence",
-    "reviewedExplanation": "A high-water mark can limit JDBC reads when the source reliably exposes changes. Advance it after a successful sink commit and make retries idempotent. Timestamp cursors need tie and late-update handling; this pattern does not capture deletes unless the source represents them."
+    "objective": "I5"
   },
   {
     "baselineId": "databricks-engineer-q-043",
@@ -422,10 +323,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-043",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "AND condition allows additional filtering on when to update matched rows",
-    "reviewedAnswer": "AND condition allows additional filtering on when to update matched rows",
-    "reviewedExplanation": "WHEN MATCHED AND condition adds an extra predicate to determine whether matched rows should be updated. For example: WHEN MATCHED AND source.update_flag = true THEN UPDATE SET... This allows conditional updates - only updating when certain criteria are met, even if the join condition matches."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-044",
@@ -433,10 +331,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-044",
     "domainId": "monitoring",
-    "objective": "M4",
-    "originalAnswer": "It compacts files within each partition AND applies Z-order clustering to improve query filtering on specified columns",
-    "reviewedAnswer": "It compacts files within each partition AND applies Z-order clustering to improve query filtering on specified columns",
-    "reviewedExplanation": "OPTIMIZE ... ZORDER BY on a partitioned table performs two optimizations: 1) File compaction (combining small files) within each partition, and 2) Multi-dimensional clustering (Z-ordering) on the specified columns within each partition. This is especially effective for filtered queries on high-cardinality columns."
+    "objective": "M4"
   },
   {
     "baselineId": "databricks-engineer-q-045",
@@ -444,10 +339,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-045",
     "domainId": "transformation",
-    "objective": "T2",
-    "originalAnswer": "Broadcast Hash Join using broadcast() hint",
-    "reviewedAnswer": "Broadcast Hash Join using broadcast() hint",
-    "reviewedExplanation": "Broadcast Hash Join is optimal when one table is small enough to fit in memory. Spark sends (broadcasts) the small table to all executor nodes, avoiding expensive shuffle of the large table. Use broadcast(smallDF) hint or Spark may auto-broadcast if configured. For large-large joins, Sort Merge Join is typically used."
+    "objective": "T2"
   },
   {
     "baselineId": "databricks-engineer-q-046",
@@ -455,10 +347,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-046",
     "domainId": "transformation",
-    "objective": "T3",
-    "originalAnswer": "It accesses data from a previous row in the same result set without self-join",
-    "reviewedAnswer": "It accesses data from a previous row in the same result set without self-join",
-    "reviewedExplanation": "LAG(column, offset, default_value) retrieves the value from a previous row at the specified offset (default 1) within the window partition. LEAD() looks ahead. This is useful for calculating differences between consecutive rows, like period-over-period changes. Unlike self-joins, LAG is efficient and concise."
+    "objective": "T3"
   },
   {
     "baselineId": "databricks-engineer-q-047",
@@ -472,10 +361,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-048",
     "domainId": "transformation",
-    "objective": "T2",
-    "originalAnswer": "LEFT SEMI JOIN returns rows from the left table where there is a match in the right; LEFT ANTI JOIN returns rows where there is NO match",
-    "reviewedAnswer": "LEFT SEMI JOIN returns rows from the left table where there is a match in the right; LEFT ANTI JOIN returns rows where there is NO match",
-    "reviewedExplanation": "LEFT SEMI JOIN returns only rows from the left table where the join key exists in the right table (like EXISTS). LEFT ANTI JOIN returns only rows from the left table where the join key does NOT exist in the right table (like NOT EXISTS). Neither returns columns from the right table. They're efficient for filtering based on existence."
+    "objective": "T2"
   },
   {
     "baselineId": "databricks-engineer-q-049",
@@ -483,10 +369,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-049",
     "domainId": "ingestion",
-    "objective": "I3",
-    "originalAnswer": "Parquet or Delta (schema is embedded in the file metadata)",
-    "reviewedAnswer": "Parquet",
-    "reviewedExplanation": "Parquet embeds typed schema information. Auto Loader defaults to strings for JSON and CSV inference unless inferColumnTypes is enabled. Delta tables are read using the Delta source, not cloudFiles.format=\"delta\"."
+    "objective": "I3"
   },
   {
     "baselineId": "databricks-engineer-q-050",
@@ -494,10 +377,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-050",
     "domainId": "transformation",
-    "objective": "T2",
-    "originalAnswer": "To define temporary result sets that can be referenced within a single query, improving readability and enabling recursion",
-    "reviewedAnswer": "A named intermediate query result available to that SQL statement",
-    "reviewedExplanation": "A common table expression names an intermediate query for use within one statement. It can clarify complex transformations; it does not persist data or guarantee materialization. Recursive forms require explicit supported syntax."
+    "objective": "T2"
   },
   {
     "baselineId": "databricks-engineer-q-051",
@@ -505,10 +385,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-051",
     "domainId": "transformation",
-    "objective": "T7",
-    "originalAnswer": "NOT NULL constraint added via ALTER TABLE ALTER COLUMN",
-    "reviewedAnswer": "ALTER TABLE main.silver.orders ALTER COLUMN order_id SET NOT NULL",
-    "reviewedExplanation": "SET NOT NULL declares an enforced column constraint and existing data must satisfy it. A CHECK expression can enforce other data predicates. Primary keys are informational and are not an interchangeable write-time nullability enforcement mechanism."
+    "objective": "T7"
   },
   {
     "baselineId": "databricks-engineer-q-052",
@@ -528,10 +405,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-054",
     "domainId": "transformation",
-    "objective": "T5",
-    "originalAnswer": "Redistributes the data into 100 partitions with full shuffle",
-    "reviewedAnswer": "Redistributes the data into 100 partitions with full shuffle",
-    "reviewedExplanation": "repartition(n) triggers a full shuffle to redistribute data into exactly n partitions. Use it when you need to change the number of partitions (e.g., before writing to maximize parallelism). coalesce() is preferred when reducing partitions without a full shuffle. repartition() can improve or hurt performance depending on usage."
+    "objective": "T5"
   },
   {
     "baselineId": "databricks-engineer-q-055",
@@ -539,10 +413,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-055",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "Use MERGE INTO with a subquery or join that sources from other tables in the USING clause",
-    "reviewedAnswer": "Use MERGE INTO with a subquery or join that sources from other tables in the USING clause",
-    "reviewedExplanation": "MERGE INTO with a complex USING clause (joining multiple tables or using subqueries) can handle multi-column updates based on complex logic in a single atomic operation. WHEN MATCHED THEN UPDATE SET can reference columns from the source tables. This is more efficient and atomic than multiple separate operations."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-056",
@@ -556,10 +427,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-057",
     "domainId": "transformation",
-    "objective": "T5",
-    "originalAnswer": "Use coalesce when reducing partitions to avoid full shuffle; use repartition when you need equal-sized partitions or increasing partitions",
-    "reviewedAnswer": "coalesce(n) with a smaller partition count",
-    "reviewedExplanation": "coalesce can reduce partitions without a full redistribution shuffle. repartition uses a shuffle to redistribute rows and can change partition counts in either direction. Avoid routinely forcing a large output into one partition, which can create a bottleneck."
+    "objective": "T5"
   },
   {
     "baselineId": "databricks-engineer-q-058",
@@ -567,10 +435,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-058",
     "domainId": "transformation",
-    "objective": "T5",
-    "originalAnswer": "UDFs act as black boxes to Catalyst optimizer which can limit optimization opportunities",
-    "reviewedAnswer": "Spark can better analyze and optimize it, and it avoids the usual Python UDF execution overhead",
-    "reviewedExplanation": "Built-in expressions expose their semantics to Spark and typically avoid Python serialization costs. Python UDFs can run on executors but provide fewer optimization opportunities. Choose and measure an implementation that meets the required semantics."
+    "objective": "T5"
   },
   {
     "baselineId": "databricks-engineer-q-059",
@@ -578,10 +443,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-059",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "A stream processing engine built on Spark SQL that treats streams as unbounded tables",
-    "reviewedAnswer": "Structured Streaming treats the input stream as an unbounded table",
-    "reviewedExplanation": "Structured Streaming is Spark's stream processing engine built on Spark SQL. It treats a data stream as an unbounded input table - new rows appended to the table represent new data in the stream. This unified programming model allows using the same operations (DataFrame/Dataset API) for both batch and streaming."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-060",
@@ -589,10 +451,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-060",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "To track progress and enable fault tolerance by saving state and offsets",
-    "reviewedAnswer": "To persist source progress and applicable state so a compatible query can recover",
-    "reviewedExplanation": "A checkpoint retains progress and state. Recovery depends on a compatible query and source, retained state, and sink semantics. Exactly-once end-to-end behavior also requires an appropriate sink; foreachBatch needs its own idempotency."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-061",
@@ -600,10 +459,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-061",
     "domainId": "ingestion",
-    "objective": "I3",
-    "originalAnswer": "Incrementally and efficiently processes new files as they arrive in cloud storage",
-    "reviewedAnswer": "Incremental discovery and processing of new files through the cloudFiles source",
-    "reviewedExplanation": "Auto Loader tracks file discovery and progress to ingest new files incrementally. A durable checkpoint enables recovery. It uses Structured Streaming APIs and can process bounded increments with AvailableNow; it is not a JDBC database connector."
+    "objective": "I3"
   },
   {
     "baselineId": "databricks-engineer-q-062",
@@ -611,10 +467,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-062",
     "domainId": "transformation",
-    "objective": "T6",
-    "originalAnswer": "A medallion architecture with Bronze (raw), Silver (cleaned), and Gold (aggregated) data layers",
-    "reviewedAnswer": "A medallion architecture with Bronze (raw), Silver (cleaned), and Gold (aggregated) data layers",
-    "reviewedExplanation": "The medallion architecture organizes data into three layers: Bronze (raw ingestion, data as-is), Silver (cleaned, conformed, deduplicated), and Gold (aggregated, business-level, analytics-ready). This pattern provides data quality progression while maintaining raw data for reprocessing. It is the standard best practice for Lakehouse implementations."
+    "objective": "T6"
   },
   {
     "baselineId": "databricks-engineer-q-063",
@@ -622,10 +475,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-063",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "Append mode",
-    "reviewedAnswer": "Append mode",
-    "reviewedExplanation": "Append mode only outputs new rows added to the result table since the last trigger. Complete mode outputs the entire result table. Update mode outputs only rows that were updated. Replace mode does not exist in Structured Streaming. Append is most common for stateless transformations writing to files or Delta tables."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-064",
@@ -633,10 +483,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-064",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "A method to capture and propagate changes made to data in a source system",
-    "reviewedAnswer": "Change Data Capture (CDC)",
-    "reviewedExplanation": "Change Data Capture (CDC) identifies and captures changes (inserts, updates, deletes) made to data in a source database, making them available for downstream systems. CDC enables incremental data loading without full table scans. Implementations include log-based CDC (reading transaction logs) and trigger-based CDC."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-065",
@@ -656,10 +503,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-067",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "Trigger Once processes all available data and stops; ProcessingTime runs continuously at specified intervals",
-    "reviewedAnswer": "trigger(availableNow=True)",
-    "reviewedExplanation": "AvailableNow processes the available backlog and terminates, respecting source rate limits through multiple batches. ProcessingTime continues polling. Trigger.Once is legacy and deprecated; AvailableNow is the preferred bounded incremental pattern."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-068",
@@ -667,10 +511,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-068",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "To provide a change log of row-level changes for incremental processing",
-    "reviewedAnswer": "Delta Change Data Feed (CDF)",
-    "reviewedExplanation": "Change Data Feed (CDF) tracks row-level changes (INSERT, UPDATE, DELETE) in Delta tables. When enabled, it maintains a history of changes that can be queried. This enables efficient incremental processing downstream - consumers can read only changed rows rather than full tables, and CDC-style workflows become simpler."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-069",
@@ -696,10 +537,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-072",
     "domainId": "transformation",
-    "objective": "T7",
-    "originalAnswer": "A data quality constraint that filters invalid records or fails the pipeline",
-    "reviewedAnswer": "A named Boolean data quality rule with configured retain, drop, or fail behavior for violations",
-    "reviewedExplanation": "Expectations define data quality rules. A basic expectation retains invalid rows and records metrics; DROP ROW removes them; FAIL UPDATE stops the affected update. Choose behavior according to the dataset quality contract."
+    "objective": "T7"
   },
   {
     "baselineId": "databricks-engineer-q-073",
@@ -713,10 +551,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-074",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "SELECT * FROM table_changes(\"table_name\", startVersion, endVersion)",
-    "reviewedAnswer": "SELECT * FROM table_changes(\"table_name\", startVersion, endVersion)",
-    "reviewedExplanation": "table_changes() is a Delta Lake function to query Change Data Feed. Specify start/end versions or timestamps: SELECT * FROM table_changes(\"my_table\", 1, 5). It returns changed rows with metadata columns (_change_type, _commit_version, _commit_timestamp) indicating what changed. CDF must be enabled on the table first."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-075",
@@ -724,10 +559,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-075",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "To perform custom logic on each micro-batch of a streaming query using DataFrame operations",
-    "reviewedAnswer": "foreachBatch",
-    "reviewedExplanation": "foreachBatch allows custom logic on each micro-batch as a DataFrame. It enables operations not directly supported by streaming sinks: using batch DataFrame writers, performing multiple writes, or applying custom transformations per batch. The function receives the batch DataFrame and batch ID as parameters."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-076",
@@ -735,10 +567,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-076",
     "domainId": "transformation",
-    "objective": "T4",
-    "originalAnswer": "Use Delta Lake MERGE with match conditions to deduplicate or idempotent writes",
-    "reviewedAnswer": "Deduplicate the source deterministically, then MERGE on the business key with retry-safe logic",
-    "reviewedExplanation": "Deduplicate source keys before MERGE, using a defined ordering if the latest change must win. Multiple matching source rows can make MERGE ambiguous; unmatched duplicates can also be inserted. ACID does not imply key uniqueness."
+    "objective": "T4"
   },
   {
     "baselineId": "databricks-engineer-q-077",
@@ -746,10 +575,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-077",
     "domainId": "transformation",
-    "objective": "T6",
-    "originalAnswer": "Append only outputs new rows; Complete outputs the entire updated result table",
-    "reviewedAnswer": "Complete emits the whole result table; append emits only newly finalized result rows when the query supports it",
-    "reviewedExplanation": "Complete emits the full aggregation result each trigger. Append emits rows that will no longer change, such as windows finalized by a watermark. Update emits changed results. Mode support depends on the query and sink."
+    "objective": "T6"
   },
   {
     "baselineId": "databricks-engineer-q-078",
@@ -769,10 +595,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-080",
     "domainId": "transformation",
-    "objective": "T1",
-    "originalAnswer": "Data cleansing, deduplication, type casting, joining with reference data",
-    "reviewedAnswer": "Data cleansing, deduplication, type casting, joining with reference data",
-    "reviewedExplanation": "The Silver layer applies data cleansing, validation, deduplication, normalization, and enrichment. It transforms raw Bronze data into clean, conformed datasets. Typical operations: casting types, handling nulls, removing duplicates, joining reference data, and basic filtering. Business aggregations belong in the Gold layer."
+    "objective": "T1"
   },
   {
     "baselineId": "databricks-engineer-q-081",
@@ -780,10 +603,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-081",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "It enables efficient incremental processing by reading only new data files added to the table",
-    "reviewedAnswer": "To process newly committed data incrementally using Delta transaction progress",
-    "reviewedExplanation": "A Delta streaming source tracks committed additions. An initial run can process existing data and then new commits. Updates and deletes need an appropriate design such as Change Data Feed; an append stream is not a general CDC feed."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-082",
@@ -803,10 +623,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-084",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "Delta Lake (idempotent writes with checkpointing)",
-    "reviewedAnswer": "A durable checkpoint and the Delta streaming sink transaction semantics",
-    "reviewedExplanation": "The Delta streaming sink combines transactions with tracked query progress to avoid duplicate commits on recovery. Keep the checkpoint stable. Output mode alone does not establish end-to-end delivery semantics."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-085",
@@ -814,10 +631,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-085",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "To process all available data and stop, with optimized resource usage",
-    "reviewedAnswer": "It processes data available at the start of the run and terminates after that backlog is handled",
-    "reviewedExplanation": "AvailableNow bounds a streaming run to the available backlog and may use multiple micro-batches. It does not itself autoscale compute. Retaining the checkpoint supports incremental progress between scheduled runs."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-086",
@@ -825,10 +639,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-086",
     "domainId": "ingestion",
-    "objective": "I3",
-    "originalAnswer": "It can detect and add new columns with mergeSchema option, or start a rescue data column",
-    "reviewedAnswer": "The stored schema is extended, the stream stops with a schema-change error, and a restart uses the new schema",
-    "reviewedExplanation": "Reader evolution is configured with cloudFiles.schemaEvolutionMode. addNewColumns records new fields and requires a restart; rescue captures unexpected fields without evolving the schema. Delta writer schema evolution is a separate concern."
+    "objective": "I3"
   },
   {
     "baselineId": "databricks-engineer-q-087",
@@ -860,10 +671,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-091",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "Use foreachBatch with idempotent inserts based on a unique key or transaction semantics",
-    "reviewedAnswer": "Implement sink-side idempotency using batch or record keys and suitable transaction logic",
-    "reviewedExplanation": "foreachBatch provides at-least-once callback execution. A retry may repeat a batch. Design upserts or a transactionally maintained batch ledger to avoid duplicate effects. A checkpoint alone cannot make a non-idempotent external sink exactly-once."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-092",
@@ -871,10 +679,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-092",
     "domainId": "monitoring",
-    "objective": "M3",
-    "originalAnswer": "Large state can cause slow processing, memory pressure, and longer checkpointing times",
-    "reviewedAnswer": "More state can increase memory use, state access work, and checkpoint overhead",
-    "reviewedExplanation": "Stateful operators retain information across batches. Growing state can increase resource pressure and checkpoint costs. Check the operator metrics and use valid watermark or timeout semantics to bound state when the business logic permits."
+    "objective": "M3"
   },
   {
     "baselineId": "databricks-engineer-q-093",
@@ -882,10 +687,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-093",
     "domainId": "ingestion",
-    "objective": "I3",
-    "originalAnswer": "To persist the inferred schema across stream restarts, enabling schema evolution tracking",
-    "reviewedAnswer": "The inferred input schema and its evolution history",
-    "reviewedExplanation": "schemaLocation persists Auto Loader schema metadata. checkpointLocation tracks streaming progress and state. They have different purposes, even though some configurations use the same physical directory. Independent queries need independent checkpoints."
+    "objective": "I3"
   },
   {
     "baselineId": "databricks-engineer-q-094",
@@ -923,10 +725,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-099",
     "domainId": "monitoring",
-    "objective": "M3",
-    "originalAnswer": "Streaming state grows without bound because every unique key must be retained indefinitely to detect duplicates",
-    "reviewedAnswer": "Previously seen keys may need to remain in state indefinitely",
-    "reviewedExplanation": "Without a valid state eviction rule, deduplication retains previously seen keys to detect later repeats, so state can grow without bound. A watermark-based design bounds state according to the lateness policy; it is not a promise to remember duplicates forever."
+    "objective": "M3"
   },
   {
     "baselineId": "databricks-engineer-q-100",
@@ -940,10 +739,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-101",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "To orchestrate and schedule data pipelines, jobs, and tasks with dependencies",
-    "reviewedAnswer": "To orchestrate and schedule data pipelines, jobs, and tasks with dependencies",
-    "reviewedExplanation": "Databricks Workflows is the orchestration service for scheduling and running jobs composed of tasks (notebooks, JARs, Python, SQL, Delta Live Tables). It supports task dependencies, retries, notifications, and monitoring. Workflows enables production deployment of data pipelines with reliable execution and error handling."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-102",
@@ -957,10 +753,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-103",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "To define the order of task execution based on upstream task completion and success",
-    "reviewedAnswer": "Depend on both tasks with All succeeded",
-    "reviewedExplanation": "Task dependencies and run-if conditions define the execution graph. All succeeded requires every dependency to succeed. Other run-if conditions support recovery or partial-success flows, so successful upstream execution is not required for every possible task configuration."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-104",
@@ -968,10 +761,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-104",
     "domainId": "jobs",
-    "objective": "J3",
-    "originalAnswer": "0 3 * * *",
-    "reviewedAnswer": "0 0 3 * * ?",
-    "reviewedExplanation": "Databricks advanced schedules use Quartz cron syntax with a seconds field. 0 0 3 * * ? means second 0, minute 0, hour 3, every day and month, with no specific day-of-week. Set the time zone explicitly."
+    "objective": "J3"
   },
   {
     "baselineId": "databricks-engineer-q-105",
@@ -979,10 +769,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-105",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "The task is retried based on configuration before marking the job as failed",
-    "reviewedAnswer": "Retry attempts after the initial attempt, up to the configured limit",
-    "reviewedExplanation": "Retry settings control additional task attempts and intervals. They can recover transient failures but do not fix deterministic data or code errors. Final job outcome also depends on downstream control flow and leaf tasks."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-106",
@@ -990,10 +777,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-106",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "Use taskValues (dbutils.jobs.taskValues) to set and get values between tasks in the same job run",
-    "reviewedAnswer": "Use taskValues (dbutils.jobs.taskValues) to set and get values between tasks in the same job run",
-    "reviewedExplanation": "dbutils.jobs.taskValues.set() and get() enable passing key-value pairs between tasks in a multi-task job. A task sets a value: dbutils.jobs.taskValues.set(\"key\", value). Downstream tasks retrieve it: dbutils.jobs.taskValues.get(\"upstream_task\", \"key\"). This enables dynamic workflows where later tasks use outputs from earlier tasks."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-107",
@@ -1001,10 +785,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-107",
     "domainId": "jobs",
-    "objective": "J3",
-    "originalAnswer": "To automatically run jobs at specified times or intervals",
-    "reviewedAnswer": "To automatically run jobs at specified times or intervals",
-    "reviewedExplanation": "Job schedules automatically trigger job runs at defined times or intervals using cron expressions (e.g., daily at midnight, hourly). This enables automation of ETL pipelines, reports, and maintenance tasks without manual intervention. Schedules can be paused, modified, or triggered on-demand."
+    "objective": "J3"
   },
   {
     "baselineId": "databricks-engineer-q-108",
@@ -1012,10 +793,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-108",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "A way to run production workloads including notebooks, Python, JAR files, or SQL on a schedule or on-demand",
-    "reviewedAnswer": "An orchestration resource containing tasks and configuration for running workloads",
-    "reviewedExplanation": "A job groups tasks with dependencies, parameters, and execution settings. It can be triggered manually, by a schedule, or by data events. Tasks can use supported serverless, jobs compute, or SQL warehouse options according to task type."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-109",
@@ -1029,10 +807,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-110",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "A single execution of a job with a specific start time, status, and logs",
-    "reviewedAnswer": "A single execution of a job with a specific start time, status, and logs",
-    "reviewedExplanation": "A Run represents a single execution of a job. Each run has a unique run ID, start/end times, status (pending, running, succeeded, failed), and output logs. You can view run history, compare runs, and rerun specific runs. Runs enable tracking job execution history and debugging failures."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-111",
@@ -1040,10 +815,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-111",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "To control how many instances of the same job can run simultaneously",
-    "reviewedAnswer": "To control how many instances of the same job can run simultaneously",
-    "reviewedExplanation": "max_concurrent_runs limits simultaneous executions of the same job. Default is 1 (only one run at a time). If a new run is triggered while another is running, it queues or skips based on configuration. This prevents resource exhaustion and conflicting operations on the same data."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-112",
@@ -1051,10 +823,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-112",
     "domainId": "cicd",
-    "objective": "C3",
-    "originalAnswer": "A collection of resources (notebooks, jobs, pipelines) defined as code for CI/CD deployment",
-    "reviewedAnswer": "Versioned configuration and code for reproducible deployment of jobs, pipelines, and related workspace resources",
-    "reviewedExplanation": "Bundles, formerly Databricks Asset Bundles, package resource definitions and code for development and CI/CD. They integrate with Git and the Databricks CLI. They do not replace tests or automatically grant privileges."
+    "objective": "C3"
   },
   {
     "baselineId": "databricks-engineer-q-113",
@@ -1062,10 +831,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-113",
     "domainId": "jobs",
-    "objective": "J4",
-    "originalAnswer": "To manually trigger a job run immediately, regardless of schedule",
-    "reviewedAnswer": "To manually trigger a job run immediately, regardless of schedule",
-    "reviewedExplanation": "Run Now manually triggers a job execution immediately without waiting for the scheduled time. This is useful for: testing job changes, backfilling data, or ad-hoc execution. The run appears in the job history alongside scheduled runs with the same logging and monitoring."
+    "objective": "J4"
   },
   {
     "baselineId": "databricks-engineer-q-114",
@@ -1073,10 +839,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-114",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "To pass dynamic values into notebooks or scripts at runtime, enabling reusable job templates",
-    "reviewedAnswer": "Job parameters supplied to the notebook and read through the appropriate parameter interface",
-    "reviewedExplanation": "Job parameters make workload code reusable, and run-specific values can override defaults. Notebook code can read parameters through widgets; other task types have their own parameter interfaces. Configuration parameters are distinct from compute sizing."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-115",
@@ -1084,10 +847,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-115",
     "domainId": "cicd",
-    "objective": "C4",
-    "originalAnswer": "To interact with Databricks programmatically: manage clusters, jobs, workspaces, and run commands from local machines or CI/CD pipelines",
-    "reviewedAnswer": "To interact with Databricks programmatically: manage clusters, jobs, workspaces, and run commands from local machines or CI/CD pipelines",
-    "reviewedExplanation": "The Databricks CLI enables programmatic interaction with Databricks: create/manage clusters, submit jobs, import/export notebooks, manage Unity Catalog objects, deploy Asset Bundles, and more. It is essential for automation, CI/CD pipelines, and scripting Databricks operations."
+    "objective": "C4"
   },
   {
     "baselineId": "databricks-engineer-q-116",
@@ -1101,10 +861,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-117",
     "domainId": "governance",
-    "objective": "G2",
-    "originalAnswer": "To enforce constraints on cluster configurations (instance types, cost limits, auto-termination) for governance",
-    "reviewedAnswer": "To enforce constraints on cluster configurations (instance types, cost limits, auto-termination) for governance",
-    "reviewedExplanation": "Cluster policies enforce rules on cluster creation: allowed instance types, max DBU/hour, auto-termination requirements, enabled/disabled settings. They help control costs, ensure security compliance, and standardize configurations. Users must select from policy-compliant options when creating clusters."
+    "objective": "G2"
   },
   {
     "baselineId": "databricks-engineer-q-118",
@@ -1112,10 +869,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-118",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "Use job parameters passed to a notebook that dynamically constructs the source query based on the parameter value",
-    "reviewedAnswer": "Validate the source identifier against an allowlist, then read the selected named table",
-    "reviewedExplanation": "Use runtime parameters to reuse workload code. Validate any identifier against the intended catalog/schema or approved choices, and use the supported table reader or identifier parameterization. Parameterization does not grant access to otherwise unauthorized tables."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-119",
@@ -1123,10 +877,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-119",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "To define the maximum time a task can run before being automatically terminated",
-    "reviewedAnswer": "To define the maximum time a task can run before being automatically terminated",
-    "reviewedExplanation": "Task timeout (in DLT and job tasks) sets the maximum duration before automatic termination. This prevents runaway tasks from consuming resources indefinitely. If timeout is reached, the task fails. Useful for: preventing hung queries, controlling costs, and ensuring SLAs are met."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-120",
@@ -1140,10 +891,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-121",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "When enabled, new job runs queue instead of being skipped if max concurrent runs is reached",
-    "reviewedAnswer": "It waits in the queue for available capacity, subject to queue limits",
-    "reviewedExplanation": "Queuing lets eligible runs wait instead of being immediately skipped when capacity limits apply. Runs remain subject to queue lifetime and other platform limits. This is separate from the number of parallel tasks inside a run."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-122",
@@ -1157,10 +905,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-123",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "To re-run failed tasks and their downstream dependencies without re-running successful upstream tasks",
-    "reviewedAnswer": "Use Repair run to rerun failed or selected affected tasks and their required downstream work",
-    "reviewedExplanation": "Repair run re-executes failed or selected tasks within the job run recovery workflow. Successful upstream work can be preserved. Compute restart and job run repair are different operations; validate the repaired result."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-124",
@@ -1168,10 +913,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-124",
     "domainId": "cicd",
-    "objective": "C3",
-    "originalAnswer": "Use Databricks Asset Bundles with environment-specific configuration files and CI/CD pipelines",
-    "reviewedAnswer": "Use Declarative Automation Bundles with environment-specific configuration files and CI/CD pipelines",
-    "reviewedExplanation": "Databricks Asset Bundles (DABs) define jobs as YAML files with environment-specific overrides. Use the same bundle with different target environments (databricks bundle deploy -t dev/staging/prod). CI/CD pipelines automate testing and promotion. This ensures consistency across environments."
+    "objective": "C3"
   },
   {
     "baselineId": "databricks-engineer-q-125",
@@ -1185,10 +927,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-126",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "To ensure each job run starts with a clean environment, preventing interference from previous runs",
-    "reviewedAnswer": "To reduce interference from state or libraries left by previous interactive sessions",
-    "reviewedExplanation": "Run-scoped jobs compute reduces environmental interference from interactive use. It still needs explicit dependency configuration and data access permissions. Shared task compute within one run does not establish isolation between task code states."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-127",
@@ -1196,10 +935,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-127",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "To iterate over a collection (like files or partitions) and run a task for each item in parallel",
-    "reviewedAnswer": "For each with configured concurrency",
-    "reviewedExplanation": "For each invokes a nested task for input array elements. Concurrency is configurable; iteration is not necessarily fully parallel. The nested task receives the current input value through a dynamic reference."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-128",
@@ -1207,10 +943,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-128",
     "domainId": "jobs",
-    "objective": "J2",
-    "originalAnswer": "To control which users and groups can view, edit, run, or manage the job",
-    "reviewedAnswer": "To control which principals can view, trigger, or manage the orchestration resource",
-    "reviewedExplanation": "Job permissions control access to the job resource. Data access during execution is checked against the Run as identity and the relevant data privileges. Permission labels and operations follow the current job ACL model; job ownership is separate from execution identity."
+    "objective": "J2"
   },
   {
     "baselineId": "databricks-engineer-q-129",
@@ -1218,10 +951,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-129",
     "domainId": "cicd",
-    "objective": "C4",
-    "originalAnswer": "To deploy Databricks resources defined in an Asset Bundle to a target workspace",
-    "reviewedAnswer": "To deploy Databricks resources defined in an Declarative Automation Bundle to a target workspace",
-    "reviewedExplanation": "databricks bundle deploy deploys resources defined in databricks.yml (jobs, pipelines, notebooks, queries) to the specified target workspace. It validates the bundle, creates/updates resources, and handles dependencies. This enables infrastructure-as-code deployment from local development or CI/CD pipelines."
+    "objective": "C4"
   },
   {
     "baselineId": "databricks-engineer-q-130",
@@ -1229,10 +959,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-130",
     "domainId": "monitoring",
-    "objective": "M2",
-    "originalAnswer": "To persist driver and executor logs to DBFS or cloud storage for debugging after cluster termination",
-    "reviewedAnswer": "Cluster log delivery to a supported durable location",
-    "reviewedExplanation": "Configure log delivery to durable storage before the run. Retained logs help investigate failures after compute terminates. This is separate from Spark streaming checkpoints and Delta table history."
+    "objective": "M2"
   },
   {
     "baselineId": "databricks-engineer-q-131",
@@ -1240,10 +967,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-131",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "A task that executes different branches based on the result of an IF/ELSE condition",
-    "reviewedAnswer": "A task that executes different branches based on the result of an IF/ELSE condition",
-    "reviewedExplanation": "Conditional (IF/ELSE) tasks enable branching logic - they evaluate a condition and execute the true or false branch accordingly. This enables dynamic pipelines that adapt based on: presence of data, quality check results, or previous task outcomes. Different downstream paths can be taken based on runtime conditions."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-132",
@@ -1251,10 +975,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-132",
     "domainId": "governance",
-    "objective": "G2",
-    "originalAnswer": "To specify the identity (user or service principal) used for permissions when the job runs",
-    "reviewedAnswer": "The job Run as user or service principal",
-    "reviewedExplanation": "The notebook workload uses the configured Run as identity for its data authorization. The job owner and viewers are distinct concepts. Other task types, such as dashboards published with shared data permissions, can have documented identity exceptions."
+    "objective": "G2"
   },
   {
     "baselineId": "databricks-engineer-q-133",
@@ -1262,10 +983,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-133",
     "domainId": "cicd",
-    "objective": "C4",
-    "originalAnswer": "To check the syntax and configuration of a Databricks Asset Bundle without deploying",
-    "reviewedAnswer": "To check the syntax and configuration of a Declarative Automation Bundle without deploying",
-    "reviewedExplanation": "databricks bundle validate checks the bundle configuration for errors: valid YAML syntax, correct resource definitions, valid references, and environment configurations. It catches issues before deployment. Run this in CI/CD pipelines and before deploy to ensure bundle correctness."
+    "objective": "C4"
   },
   {
     "baselineId": "databricks-engineer-q-134",
@@ -1279,10 +997,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-135",
     "domainId": "transformation",
-    "objective": "T7",
-    "originalAnswer": "Use Delta Live Tables expectations with FAIL action or implement checks that raise exceptions in notebooks",
-    "reviewedAnswer": "Raise an exception when the validation fails",
-    "reviewedExplanation": "Raising an exception fails a notebook task unless it is caught and suppressed. notebook.exit returns a value and is not a failure signal by itself. Declarative pipeline FAIL UPDATE expectations provide a separate mechanism for pipeline quality failures."
+    "objective": "T7"
   },
   {
     "baselineId": "databricks-engineer-q-136",
@@ -1290,10 +1005,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-136",
     "domainId": "monitoring",
-    "objective": "M2",
-    "originalAnswer": "Configure job duration threshold alerts in notifications and set appropriate task timeouts",
-    "reviewedAnswer": "Configure duration warning notifications and suitable task timeouts",
-    "reviewedExplanation": "A duration warning signals slow execution, while a timeout limits how long a task is allowed to run. Monitor historical baselines and failure patterns. Notification delivery depends on its configured destinations."
+    "objective": "M2"
   },
   {
     "baselineId": "databricks-engineer-q-137",
@@ -1301,10 +1013,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-137",
     "domainId": "jobs",
-    "objective": "J1",
-    "originalAnswer": "Use FOR EACH tasks for fan-out (parallel processing), then a dependent task for fan-in (collecting results)",
-    "reviewedAnswer": "Depend on the For each container with an all-succeeded condition",
-    "reviewedExplanation": "Downstream tasks depend on the For each container. An all-succeeded condition waits for successful completion, rather than relying on an individual iteration or an elapsed-time guess."
+    "objective": "J1"
   },
   {
     "baselineId": "databricks-engineer-q-138",
@@ -1312,10 +1021,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-138",
     "domainId": "cicd",
-    "objective": "C4",
-    "originalAnswer": "To deploy and immediately run a job or pipeline defined in a Databricks Asset Bundle",
-    "reviewedAnswer": "Starts the named deployed bundle resource for the prod target",
-    "reviewedExplanation": "bundle run runs a specified bundle resource; deploy changes first with bundle deploy. validate checks configuration. Selecting a target controls the environment to which the command applies."
+    "objective": "C4"
   },
   {
     "baselineId": "databricks-engineer-q-139",
@@ -1329,10 +1035,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-140",
     "domainId": "monitoring",
-    "objective": "M5",
-    "originalAnswer": "To run initialization code when a cluster starts, such as installing libraries or configuring settings",
-    "reviewedAnswer": "Cluster events and init-script logs for the failing startup command",
-    "reviewedExplanation": "Init scripts run during classic compute initialization. A failing command or missing dependency can prevent startup, so inspect startup events and logs. Use supported governed script locations for the access mode; legacy DBFS script storage should not be assumed."
+    "objective": "M5"
   },
   {
     "baselineId": "databricks-engineer-q-141",
@@ -1340,10 +1043,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-141",
     "domainId": "monitoring",
-    "objective": "M5",
-    "originalAnswer": "To install libraries on a specific cluster, available to all notebooks running on that cluster",
-    "reviewedAnswer": "The specified compute resource, subject to its runtime and access-mode support",
-    "reviewedExplanation": "Compute-scoped libraries are configured for a particular compute resource. Supported package sources and behavior depend on runtime and access mode. Specify compatible versions and inspect installation status if the workload reports missing or conflicting dependencies."
+    "objective": "M5"
   },
   {
     "baselineId": "databricks-engineer-q-142",
@@ -1357,10 +1057,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-143",
     "domainId": "governance",
-    "objective": "G2",
-    "originalAnswer": "A unified governance solution for data and AI across clouds with centralized access control and auditing",
-    "reviewedAnswer": "A unified governance solution for data and AI across clouds with centralized access control and auditing",
-    "reviewedExplanation": "Unity Catalog provides unified governance across Databricks workspaces and clouds: Centralized metastore for all data assets, Fine-grained access control (RBAC), Data lineage and auditing, Data discovery and tagging, Cross-cloud data sharing. It is the recommended approach for data governance on Databricks."
+    "objective": "G2"
   },
   {
     "baselineId": "databricks-engineer-q-144",
@@ -1368,10 +1065,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-144",
     "domainId": "governance",
-    "objective": "G2",
-    "originalAnswer": "To manage access permissions on catalog objects (tables, schemas, volumes)",
-    "reviewedAnswer": "Add and remove specified privileges for users, groups, or service principals",
-    "reviewedExplanation": "GRANT assigns privileges on securable objects; REVOKE removes a specified grant. Effective access can still come from groups or parent grants. Row filters and column masks are policies or functions and are not simply row-level GRANT statements."
+    "objective": "G2"
   },
   {
     "baselineId": "databricks-engineer-q-145",
@@ -1385,10 +1079,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-146",
     "domainId": "governance",
-    "objective": "G4",
-    "originalAnswer": "To label data with metadata (PII, sensitivity, domain) for discovery and governance",
-    "reviewedAnswer": "A classification attribute that can be used by discovery and suitably configured policies",
-    "reviewedExplanation": "Tags classify data. Security enforcement requires applicable privileges, masks, filters, or ABAC policies. ABAC policy conditions use governed tags, so a plain descriptive label should not be assumed to create access restrictions."
+    "objective": "G4"
   },
   {
     "baselineId": "databricks-engineer-q-147",
@@ -1396,10 +1087,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-147",
     "domainId": "governance",
-    "objective": "G1",
-    "originalAnswer": "To store metadata about data assets including schemas, tables, and permissions",
-    "reviewedAnswer": "To store metadata about data assets including schemas, tables, and permissions",
-    "reviewedExplanation": "The Unity Catalog metastore stores: Table schemas and locations, Partition information, Column statistics, Access control lists, Data lineage, Tags and comments. It provides a unified view of data across cloud storage locations. Multiple workspaces can share a metastore."
+    "objective": "G1"
   },
   {
     "baselineId": "databricks-engineer-q-148",
@@ -1413,10 +1101,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-149",
     "domainId": "governance",
-    "objective": "G1",
-    "originalAnswer": "catalog.schema.table",
-    "reviewedAnswer": "Catalog, schema, table",
-    "reviewedExplanation": "The three-part namespace is catalog.schema.table. A schema is also called a database in some interfaces, so those names are not mutually exclusive distractors. Using a fully qualified name avoids dependence on the current catalog and schema."
+    "objective": "G1"
   },
   {
     "baselineId": "databricks-engineer-q-150",
@@ -1424,10 +1109,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-150",
     "domainId": "governance",
-    "objective": "G3",
-    "originalAnswer": "To restrict which rows users can see based on their identity or group membership",
-    "reviewedAnswer": "Restrict the rows returned to a querying principal according to a predicate",
-    "reviewedExplanation": "A row filter determines row visibility at query time using a Boolean function. It can use account group membership or identity attributes. It does not physically delete filtered data, and users still need the necessary object privileges."
+    "objective": "G3"
   },
   {
     "baselineId": "databricks-engineer-q-151",
@@ -1435,10 +1117,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-151",
     "domainId": "governance",
-    "objective": "G3",
-    "originalAnswer": "To obfuscate sensitive column data (like showing only last 4 digits of SSN) based on user permissions",
-    "reviewedAnswer": "To obfuscate sensitive column data (like showing only last 4 digits of SSN) based on user permissions",
-    "reviewedExplanation": "Column masks dynamically transform column values based on the querying user's permissions. Examples: Show NULL for unauthorized users, Show partial data (XXX-XX-1234 for SSN), Show hashed values. Masks are applied automatically in queries without changing the underlying data."
+    "objective": "G3"
   },
   {
     "baselineId": "databricks-engineer-q-152",
@@ -1446,10 +1125,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-152",
     "domainId": "governance",
-    "objective": "G2",
-    "originalAnswer": "ALL PRIVILEGES includes all permissions; MANAGE is specific to administrative actions like granting permissions to others",
-    "reviewedAnswer": "ALL PRIVILEGES does not include MANAGE; MANAGE concerns administration such as privilege management and does not by itself grant data reads",
-    "reviewedExplanation": "ALL PRIVILEGES expands to applicable privileges with documented exclusions, including MANAGE and external-use privileges. MANAGE is administrative. Reading table data still needs SELECT and the required parent usage privileges."
+    "objective": "G2"
   },
   {
     "baselineId": "databricks-engineer-q-153",
@@ -1457,10 +1133,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-153",
     "domainId": "governance",
-    "objective": "G3",
-    "originalAnswer": "Create a dynamic view with WHERE clauses using CURRENT_USER() or IS_MEMBER() functions",
-    "reviewedAnswer": "is_account_group_member()",
-    "reviewedExplanation": "is_account_group_member checks account-level group membership. is_member is associated with workspace-local groups and is not interchangeable for every Unity Catalog account group. Define the view predicate using the intended identity model."
+    "objective": "G3"
   },
   {
     "baselineId": "databricks-engineer-q-154",
@@ -1474,10 +1147,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-155",
     "domainId": "governance",
-    "objective": "G1",
-    "originalAnswer": "To manage access to non-tabular data files (CSV, JSON, images, ML models) with governance",
-    "reviewedAnswer": "A volume",
-    "reviewedExplanation": "Volumes govern access to non-tabular files. The path convention is /Volumes/catalog/schema/volume/..., with appropriate parent usage and volume privileges. A volume is not a replacement for registering a managed Delta table through its table name."
+    "objective": "G1"
   },
   {
     "baselineId": "databricks-engineer-q-156",
@@ -1491,10 +1161,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-157",
     "domainId": "governance",
-    "objective": "G1",
-    "originalAnswer": "Managed tables store data in Unity Catalog storage with full lifecycle management; external tables reference existing data locations",
-    "reviewedAnswer": "CREATE TABLE main.bronze.events USING DELTA LOCATION 's3://example-bucket/events/'",
-    "reviewedExplanation": "An explicit supported external LOCATION creates an external table over data at that location. The creator needs the required parent and external-location privileges. A managed table without LOCATION uses managed storage; a volume governs files rather than registering a table."
+    "objective": "G1"
   },
   {
     "baselineId": "databricks-engineer-q-158",
@@ -1502,10 +1169,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-158",
     "domainId": "governance",
-    "objective": "G3",
-    "originalAnswer": "Use column masks, apply appropriate tags, restrict access, and consider pseudonymization",
-    "reviewedAnswer": "Use column masks, apply appropriate tags, restrict access, and consider pseudonymization",
-    "reviewedExplanation": "PII handling: Tag columns with PII classification, Apply column masks to limit visibility (show NULL or masked values for unauthorized users), Restrict access through RLS or table permissions, Use encryption for storage, Consider pseudonymization/anonymization for analytics, Audit access to PII columns."
+    "objective": "G3"
   },
   {
     "baselineId": "databricks-engineer-q-159",
@@ -1519,10 +1183,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-160",
     "domainId": "governance",
-    "objective": "G3",
-    "originalAnswer": "To enforce data quality rules at the database level, preventing invalid data from being stored",
-    "reviewedAnswer": "CHECK validates writes; a row filter or dynamic view is needed for identity-dependent row visibility",
-    "reviewedExplanation": "CHECK and NOT NULL constraints enforce data quality at write time. Row filters and dynamic views govern which stored rows readers can see. Quality validation and security policies solve different requirements and can be used together."
+    "objective": "G3"
   },
   {
     "baselineId": "databricks-engineer-q-161",
@@ -1536,10 +1197,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-162",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "An ordered record of all commits (JSON files and periodic checkpoints) describing changes to the table",
-    "reviewedAnswer": "An ordered record of all commits (JSON files and periodic checkpoints) describing changes to the table",
-    "reviewedExplanation": "The _delta_log directory holds an ordered series of JSON commit files (and periodic Parquet checkpoints) that record every transaction. Reading the log lets Delta reconstruct the current table state and provides ACID guarantees and time travel."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-163",
@@ -1547,10 +1205,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-163",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "Time travel using VERSION AS OF or TIMESTAMP AS OF",
-    "reviewedAnswer": "Time travel using VERSION AS OF or TIMESTAMP AS OF",
-    "reviewedExplanation": "Delta Lake time travel lets you read an earlier table snapshot with SELECT ... VERSION AS OF n or TIMESTAMP AS OF '...'. It relies on the transaction log and on data files still being retained (not yet removed by VACUUM)."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-164",
@@ -1576,10 +1231,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-167",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "ACID transactions backed by optimistic concurrency control",
-    "reviewedAnswer": "ACID transactions backed by optimistic concurrency control",
-    "reviewedExplanation": "Delta Lake provides ACID transactions using optimistic concurrency control on the transaction log. Commits are atomic and isolated, so a write fully succeeds or leaves the table unchanged, even when multiple jobs write concurrently."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-168",
@@ -1599,10 +1251,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-170",
     "domainId": "governance",
-    "objective": "G1",
-    "originalAnswer": "They are deleted (or marked for deletion) because Databricks manages the data lifecycle",
-    "reviewedAnswer": "The table has a recovery period, after which its managed data is eligible for asynchronous deletion",
-    "reviewedExplanation": "Managed tables include lifecycle handling and support recovery of recently dropped tables. Purge happens after the recovery period; do not assume immediate physical erasure. External table drops leave the external data files."
+    "objective": "G1"
   },
   {
     "baselineId": "databricks-engineer-q-171",
@@ -1610,10 +1259,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-171",
     "domainId": "cicd",
-    "objective": "C1",
-    "originalAnswer": "Use Databricks Git folders (Repos) to clone and sync with a remote Git provider",
-    "reviewedAnswer": "Push the branch and create a pull request in the Git provider",
-    "reviewedExplanation": "A local commit records history in the Git folder. Pushing publishes commits to the remote branch, where a pull request supports review before merging. Notebook history and table time travel do not publish a Git branch."
+    "objective": "C1"
   },
   {
     "baselineId": "databricks-engineer-q-172",
@@ -1627,10 +1273,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-173",
     "domainId": "platform",
-    "objective": "P2",
-    "originalAnswer": "Providing compute to run SQL queries and power BI/dashboard workloads on the lakehouse",
-    "reviewedAnswer": "Providing compute to run SQL queries and power BI/dashboard workloads on the lakehouse",
-    "reviewedExplanation": "A SQL warehouse (formerly SQL endpoint) is compute optimized for running SQL queries against lakehouse data and serving BI tools and Databricks SQL dashboards. Serverless SQL warehouses start almost instantly and auto-scale."
+    "objective": "P2"
   },
   {
     "baselineId": "databricks-engineer-q-174",
@@ -1650,10 +1293,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-176",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "Backend services such as the web UI, notebooks, job scheduling, and cluster management",
-    "reviewedAnswer": "Workspace UI, APIs, and job scheduling and compute management services",
-    "reviewedExplanation": "The control plane provides workspace and orchestration services. Processing runs in a compute plane: classic compute uses customer cloud resources, whereas serverless compute uses Databricks-managed resources. Do not generalize the classic deployment location to serverless."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-177",
@@ -1661,10 +1301,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-177",
     "domainId": "ingestion",
-    "objective": "I1",
-    "originalAnswer": "Bronze",
-    "reviewedAnswer": "Bronze",
-    "reviewedExplanation": "The medallion architecture flows Bronze (raw ingested data) to Silver (cleaned, conformed, deduplicated) to Gold (business-level aggregates). Each hop progressively improves data quality and structure."
+    "objective": "I1"
   },
   {
     "baselineId": "databricks-engineer-q-178",
@@ -1672,10 +1309,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-178",
     "domainId": "transformation",
-    "objective": "T6",
-    "originalAnswer": "Business-level aggregates and curated tables ready for analytics and reporting",
-    "reviewedAnswer": "Business-level aggregates and curated tables ready for analytics and reporting",
-    "reviewedExplanation": "Gold tables hold curated, business-level aggregates and project-specific datasets optimized for BI, dashboards, and ML features. Bronze holds raw data and Silver holds cleaned, conformed data at a finer grain."
+    "objective": "T6"
   },
   {
     "baselineId": "databricks-engineer-q-179",
@@ -1695,10 +1329,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-181",
     "domainId": "monitoring",
-    "objective": "M1",
-    "originalAnswer": "A log of operations (writes, merges, optimizes, etc.) with version numbers, timestamps, and operation metrics",
-    "reviewedAnswer": "Compare its run history and task durations with earlier comparable runs",
-    "reviewedExplanation": "Job run history provides previous durations, statuses, and task details. Compare runs with similar inputs and configurations before attributing a slowdown. Delta DESCRIBE HISTORY describes table transactions and is not a replacement for job execution history."
+    "objective": "M1"
   },
   {
     "baselineId": "databricks-engineer-q-182",
@@ -1712,10 +1343,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-183",
     "domainId": "platform",
-    "objective": "P2",
-    "originalAnswer": "Compute starts in seconds and is fully managed by Databricks, reducing idle cost and startup latency",
-    "reviewedAnswer": "A serverless SQL warehouse",
-    "reviewedExplanation": "A serverless SQL warehouse provides managed SQL compute with fast startup and scaling. It still uses Unity Catalog access controls. Total cost depends on workload and usage; serverless is not a guarantee of a lower bill."
+    "objective": "P2"
   },
   {
     "baselineId": "databricks-engineer-q-184",
@@ -1747,10 +1375,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-188",
     "domainId": "ingestion",
-    "objective": "I2",
-    "originalAnswer": "Idempotent, incrementally re-runnable loading that tracks which files have already been ingested",
-    "reviewedAnswer": "It tracks files already ingested, enabling idempotent incremental reruns",
-    "reviewedExplanation": "COPY INTO is a retriable, idempotent bulk load: it records which source files it has already processed, so re-running the command only ingests new files. This makes it well suited to repeatable batch ingestion into Delta tables."
+    "objective": "I2"
   },
   {
     "baselineId": "databricks-engineer-q-189",
@@ -1764,10 +1389,7 @@
     "status": "rewritten",
     "packQuestionId": "dea26-baseline-190",
     "domainId": "monitoring",
-    "objective": "M4",
-    "originalAnswer": "A flexible data layout that clusters a table on chosen keys without rigid partitioning, and can be changed without rewriting the whole table",
-    "reviewedAnswer": "It organizes data using clustering keys without fixed partition directories and supports changing keys for future clustering",
-    "reviewedExplanation": "Liquid clustering provides flexible table layout for data skipping. Changing keys does not instantly recluster all old data; use the appropriate optimization operation when needed. Automatic key selection is a separate configured capability, not a property of every clustered table."
+    "objective": "M4"
   },
   {
     "baselineId": "databricks-engineer-q-191",
@@ -1781,10 +1403,7 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-192",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "An architecture that combines the low-cost, open storage of a data lake with the management, ACID transactions, and performance of a data warehouse",
-    "reviewedAnswer": "An architecture that combines the low-cost, open storage of a data lake with the management, ACID transactions, and performance of a data warehouse",
-    "reviewedExplanation": "The lakehouse stores data in open formats (Delta Lake) on cheap cloud object storage while adding warehouse-grade features: ACID transactions, schema enforcement, governance, and BI/ML performance. This removes the need for separate lake and warehouse systems."
+    "objective": "P1"
   },
   {
     "baselineId": "databricks-engineer-q-193",
@@ -1798,9 +1417,6 @@
     "status": "retained-with-terminology-normalization",
     "packQuestionId": "dea26-baseline-194",
     "domainId": "platform",
-    "objective": "P1",
-    "originalAnswer": "Delta Lake's unified batch-and-streaming support with ACID transactions",
-    "reviewedAnswer": "Delta Lake's unified batch-and-streaming support with ACID transactions",
-    "reviewedExplanation": "Because Delta Lake provides ACID transactions and supports streaming writes and batch reads on the same table, a streaming job can append while analysts run consistent SQL queries against it concurrently, with no separate copies required."
+    "objective": "P1"
   }
 ]
