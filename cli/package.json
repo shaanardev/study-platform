@@ -2,8 +2,8 @@
   "name": "pack-cli",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "index.js",
+  "description": "Local command-line tools for authoring and validating learning packs.",
+  "private": true,
   "scripts": {
     "packs": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
@@ -11,7 +11,7 @@
     "lint:fix": "oxlint --fix",
     "test": "vitest run",
     "prepare": "effect-tsgo patch --typescript --oxlint",
-    "verify": "pnpm lint:fix && pnpm typecheck"
+    "verify": "pnpm lint:fix && pnpm typecheck && pnpm test"
   },
   "keywords": [],
   "author": "",

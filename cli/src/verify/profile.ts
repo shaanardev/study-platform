@@ -1,67 +1,15 @@
 import { Crypto, Data, Effect, FileSystem, Path, Schema } from 'effect';
 import { Hex } from 'effect/encoding';
-import type { PackForVerification } from './verify.js';
-
-const NonEmptyText = Schema.String.check(Schema.isMinLength(1));
-const NonNegativeInteger = Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0));
-const DomainExpectation = Schema.Struct({
-  count: NonNegativeInteger,
-  weight: Schema.Finite.check(Schema.isGreaterThan(0), Schema.isLessThanOrEqualTo(100)),
-});
-const ProfileSchema = Schema.Struct({
-  domains: Schema.optionalKey(Schema.Record(Schema.String, DomainExpectation)),
-  objectives: Schema.optionalKey(Schema.Struct({
-    path: NonEmptyText,
-    byDomain: Schema.Record(Schema.String, Schema.Array(NonEmptyText)),
-  })),
-  questionRules: Schema.optionalKey(Schema.Struct({
-    type: Schema.optionalKey(Schema.Literals(['single_choice', 'multiple_choice'])),
-    optionCount: Schema.optionalKey(Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(2))),
-    explanationMinWords: Schema.optionalKey(NonNegativeInteger),
-    requiredSourcePathFragment: Schema.optionalKey(NonEmptyText),
-  })),
-  answerPositions: Schema.optionalKey(Schema.Record(Schema.String, NonNegativeInteger)),
-  baselineAudit: Schema.optionalKey(Schema.Struct({
-    path: NonEmptyText,
-    total: NonNegativeInteger,
-    included: NonNegativeInteger,
-    excluded: NonNegativeInteger,
-    idPrefix: Schema.optionalKey(Schema.String),
-  })),
-  sourceIntegrity: Schema.optionalKey(Schema.Struct({ provenancePath: NonEmptyText })),
-  reportPath: Schema.optionalKey(NonEmptyText),
-});
-const CoverageSchema = Schema.Struct({
-  questionObjectives: Schema.Record(Schema.String, Schema.Array(Schema.String)),
-  objectives: Schema.Record(Schema.String, Schema.Unknown),
-});
-const IncludedBaselineEntrySchema = Schema.Struct({
-  baselineId: NonEmptyText,
-  number: NonNegativeInteger,
-  status: Schema.Literals(['rewritten', 'retained-with-terminology-normalization']),
-  packQuestionId: NonEmptyText,
-  domainId: NonEmptyText,
-  objective: NonEmptyText,
-});
-const ExcludedBaselineEntrySchema = Schema.Struct({
-  baselineId: NonEmptyText,
-  number: NonNegativeInteger,
-  status: Schema.Literal('excluded'),
-  reason: NonEmptyText,
-});
-const BaselineEntrySchema = Schema.Union([
-  IncludedBaselineEntrySchema,
-  ExcludedBaselineEntrySchema,
-]);
-const ProvenanceSchema = Schema.Struct({
-  materialInventory: Schema.Array(Schema.Struct({ path: NonEmptyText, sha256: NonEmptyText })),
-  baselinePath: NonEmptyText,
-  baselineSha256: NonEmptyText,
-});
-
-type BaselineEntry = typeof BaselineEntrySchema.Type;
-type IncludedBaselineEntry = typeof IncludedBaselineEntrySchema.Type;
-type ExcludedBaselineEntry = typeof ExcludedBaselineEntrySchema.Type;
+import {
+  type BaselineEntry,
+  BaselineEntrySchema,
+  CoverageSchema,
+  type ExcludedBaselineEntry,
+  type IncludedBaselineEntry,
+  ProfileSchema,
+  ProvenanceSchema,
+} from './profile-schema.js';
+import type { PackForVerification } from './schema.js';
 
 export class ProfileError extends Data.TaggedError('ProfileError')<{ readonly message: string }> {}
 
@@ -263,12 +211,6 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
             `${question.id}: missing required source`,
           );
         }
-        yield* ensure(
-          new Set(
-            question.options.map(({ text }) => text.toLowerCase().replace(/\s+/g, ' ').trim()),
-          ).size === question.options.length,
-          `${question.id}: duplicate option text`,
-        );
       }
       report.questionRules = 'passed';
     }
@@ -429,16 +371,8 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       profile.reportPath ?? 'assets/verification-report.json',
       'Verification report',
     );
-    const reportJson = yield* Schema.encodeEffect(
-      Schema.fromJsonString(Schema.Unknown, { space: 2 }),
-    )(report).pipe(
-      Effect.mapError(
-        (error) =>
-          new ProfileError({ message: `Unable to encode verification report: ${String(error)}` }),
-      ),
-    );
     yield* fs
-      .writeFileString(reportPath, `${reportJson}\n`)
+      .writeFileString(reportPath, `${JSON.stringify(report, null, 2)}\n`)
       .pipe(
         Effect.mapError(
           (error) =>

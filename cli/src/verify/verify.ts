@@ -1,13 +1,11 @@
 import { Config, Data, Effect, FileSystem, Option, Path, Schema } from 'effect';
 import { verifyProfile } from './profile.js';
-import type { PackForVerification } from './schema.js';
-import { BuiltExamPackSchema } from './schema.js';
+import { BuiltExamPackSchema, type PackForVerification } from './schema.js';
 
 export class VerifyError extends Data.TaggedError('VerifyError')<{
   readonly message: string;
 }> {}
 
-export type { PackForVerification } from './schema.js';
 export type VerifyResult = {
   pack: PackForVerification;
   profileReportPath?: string;
@@ -168,7 +166,8 @@ const verifySourceFiles = Effect.fn(function* (packPath: string, pack: PackForVe
           .realPath(candidate)
           .pipe(
             Effect.mapError(
-              () => new VerifyError({ message: `${question.id}: missing academy note ${source.path}` }),
+              () =>
+                new VerifyError({ message: `${question.id}: missing academy note ${source.path}` }),
             ),
           );
         const relativePath = path.relative(root, actual);
@@ -195,21 +194,6 @@ const verifySourceFiles = Effect.fn(function* (packPath: string, pack: PackForVe
   }
 });
 
-const verifyOptionalProfile = Effect.fn(function* (
-  packPath: string,
-  pack: PackForVerification,
-  profilePath: string | undefined,
-) {
-  if (!profilePath) return undefined;
-  const path = yield* Path.Path;
-  const result = yield* verifyProfile(packPath, pack, path.resolve(profilePath)).pipe(
-    Effect.mapError(
-      (error) => new VerifyError({ message: `Profile verification failed: ${error.message}` }),
-    ),
-  );
-  return result.reportPath;
-});
-
 export const verifyPack = (packPath: string, profilePath?: string) =>
   Effect.gen(function* () {
     const { absolutePath, contents } = yield* readPackFile(packPath);
@@ -217,6 +201,15 @@ export const verifyPack = (packPath: string, profilePath?: string) =>
     const pack = yield* validateBuiltPack(input);
     yield* verifyGenericStructure(pack);
     yield* verifySourceFiles(absolutePath, pack);
-    const profileReportPath = yield* verifyOptionalProfile(absolutePath, pack, profilePath);
+    let profileReportPath: string | undefined;
+    if (profilePath) {
+      const path = yield* Path.Path;
+      const result = yield* verifyProfile(absolutePath, pack, path.resolve(profilePath)).pipe(
+        Effect.mapError(
+          (error) => new VerifyError({ message: `Profile verification failed: ${error.message}` }),
+        ),
+      );
+      profileReportPath = result.reportPath;
+    }
     return profileReportPath ? { pack, profileReportPath } : { pack };
   });
