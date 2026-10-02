@@ -1,6 +1,3 @@
-// FileSystem.stat follows links in v4; use lstat only for the no-follow check.
-// oxlint-disable-next-line effecttsgo/node-builtin-import
-import { lstat } from 'node:fs/promises';
 import { Data, Effect, FileSystem, Path, Random, Schema } from 'effect';
 import { type AuthoringFile as Authoring, AuthoringFile, QuestionFile } from './authoring.js';
 
@@ -18,11 +15,18 @@ const toBuildError = (cause: unknown): BuildError =>
     ? cause
     : new BuildError({ message: cause instanceof Error ? cause.message : String(cause), cause });
 
-const isMissingFile = (error: BuildError): boolean =>
-  error.cause instanceof Error && 'code' in error.cause && error.cause.code === 'ENOENT';
+const hasNodeErrorCode = (error: unknown, code: string): boolean =>
+  error instanceof Error && 'code' in error && error.code === code;
 
-const statWithoutFollowingLinks = (path: string) =>
-  Effect.tryPromise({ try: () => lstat(path), catch: toBuildError });
+const isNotSymbolicLink = (error: unknown): boolean =>
+  error instanceof Error &&
+  'reason' in error &&
+  typeof error.reason === 'object' &&
+  error.reason !== null &&
+  '_tag' in error.reason &&
+  error.reason._tag === 'Unknown' &&
+  'cause' in error.reason &&
+  hasNodeErrorCode(error.reason.cause, 'EINVAL');
 
 function itemAt<T>(items: ArrayLike<T>, index: number): T {
   const value = items[index];
@@ -49,16 +53,22 @@ function safeRelativePath(path: string, label: string): string {
 
 const rejectSymlinks = Effect.fn(function* (destination: string) {
   const path = yield* Path.Path;
+  const fs = yield* FileSystem.FileSystem;
   const filesystemRoot = path.parse(destination).root;
   const parts = path.relative(filesystemRoot, destination).split(path.sep);
   let current = filesystemRoot;
   for (const part of parts) {
     current = path.join(current, part);
-    const info = yield* statWithoutFollowingLinks(current).pipe(
-      Effect.catchIf(isMissingFile, () => Effect.succeed(undefined)),
+    const link = yield* fs.readLink(current).pipe(
+      Effect.catchIf(isNotSymbolicLink, () => Effect.succeed(undefined)),
+      Effect.catchIf(
+        (error) => error._tag === 'PlatformError' && error.reason._tag === 'NotFound',
+        () => Effect.succeed(null),
+      ),
+      Effect.mapError(toBuildError),
     );
-    if (!info) break;
-    if (info.isSymbolicLink())
+    if (link === null) break;
+    if (link !== undefined)
       return yield* Effect.fail(
         new BuildError({ message: `Path contains a symbolic link: ${current}` }),
       );
@@ -67,8 +77,9 @@ const rejectSymlinks = Effect.fn(function* (destination: string) {
 
 const requireInputFile = Effect.fn(function* (filename: string) {
   yield* rejectSymlinks(filename);
-  const info = yield* statWithoutFollowingLinks(filename);
-  if (!info.isFile())
+  const fs = yield* FileSystem.FileSystem;
+  const info = yield* fs.stat(filename).pipe(Effect.mapError(toBuildError));
+  if (info.type !== 'File')
     return yield* Effect.fail(new BuildError({ message: `Not a regular file: ${filename}` }));
   return yield* (yield* FileSystem.FileSystem).realPath(filename);
 });
