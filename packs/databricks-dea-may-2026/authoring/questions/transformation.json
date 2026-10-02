@@ -28,20 +28,13 @@
     "explanation": "In Databricks, the default table format is Delta Lake. When you run CREATE TABLE without specifying a format (like USING PARQUET or USING CSV), Databricks automatically creates a Delta table. This default can be changed but Delta is the recommended and default format for its ACID guarantees and performance features.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/managed.md",
-        "label": "Unity Catalog managed table lifecycle"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-014.md",
-        "label": "Archived baseline databricks-engineer-q-014; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta/"
+        ],
+        "section": "Overview"
       }
     ]
   },
@@ -74,20 +67,14 @@
     "explanation": "saveAsTable writes a named table and registers it in the catalog. save requires a filesystem path; load is a reader operation. The writer needs the appropriate catalog and schema privileges.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/managed.md",
-        "label": "Unity Catalog managed table lifecycle"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-023.md",
-        "label": "Archived baseline databricks-engineer-q-023; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframewriter/saveAsTable",
+          "https://docs.databricks.com/aws/en/delta/"
+        ],
+        "section": "Overview"
       }
     ]
   },
@@ -120,20 +107,13 @@
     "explanation": "In PySpark, use the cast() method: col(\"column_name\").cast(\"int\") or cast(\"integer\"). You can also use SQL-style casting with expr(\"CAST(col AS INT)\"). The cast() function is the standard way to convert data types in DataFrame operations.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/managed.md",
-        "label": "Unity Catalog managed table lifecycle"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-024.md",
-        "label": "Archived baseline databricks-engineer-q-024; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/column/cast",
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/expr"
+        ]
       }
     ]
   },
@@ -166,20 +146,12 @@
     "explanation": "na.fill() replaces NULL values with specified values. The dictionary format allows different fill values for different columns - age NULLs become 0, name NULLs become \"Unknown\". To drop NULLs, use na.drop(). To replace specific values (not just NULLs), use na.replace().",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/managed.md",
-        "label": "Unity Catalog managed table lifecycle"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-029.md",
-        "label": "Archived baseline databricks-engineer-q-029; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframenafunctions/fill"
+        ]
       }
     ]
   },
@@ -209,23 +181,16 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "The Silver layer applies data cleansing, validation, deduplication, normalization, and enrichment. It transforms raw Bronze data into clean, conformed datasets. Typical operations: casting types, handling nulls, removing duplicates, joining reference data, and basic filtering. Business aggregations belong in the Gold layer.",
+    "explanation": "The Silver layer applies data cleansing, validation, deduplication, normalization, and enrichment. It transforms raw Bronze data into clean, conformed datasets. Typical operations: casting types, handling nulls, removing duplicates, joining reference data, and basic filtering. Business-facing aggregations typically belong in the Gold layer.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/managed.md",
-        "label": "Unity Catalog managed table lifecycle"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-080.md",
-        "label": "Archived baseline databricks-engineer-q-080; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/lakehouse/medallion"
+        ],
+        "section": "Overview"
       }
     ]
   },
@@ -258,20 +223,12 @@
     "explanation": "INNER JOIN returns only rows that have matching values in both tables. LEFT OUTER JOIN (or LEFT JOIN) returns all rows from the left table and matched rows from the right; if no match exists, NULL values are returned for right table columns. RIGHT OUTER JOIN and FULL OUTER JOIN follow similar logic for the right table or both tables respectively.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-union.md",
-        "label": "PySpark union alignment"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-025.md",
-        "label": "Archived baseline databricks-engineer-q-025; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-join"
+        ]
       }
     ]
   },
@@ -304,20 +261,12 @@
     "explanation": "CROSS JOIN produces the Cartesian product - every row from the first table paired with every row from the second table (100 × 50 = 5,000). Use with caution on large tables as it can produce massive results. CROSS JOIN is used when you need all possible combinations.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-union.md",
-        "label": "PySpark union alignment"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-037.md",
-        "label": "Archived baseline databricks-engineer-q-037; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-join"
+        ]
       }
     ]
   },
@@ -350,20 +299,13 @@
     "explanation": "Broadcast Hash Join is optimal when one table is small enough to fit in memory. Spark sends (broadcasts) the small table to all executor nodes, avoiding expensive shuffle of the large table. Use broadcast(smallDF) hint or Spark may auto-broadcast if configured. For large-large joins, Sort Merge Join is typically used.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-union.md",
-        "label": "PySpark union alignment"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-045.md",
-        "label": "Archived baseline databricks-engineer-q-045; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/broadcast",
+          "https://docs.databricks.com/aws/en/optimizations/aqe"
+        ]
       }
     ]
   },
@@ -396,20 +338,12 @@
     "explanation": "LEFT SEMI JOIN returns only rows from the left table where the join key exists in the right table (like EXISTS). LEFT ANTI JOIN returns only rows from the left table where the join key does NOT exist in the right table (like NOT EXISTS). Neither returns columns from the right table. They're efficient for filtering based on existence.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-union.md",
-        "label": "PySpark union alignment"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-048.md",
-        "label": "Archived baseline databricks-engineer-q-048; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-join"
+        ]
       }
     ]
   },
@@ -442,20 +376,12 @@
     "explanation": "A common table expression names an intermediate query for use within one statement. It can clarify complex transformations; it does not persist data or guarantee materialization. Recursive forms require explicit supported syntax.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-union.md",
-        "label": "PySpark union alignment"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-050.md",
-        "label": "Archived baseline databricks-engineer-q-050; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-cte"
+        ]
       }
     ]
   },
@@ -488,20 +414,12 @@
     "explanation": "The show() method displays the contents of a DataFrame in a tabular format (df.show()). write() and save() are for writing DataFrames to storage. collect() retrieves all data to the driver as a Python list, which can cause out-of-memory errors on large datasets. show() is the safe way to view sample data.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-015.md",
-        "label": "Archived baseline databricks-engineer-q-015; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/show"
+        ]
       }
     ]
   },
@@ -534,20 +452,12 @@
     "explanation": "ALTER TABLE ... ADD COLUMN adds a new column to an existing table. Delta Lake supports schema evolution, allowing columns to be added without rewriting existing data. The new column will have NULL values for existing rows. To rename, use RENAME COLUMN; to change type, use ALTER COLUMN.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-016.md",
-        "label": "Archived baseline databricks-engineer-q-016; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-alter-table"
+        ]
       }
     ]
   },
@@ -580,20 +490,13 @@
     "explanation": "current_date returns a DATE. current_timestamp, now, and getdate return current timestamp values in Databricks SQL. Select the function matching the required type, rather than assuming every timestamp alias is unsupported.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-017.md",
-        "label": "Archived baseline databricks-engineer-q-017; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/current_date",
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/current_timestamp"
+        ]
       }
     ]
   },
@@ -626,20 +529,12 @@
     "explanation": "explode() takes a column containing arrays and creates a new row for each element in the array. groupBy() aggregates rows, pivot() rotates data from rows to columns, and join() combines DataFrames. explode() and explode_outer() are essential for working with nested/variant data.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-019.md",
-        "label": "Archived baseline databricks-engineer-q-019; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/explode"
+        ]
       }
     ]
   },
@@ -672,20 +567,12 @@
     "explanation": "concat accepts multiple string arguments. The middle argument contains a space, so the result is Hello World. Single quotes avoid ambiguity with identifier quoting settings.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-020.md",
-        "label": "Archived baseline databricks-engineer-q-020; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/concat"
+        ]
       }
     ]
   },
@@ -718,20 +605,12 @@
     "explanation": "DESCRIBE TABLE (or DESC TABLE) displays the schema information of a table including column names, data types, and any comments. It's useful for understanding table structure without querying data. For extended metadata including partitioning, use DESCRIBE TABLE EXTENDED or DESCRIBE DETAIL for Delta tables.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-022.md",
-        "label": "Archived baseline databricks-engineer-q-022; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-aux-describe-table"
+        ]
       }
     ]
   },
@@ -764,20 +643,12 @@
     "explanation": "date_format returns a string in the specified pattern. to_timestamp parses or converts to a timestamp; current_date supplies the current date. from_unixtime expects epoch seconds and is not the direct formatter for a timestamp column.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-036.md",
-        "label": "Archived baseline databricks-engineer-q-036; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/date_format"
+        ]
       }
     ]
   },
@@ -810,20 +681,12 @@
     "explanation": "LAG(column, offset, default_value) retrieves the value from a previous row at the specified offset (default 1) within the window partition. LEAD() looks ahead. This is useful for calculating differences between consecutive rows, like period-over-period changes. Unlike self-joins, LAG is efficient and concise.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-046.md",
-        "label": "Archived baseline databricks-engineer-q-046; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/lag"
+        ]
       }
     ]
   },
@@ -856,24 +719,12 @@
     "explanation": "MERGE INTO (also called UPSERT) atomically updates existing rows and inserts new rows based on a match condition. It's commonly used for slowly changing dimensions (SCD Type 1/2) and incrementally updating tables. The statement uses WHEN MATCHED for updates/deletes and WHEN NOT MATCHED for inserts.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-018.md",
-        "label": "Archived baseline databricks-engineer-q-018; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta/merge"
+        ]
       }
     ]
   },
@@ -906,24 +757,12 @@
     "explanation": "HAVING filters rows after GROUP BY aggregation, while WHERE filters rows before aggregation. HAVING can reference aggregate functions (COUNT, SUM, AVG) in its condition, which WHERE cannot do. This is standard SQL behavior: WHERE filters input rows, HAVING filters grouped results.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-021.md",
-        "label": "Archived baseline databricks-engineer-q-021; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-groupby"
+        ]
       }
     ]
   },
@@ -956,24 +795,13 @@
     "explanation": "Both distinct() and dropDuplicates() remove duplicate rows from a DataFrame. dropDuplicates() can also take a list of columns to consider when identifying duplicates (df.dropDuplicates([\"col1\", \"col2\"])). distinct() considers all columns. Both return a new DataFrame with duplicates removed.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-026.md",
-        "label": "Archived baseline databricks-engineer-q-026; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/dropDuplicates",
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe"
+        ]
       }
     ]
   },
@@ -1006,24 +834,12 @@
     "explanation": "RANK gives tied rows the same rank and skips subsequent positions. ROW_NUMBER gives each row a unique number; DENSE_RANK leaves no gaps. Specify the intended window ordering.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-028.md",
-        "label": "Archived baseline databricks-engineer-q-028; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/rank"
+        ]
       }
     ]
   },
@@ -1056,24 +872,14 @@
     "explanation": "MERGE INTO is the standard approach for SCD Type 1 (overwrite) and Type 2 (history tracking). For SCD Type 1: WHEN MATCHED UPDATE overwrites existing records, WHEN NOT MATCHED INSERT adds new records. This is atomic, efficient, and handles both updates and inserts in a single operation.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-030.md",
-        "label": "Archived baseline databricks-engineer-q-030; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta/merge",
+          "https://docs.databricks.com/aws/en/ldp/cdc"
+        ],
+        "section": "Change Data Capture (CDC)"
       }
     ]
   },
@@ -1106,24 +912,12 @@
     "explanation": "PIVOT rotates row values into column headers, typically with aggregation. For example, converting month rows (Jan, Feb, Mar) into columns with SUM(sales) as values. UNPIVOT does the reverse (columns to rows). PIVOT is useful for cross-tab reports and transforming data for analysis.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-033.md",
-        "label": "Archived baseline databricks-engineer-q-033; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-pivot"
+        ]
       }
     ]
   },
@@ -1156,24 +950,12 @@
     "explanation": "COLLECT_LIST() is an aggregate function that returns a list of values (allows duplicates) from grouped rows. COLLECT_SET() returns unique values only. Both are useful for creating arrays from grouped data. Use with caution on large groups as it can create very large arrays.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-039.md",
-        "label": "Archived baseline databricks-engineer-q-039; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/functions/collect_list"
+        ]
       }
     ]
   },
@@ -1206,24 +988,14 @@
     "explanation": "SCD Type 2 retains version rows with validity intervals. A current flag can simplify access but is not mandatory. Apply a correct staged MERGE or supported declarative CDC design; one matched source row cannot simply both update and insert through ordinary MERGE clauses.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-041.md",
-        "label": "Archived baseline databricks-engineer-q-041; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/ldp/cdc",
+          "https://docs.databricks.com/aws/en/delta/merge"
+        ],
+        "section": "Change Data Capture (CDC)"
       }
     ]
   },
@@ -1256,24 +1028,12 @@
     "explanation": "WHEN MATCHED AND condition adds an extra predicate to determine whether matched rows should be updated. For example: WHEN MATCHED AND source.update_flag = true THEN UPDATE SET... This allows conditional updates - only updating when certain criteria are met, even if the join condition matches.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-043.md",
-        "label": "Archived baseline databricks-engineer-q-043; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta/merge"
+        ]
       }
     ]
   },
@@ -1306,24 +1066,12 @@
     "explanation": "MERGE INTO with a complex USING clause (joining multiple tables or using subqueries) can handle multi-column updates based on complex logic in a single atomic operation. WHEN MATCHED THEN UPDATE SET can reference columns from the source tables. This is more efficient and atomic than multiple separate operations.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-055.md",
-        "label": "Archived baseline databricks-engineer-q-055; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta/merge"
+        ]
       }
     ]
   },
@@ -1356,24 +1104,12 @@
     "explanation": "Deduplicate source keys before MERGE, using a defined ordering if the latest change must win. Multiple matching source rows can make MERGE ambiguous; unmatched duplicates can also be inserted. ACID does not imply key uniqueness.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-df.md",
-        "label": "PySpark DataFrame operations"
-      },
-      {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
-        "path": "sources/transformation/references/delta.md",
-        "label": "Delta Lake table foundations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-076.md",
-        "label": "Archived baseline databricks-engineer-q-076; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta/merge"
+        ]
       }
     ]
   },
@@ -1406,16 +1142,12 @@
     "explanation": "repartition(n) triggers a full shuffle to redistribute data into exactly n partitions. Use it when you need to change the number of partitions (e.g., before writing to maximize parallelism). coalesce() is preferred when reducing partitions without a full shuffle. repartition() can improve or hurt performance depending on usage.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-tuning.md",
-        "label": "Spark performance and configuration"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-054.md",
-        "label": "Archived baseline databricks-engineer-q-054; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/repartition"
+        ]
       }
     ]
   },
@@ -1448,16 +1180,12 @@
     "explanation": "coalesce can reduce partitions without a full redistribution shuffle. repartition uses a shuffle to redistribute rows and can change partition counts in either direction. Avoid routinely forcing a large output into one partition, which can create a bottleneck.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-tuning.md",
-        "label": "Spark performance and configuration"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-057.md",
-        "label": "Archived baseline databricks-engineer-q-057; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/coalesce"
+        ]
       }
     ]
   },
@@ -1490,16 +1218,13 @@
     "explanation": "Built-in expressions expose their semantics to Spark and typically avoid Python serialization costs. Python UDFs can run on executors but provide fewer optimization opportunities. Choose and measure an implementation that meets the required semantics.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-tuning.md",
-        "label": "Spark performance and configuration"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-058.md",
-        "label": "Archived baseline databricks-engineer-q-058; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/udf/python",
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/"
+        ]
       }
     ]
   },
@@ -1532,20 +1257,13 @@
     "explanation": "CREATE TABLE AS SELECT (CTAS) creates a new table and populates it with the results of a SELECT query. INSERT INTO adds data to an existing table. MERGE INTO performs upserts (update/insert). CTAS is the standard way to create a table from query results in Spark SQL.",
     "sources": [
       {
-        "path": "sources/transformation/references/materialized.md",
-        "label": "Materialized views and streaming tables"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-013.md",
-        "label": "Archived baseline databricks-engineer-q-013; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-table-using",
+          "https://docs.databricks.com/aws/en/delta/"
+        ]
       }
     ]
   },
@@ -1578,20 +1296,13 @@
     "explanation": "CREATE VIEW stores a permanent query definition. A temporary view is session scoped, a table stores rows, and a materialized view maintains stored results through refresh processing.",
     "sources": [
       {
-        "path": "sources/transformation/references/materialized.md",
-        "label": "Materialized views and streaming tables"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-040.md",
-        "label": "Archived baseline databricks-engineer-q-040; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-view",
+          "https://docs.databricks.com/aws/en/ldp/concepts/materialized-views"
+        ]
       }
     ]
   },
@@ -1624,20 +1335,13 @@
     "explanation": "The medallion architecture organizes data into three layers: Bronze (raw ingestion, data as-is), Silver (cleaned, conformed, deduplicated), and Gold (aggregated, business-level, analytics-ready). This pattern provides data quality progression while maintaining raw data for reprocessing. It is the standard best practice for Lakehouse implementations.",
     "sources": [
       {
-        "path": "sources/transformation/references/materialized.md",
-        "label": "Materialized views and streaming tables"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-062.md",
-        "label": "Archived baseline databricks-engineer-q-062; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/lakehouse/medallion"
+        ],
+        "section": "Overview"
       }
     ]
   },
@@ -1670,20 +1374,12 @@
     "explanation": "Complete emits the full aggregation result each trigger. Append emits rows that will no longer change, such as windows finalized by a watermark. Update emits changed results. Mode support depends on the query and sink.",
     "sources": [
       {
-        "path": "sources/transformation/references/materialized.md",
-        "label": "Materialized views and streaming tables"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-077.md",
-        "label": "Archived baseline databricks-engineer-q-077; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/structured-streaming/output-mode"
+        ]
       }
     ]
   },
@@ -1716,20 +1412,13 @@
     "explanation": "Gold tables hold curated, business-level aggregates and project-specific datasets optimized for BI, dashboards, and ML features. Bronze holds raw data and Silver holds cleaned, conformed data at a finer grain.",
     "sources": [
       {
-        "path": "sources/transformation/references/materialized.md",
-        "label": "Materialized views and streaming tables"
-      },
-      {
-        "path": "sources/transformation/references/sql.md",
-        "label": "Databricks SQL language reference"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-178.md",
-        "label": "Archived baseline databricks-engineer-q-178; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/lakehouse/medallion"
+        ],
+        "section": "Overview"
       }
     ]
   },
@@ -1762,16 +1451,12 @@
     "explanation": "SET NOT NULL declares an enforced column constraint and existing data must satisfy it. A CHECK expression can enforce other data predicates. Primary keys are informational and are not an interchangeable write-time nullability enforcement mechanism.",
     "sources": [
       {
-        "path": "sources/transformation/references/expectations.md",
-        "label": "Pipeline data quality expectations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-051.md",
-        "label": "Archived baseline databricks-engineer-q-051; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/tables/constraints"
+        ]
       }
     ]
   },
@@ -1804,16 +1489,13 @@
     "explanation": "Expectations define data quality rules. A basic expectation retains invalid rows and records metrics; DROP ROW removes them; FAIL UPDATE stops the affected update. Choose behavior according to the dataset quality contract.",
     "sources": [
       {
-        "path": "sources/transformation/references/expectations.md",
-        "label": "Pipeline data quality expectations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-072.md",
-        "label": "Archived baseline databricks-engineer-q-072; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/ldp/expectations"
+        ],
+        "section": "Ensure Data Quality with Expectations"
       }
     ]
   },
@@ -1846,16 +1528,12 @@
     "explanation": "Raising an exception fails a notebook task unless it is caught and suppressed. notebook.exit returns a value and is not a failure signal by itself. Declarative pipeline FAIL UPDATE expectations provide a separate mechanism for pipeline quality failures.",
     "sources": [
       {
-        "path": "sources/transformation/references/expectations.md",
-        "label": "Pipeline data quality expectations"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
-      },
-      {
-        "path": "sources/transformation/baseline/databricks-engineer-q-135.md",
-        "label": "Archived baseline databricks-engineer-q-135; see reviewed pack answer"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/tasks/notebook"
+        ]
       }
     ]
   },
@@ -1888,12 +1566,12 @@
     "explanation": "unionByName aligns columns by name and preserves duplicates. DataFrame union aligns columns by position and also preserves duplicates. SQL UNION removes duplicates by default; SQL UNION ALL preserves them.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-union.md",
-        "label": "PySpark union alignment"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/unionByName"
+        ]
       }
     ]
   },
@@ -1926,12 +1604,14 @@
     "explanation": "Assume the functions are imported from pyspark.sql.functions. count(\"*\") counts rows, approx_count_distinct estimates distinct customers, and avg computes a mean over non-null amounts. count(column) excludes nulls. summary() provides descriptive statistics rather than this named business aggregation.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-aggregate.md",
-        "label": "PySpark aggregation and summary"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/count",
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/approx_count_distinct",
+          "https://docs.databricks.com/aws/en/pyspark/reference/functions/avg"
+        ]
       }
     ]
   },
@@ -1964,12 +1644,13 @@
     "explanation": "Tune the parameter associated with the measured bottleneck. spark.default.parallelism relates primarily to default parallelism for RDD operations; SQL shuffles use their SQL setting and may be adapted by AQE. Re-measure duration, spill, and resource use after changing settings.",
     "sources": [
       {
-        "path": "sources/transformation/references/spark-tuning.md",
-        "label": "Spark performance and configuration"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/spark/conf",
+          "https://docs.databricks.com/aws/en/compute/configure"
+        ]
       }
     ]
   },
@@ -2002,12 +1683,14 @@
     "explanation": "A materialized view stores query results and updates them through refresh processing, which can be incremental when supported. A regular view stores only its query. A streaming table processes data incrementally according to streaming semantics; it is not interchangeable with every aggregate refresh design.",
     "sources": [
       {
-        "path": "sources/transformation/references/materialized.md",
-        "label": "Materialized views and streaming tables"
-      },
-      {
+        "kind": "academy_note",
         "path": "sources/transformation/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: transformation"
+        "label": "Academy learning plan: Transformation",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/ldp/concepts/materialized-views",
+          "https://docs.databricks.com/aws/en/lakehouse/medallion"
+        ],
+        "section": "Overview"
       }
     ]
   }
