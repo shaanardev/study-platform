@@ -1,157 +1,148 @@
-// oxlint-disable-next-line effecttsgo/node-builtin-import
-import { createHash } from 'node:crypto';
-// oxlint-disable-next-line effecttsgo/node-builtin-import
-import { readFile, writeFile } from 'node:fs/promises';
-// oxlint-disable-next-line effecttsgo/node-builtin-import
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { Crypto, Data, Effect, FileSystem, Path, Schema } from 'effect';
+import { Hex } from 'effect/encoding';
+import { normalizeReviewedAnswer } from './legacy.js';
 import type { PackForVerification } from './verify.js';
 
-type Profile = {
-  domains?: Record<string, { count: number; weight: number }>;
-  objectives?: { path: string; byDomain: Record<string, string[]> };
-  questionRules?: {
-    type?: 'single_choice' | 'multiple_choice';
-    optionCount?: number;
-    explanationMinWords?: number;
-    requiredSourcePathFragment?: string;
-  };
-  answerPositions?: Record<string, number>;
-  baselineAudit?: {
-    path: string;
-    total: number;
-    included: number;
-    excluded: number;
-    idPrefix?: string;
-  };
-  sourceIntegrity?: { provenancePath: string };
-  reportPath?: string;
-};
+const NonEmptyText = Schema.String.check(Schema.isMinLength(1));
+const NonNegativeInteger = Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0));
+const DomainExpectation = Schema.Struct({
+  count: NonNegativeInteger,
+  weight: Schema.Finite.check(Schema.isGreaterThan(0), Schema.isLessThanOrEqualTo(100)),
+});
+const ProfileSchema = Schema.Struct({
+  domains: Schema.optionalKey(Schema.Record(Schema.String, DomainExpectation)),
+  objectives: Schema.optionalKey(Schema.Struct({
+    path: NonEmptyText,
+    byDomain: Schema.Record(Schema.String, Schema.Array(NonEmptyText)),
+  })),
+  questionRules: Schema.optionalKey(Schema.Struct({
+    type: Schema.optionalKey(Schema.Literals(['single_choice', 'multiple_choice'])),
+    optionCount: Schema.optionalKey(Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(2))),
+    explanationMinWords: Schema.optionalKey(NonNegativeInteger),
+    requiredSourcePathFragment: Schema.optionalKey(NonEmptyText),
+  })),
+  answerPositions: Schema.optionalKey(Schema.Record(Schema.String, NonNegativeInteger)),
+  baselineAudit: Schema.optionalKey(Schema.Struct({
+    path: NonEmptyText,
+    total: NonNegativeInteger,
+    included: NonNegativeInteger,
+    excluded: NonNegativeInteger,
+    idPrefix: Schema.optionalKey(Schema.String),
+  })),
+  sourceIntegrity: Schema.optionalKey(Schema.Struct({ provenancePath: NonEmptyText })),
+  reportPath: Schema.optionalKey(NonEmptyText),
+});
+const CoverageSchema = Schema.Struct({
+  questionObjectives: Schema.Record(Schema.String, Schema.Array(Schema.String)),
+  objectives: Schema.Record(Schema.String, Schema.Unknown),
+});
+const BaselineEntrySchema = Schema.Struct({
+  number: NonNegativeInteger,
+  status: NonEmptyText,
+  packQuestionId: NonEmptyText,
+  reviewedAnswer: Schema.String,
+  reason: Schema.optionalKey(Schema.String),
+});
+const ProvenanceSchema = Schema.Struct({
+  materialInventory: Schema.Array(Schema.Struct({ path: NonEmptyText, sha256: NonEmptyText })),
+  baselinePath: NonEmptyText,
+  baselineSha256: NonEmptyText,
+});
 
-type BaselineEntry = {
-  number: number;
-  status: string;
-  packQuestionId: string;
-  reviewedAnswer: string;
-  reason?: string;
-};
+type BaselineEntry = typeof BaselineEntrySchema.Type;
 
-const assert: (condition: unknown, message: string) => asserts condition = (condition, message) => {
-  if (!condition) throw new Error(message);
-};
-const hash = (bytes: Buffer): string => createHash('sha256').update(bytes).digest('hex');
+export class ProfileError extends Data.TaggedError('ProfileError')<{ readonly message: string }> {}
+
+const fail = (message: string) => Effect.fail(new ProfileError({ message }));
+const ensure = (condition: unknown, message: string) => (condition ? Effect.void : fail(message));
 const countBy = (values: string[]): Map<string, number> =>
   values.reduce((map, value) => map.set(value, (map.get(value) ?? 0) + 1), new Map());
 const sortedObject = (values: Map<string, number>): Record<string, number> =>
   Object.fromEntries([...values].sort(([left], [right]) => left.localeCompare(right)));
-const resolveWithin = (directory: string, path: string, label: string): string => {
-  const actual = resolve(directory, path);
-  const fromDirectory = relative(directory, actual);
-  assert(
-    fromDirectory !== '..' && !fromDirectory.startsWith(`..${sep}`) && !isAbsolute(fromDirectory),
-    `${label} escapes pack folder (${path})`,
-  );
+
+const resolveWithin = Effect.fn(function* (directory: string, filename: string, label: string) {
+  const path = yield* Path.Path;
+  const actual = path.resolve(directory, filename);
+  const fromDirectory = path.relative(directory, actual);
+  if (fromDirectory === '..' || fromDirectory.startsWith(`..${path.sep}`) || path.isAbsolute(fromDirectory))
+    return yield* fail(`${label} escapes pack folder (${filename})`);
   return actual;
-};
-const modernize = (text: string): string => {
-  const replacements: Array<[string, string]> = [
-    ['Delta Live Tables (DLT)', 'Lakeflow Spark Declarative Pipelines'],
-    ['Delta Live Tables', 'Lakeflow Spark Declarative Pipelines'],
-    ['Databricks Workflows', 'Lakeflow Jobs'],
-    ['Databricks Asset Bundles', 'Declarative Automation Bundles'],
-    ['Databricks Asset Bundle', 'Declarative Automation Bundle'],
-    ['Asset Bundles', 'Declarative Automation Bundles'],
-    ['Asset Bundle', 'Declarative Automation Bundle'],
-  ];
-  for (const [before, after] of replacements) text = text.replaceAll(before, after);
-  return text.replace(/\bDLT\b/g, 'Lakeflow Spark Declarative Pipelines');
-};
+});
 
-function validateProfileShape(value: unknown): asserts value is Profile {
-  assert(typeof value === 'object' && value !== null && !Array.isArray(value), 'Profile must be an object');
-  const profile = value as Profile;
-  const allowed = ['domains', 'objectives', 'questionRules', 'answerPositions', 'baselineAudit', 'sourceIntegrity', 'reportPath'];
-  assert(Object.keys(value).every((key) => allowed.includes(key)), 'Profile contains an unknown field');
-  if (profile.domains !== undefined) {
-    assert(typeof profile.domains === 'object' && profile.domains !== null && !Array.isArray(profile.domains), 'Profile domains must be an object');
-    for (const [id, domain] of Object.entries(profile.domains)) {
-      assert(typeof domain === 'object' && domain !== null, `${id}: profile domain must be an object`);
-      assert(Object.keys(domain).every((key) => key === 'count' || key === 'weight'), `${id}: profile domain contains an unknown field`);
-      assert(Number.isInteger(domain.count) && domain.count >= 0, `${id}: expected count must be a non-negative integer`);
-      assert(typeof domain.weight === 'number' && Number.isFinite(domain.weight) && domain.weight > 0 && domain.weight <= 100, `${id}: expected weight must be greater than 0 and at most 100`);
-    }
-  }
-  if (profile.objectives !== undefined) {
-    const objectives = profile.objectives;
-    assert(typeof objectives === 'object' && objectives !== null && typeof objectives.path === 'string' && objectives.path.length > 0 && typeof objectives.byDomain === 'object' && objectives.byDomain !== null && !Array.isArray(objectives.byDomain), 'Profile objectives require path and byDomain');
-    assert(Object.entries(objectives.byDomain).every(([, ids]) => Array.isArray(ids) && ids.every((id) => typeof id === 'string' && id.length > 0)), 'Profile objective IDs must be non-empty strings');
-  }
-  if (profile.questionRules !== undefined) {
-    const rules = profile.questionRules;
-    assert(typeof rules === 'object' && rules !== null && !Array.isArray(rules), 'Profile questionRules must be an object');
-    assert(Object.keys(rules).every((key) => ['type', 'optionCount', 'explanationMinWords', 'requiredSourcePathFragment'].includes(key)), 'Profile questionRules contains an unknown field');
-    if (rules.type !== undefined) assert(rules.type === 'single_choice' || rules.type === 'multiple_choice', 'Profile questionRules type is invalid');
-    if (rules.optionCount !== undefined) assert(Number.isInteger(rules.optionCount) && rules.optionCount >= 2, 'Profile optionCount must be an integer of at least 2');
-    if (rules.explanationMinWords !== undefined) assert(Number.isInteger(rules.explanationMinWords) && rules.explanationMinWords >= 0, 'Profile explanationMinWords must be a non-negative integer');
-    if (rules.requiredSourcePathFragment !== undefined) assert(typeof rules.requiredSourcePathFragment === 'string' && rules.requiredSourcePathFragment.length > 0, 'Profile requiredSourcePathFragment must be non-empty text');
-  }
-  if (profile.answerPositions !== undefined) assert(typeof profile.answerPositions === 'object' && profile.answerPositions !== null && !Array.isArray(profile.answerPositions), 'Profile answerPositions must be an object');
-  if (profile.answerPositions) assert(Object.values(profile.answerPositions).every((count) => Number.isInteger(count) && count >= 0), 'Profile answer position counts must be non-negative integers');
-  if (profile.baselineAudit !== undefined) {
-    const audit = profile.baselineAudit;
-    assert(typeof audit === 'object' && audit !== null && typeof audit.path === 'string', 'Profile baselineAudit requires a path');
-    for (const key of ['total', 'included', 'excluded'] as const) assert(Number.isInteger(audit[key]) && audit[key] >= 0, `Profile baselineAudit ${key} must be a non-negative integer`);
-    assert(audit.total === audit.included + audit.excluded, 'Profile baselineAudit totals must add up');
-  }
-  if (profile.sourceIntegrity !== undefined) {
-    const integrity = profile.sourceIntegrity;
-    assert(typeof integrity === 'object' && integrity !== null && typeof integrity.provenancePath === 'string', 'Profile sourceIntegrity requires provenancePath');
-  }
-  if (profile.reportPath !== undefined) assert(typeof profile.reportPath === 'string' && profile.reportPath.length > 0, 'Profile reportPath must be non-empty text');
-}
+const readText = Effect.fn(function* (filename: string, label: string) {
+  const fs = yield* FileSystem.FileSystem;
+  return yield* fs.readFileString(filename).pipe(
+    Effect.mapError((error) => new ProfileError({ message: `${label}: ${String(error)}` })),
+  );
+});
 
-// oxlint-disable-next-line effecttsgo/async-function
-export async function verifyProfile(
+const readJson = Effect.fn(function* <A>(filename: string, schema: Schema.Codec<A, any, never, never>, label: string) {
+  const text = yield* readText(filename, `Unable to read ${label}`);
+  return yield* Schema.decodeEffect(Schema.fromJsonString(schema), { onExcessProperty: 'error' })(text).pipe(
+    Effect.mapError((error) => new ProfileError({ message: `${label} schema validation failed: ${String(error)}` })),
+  );
+});
+
+const sha256 = Effect.fn(function* (bytes: Uint8Array) {
+  const crypto = yield* Crypto.Crypto;
+  const digest = yield* crypto.digest('SHA-256', bytes).pipe(
+    Effect.mapError((error) => new ProfileError({ message: `Unable to compute SHA-256: ${String(error)}` })),
+  );
+  return Hex.encode(digest);
+});
+
+export const verifyProfile = (
   packPath: string,
   pack: PackForVerification,
   profilePath: string,
-): Promise<{ report: Record<string, unknown>; reportPath: string }> {
-  const profileValue: unknown = JSON.parse(await readFile(profilePath, 'utf8'));
-  validateProfileShape(profileValue);
-  const profile = profileValue;
-  const base = dirname(resolve(packPath));
-  const report: Record<string, unknown> = { status: 'passed', packSha256: hash(await readFile(packPath)), questionCount: pack.questions.length };
+) => Effect.gen(function* () {
+  const path = yield* Path.Path;
+  const fs = yield* FileSystem.FileSystem;
+  const absolutePackPath = path.resolve(packPath);
+  const base = path.dirname(absolutePackPath);
+  const profile = yield* readJson(path.resolve(profilePath), ProfileSchema, 'Profile');
+  const packBytes = yield* fs.readFile(absolutePackPath).pipe(
+    Effect.mapError((error) => new ProfileError({ message: `Unable to read exam pack for profile: ${String(error)}` })),
+  );
+  const report: Record<string, unknown> = {
+    status: 'passed',
+    packSha256: yield* sha256(packBytes),
+    questionCount: pack.questions.length,
+  };
 
   if (profile.domains) {
     const actualIds = new Set(pack.domains.map(({ id }) => id));
-    assert(actualIds.size === Object.keys(profile.domains).length && Object.keys(profile.domains).every((id) => actualIds.has(id)), 'Profile domain set does not match pack');
+    yield* ensure(actualIds.size === Object.keys(profile.domains).length && Object.keys(profile.domains).every((id) => actualIds.has(id)), 'Profile domain set does not match pack');
     const questionCounts = countBy(pack.questions.map(({ domainId }) => domainId));
-    const domains = Object.entries(profile.domains).map(([id, expected]) => {
+    const domains = [];
+    for (const [id, expected] of Object.entries(profile.domains)) {
       const domain = pack.domains.find((item) => item.id === id);
-      assert(domain, `${id}: domain missing from pack`);
+      if (!domain) return yield* fail(`${id}: domain missing from pack`);
       const actualCount = questionCounts.get(id) ?? 0;
-      assert(domain.weight === expected.weight, `${id}: expected weight ${expected.weight}, got ${domain.weight}`);
-      assert(actualCount === expected.count, `${id}: expected ${expected.count} questions, got ${actualCount}`);
-      return { id, title: domain.title, guidePercent: expected.weight, questionCount: actualCount, actualPercent: (actualCount * 100) / pack.questions.length, differencePercentagePoints: (actualCount * 100) / pack.questions.length - expected.weight };
-    });
+      yield* ensure(domain.weight === expected.weight, `${id}: expected weight ${expected.weight}, got ${domain.weight}`);
+      yield* ensure(actualCount === expected.count, `${id}: expected ${expected.count} questions, got ${actualCount}`);
+      domains.push({ id, title: domain.title, guidePercent: expected.weight, questionCount: actualCount, actualPercent: (actualCount * 100) / pack.questions.length, differencePercentagePoints: (actualCount * 100) / pack.questions.length - expected.weight });
+    }
     report['exactDomainWeights'] = 'passed';
     report['domains'] = domains;
   }
 
   if (profile.objectives) {
-    const coveragePath = resolveWithin(base, profile.objectives.path, 'Objective mapping');
-    const coverage = JSON.parse(await readFile(coveragePath, 'utf8')) as { questionObjectives?: Record<string, string[]>; objectives?: Record<string, unknown> };
+    const coveragePath = yield* resolveWithin(base, profile.objectives.path, 'Objective mapping');
+    const coverage = yield* readJson(coveragePath, CoverageSchema, 'Objective mapping');
     const coverageQuestions = coverage.questionObjectives;
-    assert(coverageQuestions && Object.keys(coverageQuestions).length === pack.questions.length && pack.questions.every(({ id }) => Object.hasOwn(coverageQuestions, id)), 'Objective mapping does not exactly match questions');
+    yield* ensure(Object.keys(coverageQuestions).length === pack.questions.length && pack.questions.every(({ id }) => Object.hasOwn(coverageQuestions, id)), 'Objective mapping does not exactly match questions');
     const expectedObjectives = new Set(Object.values(profile.objectives.byDomain).flat());
-    assert(coverage.objectives && Object.keys(coverage.objectives).length === expectedObjectives.size && Object.keys(coverage.objectives).every((id) => expectedObjectives.has(id)), 'Objective list does not match profile');
+    yield* ensure(Object.keys(coverage.objectives).length === expectedObjectives.size && Object.keys(coverage.objectives).every((id) => expectedObjectives.has(id)), 'Objective list does not match profile');
     const observed = new Set<string>();
     for (const question of pack.questions) {
       const mapped = coverageQuestions[question.id];
       const permitted = profile.objectives.byDomain[question.domainId];
-      assert(Array.isArray(mapped) && mapped.length > 0 && new Set(mapped).size === mapped.length && mapped.every((id) => permitted?.includes(id)), `${question.id}: objective/domain mismatch`);
+      if (!mapped || mapped.length === 0 || new Set(mapped).size !== mapped.length || !mapped.every((id) => permitted?.includes(id)))
+        return yield* fail(`${question.id}: objective/domain mismatch`);
       mapped.forEach((id) => observed.add(id));
     }
-    assert(observed.size === expectedObjectives.size && [...expectedObjectives].every((id) => observed.has(id)), 'At least one profile objective has no question');
+    yield* ensure(observed.size === expectedObjectives.size && [...expectedObjectives].every((id) => observed.has(id)), 'At least one profile objective has no question');
     report['objectivesCovered'] = observed.size;
     report['objectiveCounts'] = sortedObject(countBy(pack.questions.flatMap(({ id }) => coverageQuestions[id] ?? [])));
   }
@@ -159,69 +150,78 @@ export async function verifyProfile(
   if (profile.questionRules) {
     const rules = profile.questionRules;
     for (const question of pack.questions) {
-      if (rules.type) assert(question.type === rules.type, `${question.id}: expected ${rules.type}`);
-      if (rules.optionCount !== undefined) assert(question.options.length === rules.optionCount, `${question.id}: expected ${rules.optionCount} options`);
-      if (rules.explanationMinWords !== undefined) assert(question.explanation.trim().split(/\s+/).filter(Boolean).length >= rules.explanationMinWords, `${question.id}: explanation too short`);
-      if (rules.requiredSourcePathFragment) assert(question.sources.some(({ path }) => path.includes(rules.requiredSourcePathFragment as string)), `${question.id}: missing required source`);
-      assert(new Set(question.options.map(({ text }) => text.toLowerCase().replace(/\s+/g, ' ').trim())).size === question.options.length, `${question.id}: duplicate option text`);
+      if (rules.type) yield* ensure(question.type === rules.type, `${question.id}: expected ${rules.type}`);
+      if (rules.optionCount !== undefined) yield* ensure(question.options.length === rules.optionCount, `${question.id}: expected ${rules.optionCount} options`);
+      if (rules.explanationMinWords !== undefined) yield* ensure(question.explanation.trim().split(/\s+/).filter(Boolean).length >= rules.explanationMinWords, `${question.id}: explanation too short`);
+      if (rules.requiredSourcePathFragment) yield* ensure(question.sources.some(({ path: sourcePath }) => sourcePath.includes(rules.requiredSourcePathFragment!)), `${question.id}: missing required source`);
+      yield* ensure(new Set(question.options.map(({ text }) => text.toLowerCase().replace(/\s+/g, ' ').trim())).size === question.options.length, `${question.id}: duplicate option text`);
     }
     report['questionRules'] = 'passed';
   }
 
   if (profile.answerPositions) {
-    const positions = countBy(pack.questions.map((question) => {
-      assert(question.answerIds.length === 1, `${question.id}: answer position requires one correct answer`);
+    const answerLetters: string[] = [];
+    for (const question of pack.questions) {
       const answer = question.answerIds[0];
-      assert(answer, `${question.id}: missing correct answer`);
+      yield* ensure(question.answerIds.length === 1 && answer, `${question.id}: answer position requires one correct answer`);
       const optionIndex = question.options.findIndex(({ id }) => id === answer);
-      assert(optionIndex >= 0, `${question.id}: correct answer is not an option`);
-      return String.fromCharCode(97 + optionIndex);
-    }));
-    for (const [position, expected] of Object.entries(profile.answerPositions)) assert((positions.get(position) ?? 0) === expected, `Answer position ${position}: expected ${expected}, got ${positions.get(position) ?? 0}`);
-    assert(positions.size === Object.keys(profile.answerPositions).length, 'Unexpected correct answer position');
+      yield* ensure(optionIndex >= 0, `${question.id}: correct answer is not an option`);
+      answerLetters.push(String.fromCharCode(97 + optionIndex));
+    }
+    const positions = countBy(answerLetters);
+    for (const [position, expected] of Object.entries(profile.answerPositions)) yield* ensure((positions.get(position) ?? 0) === expected, `Answer position ${position}: expected ${expected}, got ${positions.get(position) ?? 0}`);
+    yield* ensure(positions.size === Object.keys(profile.answerPositions).length, 'Unexpected correct answer position');
     report['answerPositions'] = sortedObject(positions);
   }
 
   if (profile.baselineAudit) {
     const audit = profile.baselineAudit;
-    const review = JSON.parse(await readFile(resolveWithin(base, audit.path, 'Baseline audit'), 'utf8')) as BaselineEntry[];
-    assert(Array.isArray(review) && review.length === audit.total && new Set(review.map(({ number }) => number)).size === review.length && review.every((item, index) => item.number === index + 1), 'Incomplete baseline audit');
+    yield* ensure(audit.total === audit.included + audit.excluded, 'Profile baselineAudit totals must add up');
+    const auditPath = yield* resolveWithin(base, audit.path, 'Baseline audit');
+    const review: readonly BaselineEntry[] = yield* readJson(auditPath, Schema.Array(BaselineEntrySchema), 'Baseline audit');
+    yield* ensure(review.length === audit.total && new Set(review.map(({ number }) => number)).size === review.length && review.every((item, index) => item.number === index + 1), 'Incomplete baseline audit');
     const included = review.filter(({ status }) => status !== 'excluded');
     const excluded = review.filter(({ status }) => status === 'excluded');
-    assert(included.length === audit.included && excluded.length === audit.excluded, 'Baseline audit disposition totals do not match profile');
+    yield* ensure(included.length === audit.included && excluded.length === audit.excluded, 'Baseline audit disposition totals do not match profile');
     const prefix = audit.idPrefix ?? '';
     const baselineIds = new Set(pack.questions.map(({ id }) => id).filter((id) => prefix.length === 0 || id.startsWith(prefix)));
-    assert(new Set(included.map(({ packQuestionId }) => packQuestionId)).size === baselineIds.size && [...baselineIds].every((id) => included.some((item) => item.packQuestionId === id)), 'Baseline audit and pack differ');
+    yield* ensure(new Set(included.map(({ packQuestionId }) => packQuestionId)).size === baselineIds.size && [...baselineIds].every((id) => included.some((item) => item.packQuestionId === id)), 'Baseline audit and pack differ');
     const byId = new Map(pack.questions.map((question) => [question.id, question]));
     for (const item of included) {
       const question = byId.get(item.packQuestionId);
-      assert(question, `Missing baseline question ${item.packQuestionId}`);
+      if (!question) return yield* fail(`Missing baseline question ${item.packQuestionId}`);
       const answer = question.options.find(({ id }) => id === question.answerIds[0])?.text;
-      assert(answer === modernize(item.reviewedAnswer), `${question.id}: reviewed key changed`);
+      yield* ensure(answer === normalizeReviewedAnswer(item.reviewedAnswer), `${question.id}: reviewed key changed`);
     }
-    assert(excluded.every(({ reason }) => Boolean(reason)), 'Baseline exclusion without rationale');
+    yield* ensure(excluded.every(({ reason }) => Boolean(reason)), 'Baseline exclusion without rationale');
     report['baselineAuditCount'] = review.length;
     report['baselineAdapted'] = included.length;
     report['newlyAuthored'] = pack.questions.length - included.length;
   }
 
   if (profile.sourceIntegrity) {
-    const provenancePath = resolveWithin(base, profile.sourceIntegrity.provenancePath, 'Source provenance');
-    const provenance = JSON.parse(await readFile(provenancePath, 'utf8')) as { materialInventory?: Array<{ path: string; sha256: string }>; baselinePath?: string; baselineSha256?: string };
-    assert(Array.isArray(provenance.materialInventory) && typeof provenance.baselinePath === 'string' && typeof provenance.baselineSha256 === 'string', 'Invalid source provenance data');
-    const provenanceDirectory = dirname(provenancePath);
-    const materialsDirectory = resolve(provenanceDirectory, 'materials');
+    const provenancePath = yield* resolveWithin(base, profile.sourceIntegrity.provenancePath, 'Source provenance');
+    const provenance = yield* readJson(provenancePath, ProvenanceSchema, 'Source provenance');
+    const provenanceDirectory = path.dirname(provenancePath);
+    const materialsDirectory = path.resolve(provenanceDirectory, 'materials');
     for (const item of provenance.materialInventory) {
-      const materialPath = resolveWithin(materialsDirectory, item.path, 'Material snapshot');
-      assert(hash(await readFile(materialPath)) === item.sha256, `Material snapshot changed: ${item.path}`);
+      const materialPath = yield* resolveWithin(materialsDirectory, item.path, 'Material snapshot');
+      const materialBytes = yield* fs.readFile(materialPath).pipe(Effect.mapError((error) => new ProfileError({ message: `Unable to read material snapshot ${item.path}: ${String(error)}` })));
+      yield* ensure((yield* sha256(materialBytes)) === item.sha256, `Material snapshot changed: ${item.path}`);
     }
-    const baselinePath = resolveWithin(materialsDirectory, provenance.baselinePath, 'Baseline archive');
-    assert(hash(await readFile(baselinePath)) === provenance.baselineSha256, 'Baseline archive hash mismatch');
-    report['sourceFilesResolved'] = new Set(pack.questions.flatMap(({ sources }) => sources.map(({ path }) => path))).size;
+    const baselinePath = yield* resolveWithin(materialsDirectory, provenance.baselinePath, 'Baseline archive');
+    const baselineBytes = yield* fs.readFile(baselinePath).pipe(Effect.mapError((error) => new ProfileError({ message: `Unable to read baseline archive: ${String(error)}` })));
+    yield* ensure((yield* sha256(baselineBytes)) === provenance.baselineSha256, 'Baseline archive hash mismatch');
+    report['sourceFilesResolved'] = new Set(pack.questions.flatMap(({ sources }) => sources.map(({ path: sourcePath }) => sourcePath))).size;
     report['materialFilesVerified'] = provenance.materialInventory.length + 1;
   }
 
-  const reportPath = resolveWithin(base, profile.reportPath ?? 'assets/verification-report.json', 'Verification report');
-  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  const reportPath = yield* resolveWithin(base, profile.reportPath ?? 'assets/verification-report.json', 'Verification report');
+  const reportJson = yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown, { space: 2 }))(report).pipe(
+    Effect.mapError((error) => new ProfileError({ message: `Unable to encode verification report: ${String(error)}` })),
+  );
+  yield* fs.writeFileString(reportPath, `${reportJson}\n`).pipe(
+    Effect.mapError((error) => new ProfileError({ message: `Unable to write verification report: ${String(error)}` })),
+  );
   return { report, reportPath };
-}
+});
