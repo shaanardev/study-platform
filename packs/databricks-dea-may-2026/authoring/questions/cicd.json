@@ -28,16 +28,14 @@
     "explanation": "Git folders, formerly Repos, support Git-based branches, commits, pulls, and pushes. Table history tracks data changes rather than code changes. Commit and push code before creating a pull request in the Git provider.",
     "sources": [
       {
-        "path": "sources/cicd/git-folders.md",
-        "label": "git-folders"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-005.md",
-        "label": "Reviewed baseline databricks-engineer-q-005"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/repos/git-folders-concepts",
+          "https://docs.databricks.com/aws/en/repos/ci-cd"
+        ]
       }
     ]
   },
@@ -70,16 +68,15 @@
     "explanation": "Bundles, formerly Declarative Automation Bundles, package resource definitions and code for development and CI/CD. They integrate with Git and the Databricks CLI. They do not replace tests or automatically grant privileges.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-112.md",
-        "label": "Reviewed baseline databricks-engineer-q-112"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/resources"
+        ]
       }
     ]
   },
@@ -112,16 +109,14 @@
     "explanation": "The Databricks CLI enables programmatic interaction with Databricks: create/manage clusters, submit jobs, import/export notebooks, manage Unity Catalog objects, deploy Declarative Automation Bundles, and more. It is essential for automation, CI/CD pipelines, and scripting Databricks operations.",
     "sources": [
       {
-        "path": "sources/cicd/cli.md",
-        "label": "cli"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-115.md",
-        "label": "Reviewed baseline databricks-engineer-q-115"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/cli/commands",
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands"
+        ]
       }
     ]
   },
@@ -154,16 +149,15 @@
     "explanation": "Declarative Automation Bundles (DABs) define jobs as YAML files with environment-specific overrides. Use the same bundle with different target environments (databricks bundle deploy -t dev/staging/prod). CI/CD pipelines automate testing and promotion. This ensures consistency across environments.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-124.md",
-        "label": "Reviewed baseline databricks-engineer-q-124"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings",
+          "https://docs.databricks.com/aws/en/repos/ci-cd"
+        ]
       }
     ]
   },
@@ -196,16 +190,14 @@
     "explanation": "databricks bundle deploy deploys resources defined in databricks.yml (jobs, pipelines, notebooks, queries) to the specified target workspace. It validates the bundle, creates/updates resources, and handles dependencies. This enables infrastructure-as-code deployment from local development or CI/CD pipelines.",
     "sources": [
       {
-        "path": "sources/cicd/cli.md",
-        "label": "cli"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-129.md",
-        "label": "Reviewed baseline databricks-engineer-q-129"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/resources"
+        ]
       }
     ]
   },
@@ -238,16 +230,13 @@
     "explanation": "databricks bundle validate checks the bundle configuration for errors: valid YAML syntax, correct resource definitions, valid references, and environment configurations. It catches issues before deployment. Run this in CI/CD pipelines and before deploy to ensure bundle correctness.",
     "sources": [
       {
-        "path": "sources/cicd/cli.md",
-        "label": "cli"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-133.md",
-        "label": "Reviewed baseline databricks-engineer-q-133"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands"
+        ]
       }
     ]
   },
@@ -280,16 +269,13 @@
     "explanation": "bundle run runs a specified bundle resource; deploy changes first with bundle deploy. validate checks configuration. Selecting a target controls the environment to which the command applies.",
     "sources": [
       {
-        "path": "sources/cicd/cli.md",
-        "label": "cli"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-138.md",
-        "label": "Reviewed baseline databricks-engineer-q-138"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands"
+        ]
       }
     ]
   },
@@ -322,16 +308,14 @@
     "explanation": "A local commit records history in the Git folder. Pushing publishes commits to the remote branch, where a pull request supports review before merging. Notebook history and table time travel do not publish a Git branch.",
     "sources": [
       {
-        "path": "sources/cicd/git-folders.md",
-        "label": "git-folders"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
-      },
-      {
-        "path": "sources/cicd/baseline/databricks-engineer-q-171.md",
-        "label": "Reviewed baseline databricks-engineer-q-171"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/repos/git-operations-with-repos",
+          "https://docs.databricks.com/aws/en/repos/ci-cd"
+        ]
       }
     ]
   },
@@ -364,12 +348,14 @@
     "explanation": "Bundle variables and target configuration let the same resource definitions and code use environment-specific values. Keep the target selection explicit in CI/CD.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/variables",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings"
+        ]
       }
     ]
   },
@@ -402,12 +388,13 @@
     "explanation": "Bundle variable substitution uses ${var.name}. For each task inputs use a different dynamic reference syntax. A Unity Catalog three-part identifier names a data object, not a bundle variable.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/variables"
+        ]
       }
     ]
   },
@@ -440,12 +427,14 @@
     "explanation": "Targets can override workspace settings and resource configuration. The selected target must resolve to the intended host and authenticated identity. Verify the deployment summary before promotion.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/"
+        ]
       }
     ]
   },
@@ -478,12 +467,13 @@
     "explanation": "validate checks configuration, deploy updates resources, and run starts a named resource. Use the same intended target throughout. Running a resource is distinct from deploying changed code and definitions.",
     "sources": [
       {
-        "path": "sources/cicd/cli.md",
-        "label": "cli"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands"
+        ]
       }
     ]
   },
@@ -516,12 +506,15 @@
     "explanation": "Promote a known reviewed code revision through environment targets. Bundles define resources and configuration alongside code. Manual recreation and mutable unreviewed source weaken deployment repeatability.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings",
+          "https://docs.databricks.com/aws/en/repos/ci-cd"
+        ]
       }
     ]
   },
@@ -554,12 +547,14 @@
     "explanation": "Git folders expose branch operations for code development. Feature branches support review before merging into the shared branch. Delta versioning concerns table data, not Git code history.",
     "sources": [
       {
-        "path": "sources/cicd/git-folders.md",
-        "label": "git-folders"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/repos/git-folders-concepts",
+          "https://docs.databricks.com/aws/en/repos/git-operations-with-repos"
+        ]
       }
     ]
   },
@@ -592,12 +587,13 @@
     "explanation": "Pull synchronizes remote commits into the local Git working copy. Resolve or preserve local modifications and conflicts deliberately. Committing alone does not fetch teammates changes.",
     "sources": [
       {
-        "path": "sources/cicd/git-folders.md",
-        "label": "git-folders"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/repos/git-operations-with-repos"
+        ]
       }
     ]
   },
@@ -630,12 +626,13 @@
     "explanation": "Configuration validation is useful before deployment. It cannot prove every transformation result, source availability, or runtime permission. CI/CD should also verify the behavior of the workload.",
     "sources": [
       {
-        "path": "sources/cicd/cli.md",
-        "label": "cli"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands"
+        ]
       }
     ]
   },
@@ -668,12 +665,14 @@
     "explanation": "A service principal provides an identity for automation. Grant only the required privileges and configure supported non-interactive authentication. Deployment identity and job Run as identity should both be explicit.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/auth/service-principals",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/"
+        ]
       }
     ]
   },
@@ -706,12 +705,14 @@
     "explanation": "Resource definitions should describe the intended deployed configuration. Capture approved changes in source control so future deployments do not unexpectedly restore an older setting.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/resources",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings"
+        ]
       }
     ]
   },
@@ -744,12 +745,14 @@
     "explanation": "Bundle substitutions are resolved for deployment or CLI operations. Job parameters are values supplied to task execution. Wire the desired runtime configurability into task parameters explicitly.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/variables",
+          "https://docs.databricks.com/aws/en/dev-tools/cli/bundle-commands"
+        ]
       }
     ]
   },
@@ -782,12 +785,14 @@
     "explanation": "Bundles keep workload resources and code together for review and deployment. Changing dependencies affects execution behavior and should be reviewed with the code that relies on those dependencies.",
     "sources": [
       {
-        "path": "sources/cicd/bundles.md",
-        "label": "bundles"
-      },
-      {
-        "path": "sources/cicd/academy-learning-plan/notes.md",
-        "label": "Supplied academy notes: Declarative Automation Bundles"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/declarative-automation-bundles/notes.md",
+        "label": "Original Academy learning plan: Deploying (supplemental)",
+        "section": "Deploying",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/resources",
+          "https://docs.databricks.com/aws/en/dev-tools/bundles/settings"
+        ]
       }
     ]
   }
