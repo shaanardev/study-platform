@@ -44,12 +44,13 @@ afterEach(async () => {
 
 describe('pack verify command', () => {
   // oxlint-disable-next-line effecttsgo/async-function
-  it('verifies the incoming Databricks sample through the app importer', async () => {
+  it('verifies the incoming Databricks sample with CLI checks', async () => {
     const { path } = await temporaryPack();
     const result = runVerify(path);
     expect(result.status, `${result.stderr}${result.stdout}`).toBe(0);
     expect(result.stdout).toContain('PASS:');
-    expect(result.stdout).toContain('app import, practice, timed mock');
+    expect(result.stdout).toContain('structural checks and source-file checks passed');
+    expect(result.stdout).not.toContain('app import');
   });
 
   // oxlint-disable-next-line effecttsgo/async-function
@@ -68,6 +69,22 @@ describe('pack verify command', () => {
     const result = runVerify(path);
     expect(result.status, `${result.stderr}${result.stdout}`).toBe(0);
     expect(result.stdout).toContain('PASS:');
+  });
+
+  // oxlint-disable-next-line effecttsgo/async-function
+  it('rejects unknown fields in built pack objects', async () => {
+    const { path } = await temporaryPack();
+    const pack = JSON.parse(await readFile(path, 'utf8')) as {
+      exam: Record<string, unknown>;
+      [key: string]: unknown;
+    };
+    pack['unexpected'] = true;
+    pack.exam['unexpectedNested'] = true;
+    await writeFile(path, JSON.stringify(pack));
+
+    const result = runVerify(path);
+    expect(result.status).not.toBe(0);
+    expect(`${result.stderr}${result.stdout}`).toContain('unexpected');
   });
 
   // oxlint-disable-next-line effecttsgo/async-function
@@ -206,7 +223,7 @@ describe('pack verify command', () => {
     const result = runVerify(path);
     expect(result.status).not.toBe(0);
     expect(`${result.stderr}${result.stdout}`).toContain(
-      'Exam pack JSON Schema validation failed',
+      'Exam pack schema validation failed',
     );
   });
 });
