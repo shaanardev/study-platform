@@ -4,23 +4,14 @@
 - **Package Manager**: pnpm
 - **Add-ons**: vitest, ai-tools, experimental
 
----
+## Subagent Delegation
 
-You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
+- For independent research or file discovery, use `explorer` agents in parallel. Reuse an explorer for related follow-ups and ask for concise findings with file references.
+- For small isolated code changes, use `worker` agents with explicit file ownership and acceptance criteria. Tell workers that others share the checkout and not to revert their changes.
+- Use `gpt-6-luna` at high reasoning for general delegated agents. Keep quick or dependent steps with the parent agent, which integrates the results.
 
-## Available Svelte MCP Tools:
+## Svelte Work
 
-### 1. list-sections
-
-Use this FIRST to discover all available documentation sections. Returns a structured list with titles, use_cases, and paths.
-When asked about Svelte or SvelteKit topics, ALWAYS use this tool at the start of the chat to find relevant sections.
-
-### 2. get-documentation
-
-Retrieves full documentation content for specific sections. Accepts single or multiple sections.
-After calling the list-sections tool, you MUST analyze the returned documentation sections (especially the use_cases field) and then use the get-documentation tool to fetch ALL documentation sections that are relevant for the user's task.
-
-### 3. svelte-autofixer
-
-Analyzes Svelte code and returns issues and suggestions.
-You MUST use this tool whenever writing Svelte code before sending it to the user. Keep calling it until no issues or suggestions are returned.
+- Use the `$svelte-best-practices` skill when writing, editing, or reviewing Svelte components or modules.
+- Consult the Svelte MCP for relevant Svelte or SvelteKit APIs. Call `list-sections` before `get-documentation`, and fetch only the sections needed for the task.
+- After changing Svelte code, run `svelte-autofixer` on the affected components or modules and address its issues and suggestions.
