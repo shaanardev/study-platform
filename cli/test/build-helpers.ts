@@ -1,6 +1,6 @@
 import { Effect, FileSystem, Schema } from 'effect';
 import { afterEach } from 'vitest';
-import { AuthoringFile, QuestionFile } from '../src/build/authoring.js';
+import { AuthoringFile, QuestionFile } from '../src/build/authoring-schema.js';
 import { makeTemporaryDirectoryTracker, run, writeJson } from './test-helpers.js';
 
 export { run, writeJson };

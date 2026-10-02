@@ -11,7 +11,10 @@ import {
 } from './profile-schema.js';
 import type { PackForVerification } from './schema.js';
 
-export class ProfileError extends Data.TaggedError('ProfileError')<{ readonly message: string }> {}
+export class ProfileError extends Data.TaggedError('ProfileError')<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
 
 const fail = (message: string) => Effect.fail(new ProfileError({ message }));
 const ensure = (condition: unknown, message: string) => (condition ? Effect.void : fail(message));
@@ -40,7 +43,11 @@ const readText = Effect.fn(function* (filename: string, label: string) {
   const fs = yield* FileSystem.FileSystem;
   return yield* fs
     .readFileString(filename)
-    .pipe(Effect.mapError((error) => new ProfileError({ message: `${label}: ${String(error)}` })));
+    .pipe(
+      Effect.mapError(
+        (error) => new ProfileError({ message: `${label}: ${String(error)}`, cause: error }),
+      ),
+    );
 });
 
 const readJson = Effect.fn(function* <A>(
@@ -54,7 +61,10 @@ const readJson = Effect.fn(function* <A>(
   ).pipe(
     Effect.mapError(
       (error) =>
-        new ProfileError({ message: `${label} schema validation failed: ${String(error)}` }),
+        new ProfileError({
+          message: `${label} schema validation failed: ${String(error)}`,
+          cause: error,
+        }),
     ),
   );
 });
@@ -65,7 +75,11 @@ const sha256 = Effect.fn(function* (bytes: Uint8Array) {
     .digest('SHA-256', bytes)
     .pipe(
       Effect.mapError(
-        (error) => new ProfileError({ message: `Unable to compute SHA-256: ${String(error)}` }),
+        (error) =>
+          new ProfileError({
+            message: `Unable to compute SHA-256: ${String(error)}`,
+            cause: error,
+          }),
       ),
     );
   return Hex.encode(digest);
@@ -100,7 +114,10 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       .pipe(
         Effect.mapError(
           (error) =>
-            new ProfileError({ message: `Unable to read exam pack for profile: ${String(error)}` }),
+            new ProfileError({
+              message: `Unable to read exam pack for profile: ${String(error)}`,
+              cause: error,
+            }),
         ),
       );
     const report: ProfileReport = {
@@ -331,6 +348,7 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
             (error) =>
               new ProfileError({
                 message: `Unable to read material snapshot ${item.path}: ${String(error)}`,
+                cause: error,
               }),
           ),
         );
@@ -349,7 +367,10 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
         .pipe(
           Effect.mapError(
             (error) =>
-              new ProfileError({ message: `Unable to read baseline archive: ${String(error)}` }),
+              new ProfileError({
+                message: `Unable to read baseline archive: ${String(error)}`,
+                cause: error,
+              }),
           ),
         );
       yield* ensure(
@@ -376,7 +397,10 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
       .pipe(
         Effect.mapError(
           (error) =>
-            new ProfileError({ message: `Unable to write verification report: ${String(error)}` }),
+            new ProfileError({
+              message: `Unable to write verification report: ${String(error)}`,
+              cause: error,
+            }),
         ),
       );
     return { report, reportPath };

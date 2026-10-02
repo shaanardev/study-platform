@@ -1,20 +1,8 @@
 import { Schema } from 'effect';
+import { DocumentationUrlsSchema } from '../core/documentation-url-schema.js';
 
 const Id = Schema.String.pipe(Schema.check(Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/)));
 const Text = Schema.String.pipe(Schema.check(Schema.isPattern(/\S/)));
-const HttpsUrl = Schema.String.check(
-  Schema.isPattern(/^https:\/\//),
-  Schema.makeFilter((value) => {
-    try {
-      const url = new URL(value);
-      return url.protocol === 'https:' && url.hostname
-        ? undefined
-        : 'Documentation URLs must use HTTPS';
-    } catch {
-      return 'Documentation URLs must be valid HTTPS URLs';
-    }
-  }),
-);
 const Seed = Schema.Union([
   Schema.String,
   Schema.Number.pipe(
@@ -50,7 +38,7 @@ const AcademyNoteSource = Schema.Struct({
   path: Text,
   label: Text,
   section: Schema.optional(Text),
-  documentationUrls: Schema.Array(HttpsUrl).pipe(Schema.check(Schema.isMinLength(1))),
+  documentationUrls: DocumentationUrlsSchema,
 });
 const Source = Schema.Union([BundledSource, AcademyNoteSource]);
 const Question = Schema.Struct({

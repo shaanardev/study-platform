@@ -1,5 +1,5 @@
-import { Data, Effect, FileSystem, Path, Schema } from 'effect';
-import { AuthoringFile, QuestionFile } from './authoring.js';
+import { Data, Effect, FileSystem, Path, Result, Schema } from 'effect';
+import { AuthoringFile, QuestionFile } from './authoring-schema.js';
 import { safeRelativePath, validateAuthoring } from './authoring-validation.js';
 import { shuffleQuestions } from './question-transformation.js';
 
@@ -75,10 +75,9 @@ export const buildPack = (authoringPath: string, outputDirectory: string) =>
     const sourceRoot = path.dirname(authoringFile);
     const questions = [...(input.questions ?? [])];
     for (const reference of input.questionFiles ?? []) {
-      const relativePath = yield* Effect.try({
-        try: () => safeRelativePath(reference, 'questionFiles path'),
-        catch: toBuildError,
-      });
+      const relativePath = yield* Effect.fromResult(
+        safeRelativePath(reference, 'questionFiles path'),
+      ).pipe(Effect.mapError(toBuildError));
       const questionPath = yield* requireInputFile(path.resolve(sourceRoot, relativePath));
       const drafts = yield* Schema.decodeEffect(Schema.fromJsonString(QuestionFile), {
         onExcessProperty: 'error',
@@ -91,10 +90,7 @@ export const buildPack = (authoringPath: string, outputDirectory: string) =>
       questions.push(...drafts);
     }
     const assembled = { ...input, questions };
-    yield* Effect.try({
-      try: () => validateAuthoring(assembled),
-      catch: toBuildError,
-    });
+    yield* Effect.fromResult(validateAuthoring(assembled)).pipe(Effect.mapError(toBuildError));
 
     const outputRoot = path.resolve(outputDirectory);
     const assetsRoot = path.resolve(outputRoot, input.assetsDirectory);
@@ -111,14 +107,17 @@ export const buildPack = (authoringPath: string, outputDirectory: string) =>
       }),
     );
     const pack = { ...input.metadata, questions: yield* shuffleQuestions(assembled) };
-    const packJson = yield* Effect.try({
-      try: () => {
-        const json = JSON.stringify(pack, null, 2);
-        if (json === undefined) throw new Error('Could not serialize built pack');
-        return json;
-      },
+    const packJsonResult = Result.try({
+      try: () => JSON.stringify(pack, null, 2),
       catch: toBuildError,
-    });
+    }).pipe(
+      Result.flatMap((json) =>
+        json === undefined
+          ? Result.fail(new BuildError({ message: 'Could not serialize built pack' }))
+          : Result.succeed(json),
+      ),
+    );
+    const packJson = yield* Effect.fromResult(packJsonResult);
     const packPath = path.join(outputRoot, input.outputFile);
     yield* rejectSymlinks(packPath);
     for (const artifact of artifacts) yield* rejectSymlinks(artifact.destination);

@@ -1,9 +1,33 @@
-import { Effect, FileSystem, Path, Result } from 'effect';
+import { Cause, Effect, Exit, FileSystem, Path, Result } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { verifyPack } from '../src/verify/verify.js';
+import { ProfileError } from '../src/verify/profile.js';
+import { VerifyError, verifyPack } from '../src/verify/verify.js';
 import { makePack, run, validPack, writeJson } from './verify-helpers.js';
 
 describe('verifyPack', () => {
+  it('preserves the profile and filesystem causes when the profile is missing', () =>
+    run(
+      Effect.gen(function* () {
+        const { directory, packPath } = yield* makePack;
+        const path = yield* Path.Path;
+        const profilePath = path.join(directory, 'profile.json');
+
+        const exit = yield* Effect.exit(verifyPack(packPath, profilePath));
+        expect(Exit.isFailure(exit)).toBe(true);
+        if (Exit.isFailure(exit)) {
+          const failure = Cause.findError(exit.cause);
+          expect(Result.isSuccess(failure)).toBe(true);
+          if (Result.isSuccess(failure)) {
+            expect(failure.success).toBeInstanceOf(VerifyError);
+            expect(failure.success.cause).toBeInstanceOf(ProfileError);
+            const profileError = failure.success.cause as ProfileError;
+            expect(profileError.cause).toBeDefined();
+            expect(String(profileError.cause)).toContain(profilePath);
+          }
+        }
+      }),
+    ));
+
   it('writes an optional profile report and rejects a domain count mismatch', () =>
     run(
       Effect.gen(function* () {

@@ -94,6 +94,25 @@ describe('verifyPack', () => {
             },
             message: '',
           },
+          {
+            value: {
+              ...validPack,
+              questions: [
+                {
+                  ...validPack.questions[0],
+                  sources: [
+                    {
+                      kind: 'academy_note',
+                      path: 'notes/streaming.md',
+                      label: 'Streaming notes',
+                      documentationUrls: ['http://docs.example.com/streaming'],
+                    },
+                  ],
+                },
+              ],
+            },
+            message: 'Exam pack schema validation failed',
+          },
           { value: { ...validPack, passingThreshold: 100 }, message: '' },
         ];
         for (const scenario of cases) {

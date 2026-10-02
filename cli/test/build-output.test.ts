@@ -1,6 +1,6 @@
 import { Effect, FileSystem, Result, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { AuthoringFile } from '../src/build/authoring.js';
+import { AuthoringFile } from '../src/build/authoring-schema.js';
 import { buildPack } from '../src/build/build.js';
 import { verifyPack } from '../src/verify/verify.js';
 import { mutablePreview, outputDirectory, run, writeJson } from './build-helpers.js';

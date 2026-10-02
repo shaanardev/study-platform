@@ -1,5 +1,10 @@
 import { NodeServices } from '@effect/platform-node';
-import { Effect, FileSystem } from 'effect';
+import { Data, Effect, FileSystem, Result } from 'effect';
+
+class TestJsonError extends Data.TaggedError('TestJsonError')<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
 
 export const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
   Effect.runPromise(Effect.provide(effect, NodeServices.layer));
@@ -7,16 +12,17 @@ export const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>
 export const writeJson = (path: string, value: unknown) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const json = yield* Effect.try({
-      try: () => {
-        const serialized = JSON.stringify(value);
-        if (serialized === undefined) {
-          throw new TypeError('Value cannot be serialized as JSON');
-        }
-        return serialized;
-      },
-      catch: (error) => (error instanceof Error ? error : new Error(String(error))),
+    const serialized = Result.try({
+      try: () => JSON.stringify(value),
+      catch: (cause) => new TestJsonError({ message: 'Value cannot be serialized as JSON', cause }),
     });
+    const json = yield* Effect.fromResult(
+      Result.flatMap(serialized, (text) =>
+        text === undefined
+          ? Result.fail(new TestJsonError({ message: 'Value cannot be serialized as JSON' }))
+          : Result.succeed(text),
+      ),
+    );
     yield* fs.writeFileString(path, json);
   });
 

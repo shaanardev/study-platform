@@ -1,10 +1,62 @@
 import { Effect, FileSystem, Result } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { buildPack } from '../src/build/build.js';
+import { BuildError, buildPack } from '../src/build/build.js';
+import {
+  AuthoringValidationError,
+  safeRelativePath,
+  validateAuthoring,
+} from '../src/build/authoring-validation.js';
 import { verifyPack } from '../src/verify/verify.js';
 import { mutablePreview, run, writeJson } from './build-helpers.js';
 
 describe('build command', () => {
+  it('returns typed failures from pure authoring and path validation', () =>
+    run(
+      Effect.gen(function* () {
+        const fixture = yield* mutablePreview;
+        const invalidAuthoring = validateAuthoring({ ...fixture.input, questions: [] });
+        expect(Result.isFailure(invalidAuthoring)).toBe(true);
+        if (Result.isFailure(invalidAuthoring)) {
+          expect(invalidAuthoring.failure).toBeInstanceOf(AuthoringValidationError);
+          expect(invalidAuthoring.failure.message).toBe(
+            'Authoring must contain at least one question',
+          );
+        }
+
+        const invalidPath = safeRelativePath('../outside', 'assetFiles path');
+        expect(Result.isFailure(invalidPath)).toBe(true);
+        if (Result.isFailure(invalidPath)) {
+          expect(invalidPath.failure).toBeInstanceOf(AuthoringValidationError);
+          expect(invalidPath.failure.message).toBe(
+            'assetFiles path must be a safe relative path',
+          );
+        }
+      }),
+    ));
+
+  it('preserves pure validation failures as the BuildError cause', () =>
+    run(
+      Effect.gen(function* () {
+        const fixture = yield* mutablePreview;
+        yield* writeJson(fixture.authoringPath, {
+          ...fixture.input,
+          questions: [],
+          questionFiles: [],
+        });
+        const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
+
+        expect(Result.isFailure(result)).toBe(true);
+        if (Result.isFailure(result)) {
+          expect(result.failure).toBeInstanceOf(BuildError);
+          expect(result.failure.message).toBe('Authoring must contain at least one question');
+          expect(result.failure.cause).toBeInstanceOf(AuthoringValidationError);
+          expect((result.failure.cause as AuthoringValidationError).message).toBe(
+            'Authoring must contain at least one question',
+          );
+        }
+      }),
+    ));
+
   it('rejects an empty assembled question bank', () =>
     run(
       Effect.gen(function* () {

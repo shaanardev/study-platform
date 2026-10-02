@@ -4,6 +4,7 @@ import { BuiltExamPackSchema, type PackForVerification } from './schema.js';
 
 export class VerifyError extends Data.TaggedError('VerifyError')<{
   readonly message: string;
+  readonly cause?: unknown;
 }> {}
 
 export type VerifyResult = {
@@ -16,6 +17,7 @@ const toVerifyError =
   (cause: unknown): VerifyError =>
     new VerifyError({
       message: `${stage}: ${cause instanceof Error ? cause.message : String(cause)}`,
+      cause,
     });
 
 const normalized = (value: string): string =>
@@ -45,7 +47,10 @@ const validateBuiltPack = (input: unknown) =>
   Schema.decodeUnknownEffect(BuiltExamPackSchema, { onExcessProperty: 'error' })(input).pipe(
     Effect.mapError(
       (error) =>
-        new VerifyError({ message: `Exam pack schema validation failed: ${String(error)}` }),
+        new VerifyError({
+          message: `Exam pack schema validation failed: ${String(error)}`,
+          cause: error,
+        }),
     ),
   );
 
@@ -104,7 +109,11 @@ const sourceFileExists = Effect.fn(function* (
     .realPath(candidate)
     .pipe(
       Effect.mapError(
-        () => new VerifyError({ message: `${questionId}: missing source ${sourcePath}` }),
+        (cause) =>
+          new VerifyError({
+            message: `${questionId}: missing source ${sourcePath}`,
+            cause,
+          }),
       ),
     );
   const info = yield* fs
@@ -166,8 +175,11 @@ const verifySourceFiles = Effect.fn(function* (packPath: string, pack: PackForVe
           .realPath(candidate)
           .pipe(
             Effect.mapError(
-              () =>
-                new VerifyError({ message: `${question.id}: missing academy note ${source.path}` }),
+              (cause) =>
+                new VerifyError({
+                  message: `${question.id}: missing academy note ${source.path}`,
+                  cause,
+                }),
             ),
           );
         const relativePath = path.relative(root, actual);
@@ -206,7 +218,11 @@ export const verifyPack = (packPath: string, profilePath?: string) =>
       const path = yield* Path.Path;
       const result = yield* verifyProfile(absolutePath, pack, path.resolve(profilePath)).pipe(
         Effect.mapError(
-          (error) => new VerifyError({ message: `Profile verification failed: ${error.message}` }),
+          (error) =>
+            new VerifyError({
+              message: `Profile verification failed: ${error.message}`,
+              cause: error,
+            }),
         ),
       );
       profileReportPath = result.reportPath;

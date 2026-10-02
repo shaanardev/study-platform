@@ -30,12 +30,6 @@ import { Effect } from "effect"
 const success = Effect.succeed(42)
 const failure = Effect.fail(new Error("oops"))
 
-// From sync code (may throw)
-const sync = Effect.sync(() => JSON.parse(data))
-const trySync = Effect.try({
-  try: () => JSON.parse(data),
-  catch: (e) => new ParseError(e)
-})
 
 // From async code
 const promise = Effect.promise(() => fetch(url))
@@ -135,8 +129,8 @@ const divide = (a: number, b: number): Effect.Effect<number> =>
 ### Error Recovery
 
 ```typescript
-// Catch all errors
-Effect.catchAll(effect, (error) => Effect.succeed(fallback))
+// Handle all typed errors
+Effect.catch(effect, (error) => Effect.succeed(fallback))
 
 // Catch specific tagged errors
 Effect.catchTag(effect, "NotFoundError", (e) =>
@@ -149,8 +143,8 @@ Effect.catchTags(effect, {
   ValidationError: (e) => Effect.fail(new HttpError(400, e.message))
 })
 
-// Convert to Either (errors become Left)
-Effect.either(effect)  // Effect<Either<E, A>, never, R>
+// Convert typed failures to Result
+Effect.result(effect)  // Effect<Result<A, E>, never, R>
 
 // Retry on failure
 Effect.retry(effect, Schedule.recurs(3))
@@ -345,7 +339,7 @@ const runnable = Effect.scoped(program)
 | `Effect.flatMap` | Chain effects (monadic bind) |
 | `Effect.tap` | Side effect, keep original value |
 | `Effect.andThen` | Sequence, can be value or effect |
-| `Effect.catchAll` | Handle all errors |
+| `Effect.catch` | Handle all typed errors |
 | `Effect.catchTag` | Handle specific tagged error |
 | `Effect.provide` | Inject dependencies |
 | `Effect.retry` | Retry with schedule |
@@ -359,7 +353,7 @@ const runnable = Effect.scoped(program)
 |----------|-----|
 | Transform value | `Effect.map` |
 | Chain effects | `Effect.flatMap` or `Effect.gen` |
-| Error recovery | `Effect.catchTag` / `Effect.catchAll` |
+| Error recovery | `Effect.catchTag` / `Effect.catch` |
 | Add logging | `Effect.tap` + `Effect.log` |
 | Run in parallel | `Effect.all` with `concurrency` |
 | Limit concurrency | `Semaphore` |
