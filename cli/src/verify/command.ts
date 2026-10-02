@@ -18,8 +18,8 @@ export const verifyCommand = Command.make(
       Option.getOrUndefined(profilePath),
     );
     yield* Console.log(
-      `PASS: ${pack.questions.length} ${pack.questions.length === 1 ? 'question' : 'questions'}; generic checks, app import, practice, timed mock, and source read checks passed${Option.isSome(profilePath) ? '; profile checks passed' : ''}.`,
+      `PASS: ${pack.questions.length} ${pack.questions.length === 1 ? 'question' : 'questions'}; structural checks and source-file checks passed${Option.isSome(profilePath) ? '; profile checks passed' : ''}.`,
     );
     if (profileReportPath) yield* Console.log(`Verification report: ${profileReportPath}`);
   }),
-).pipe(Command.withDescription('Validate an exam pack and exercise the application importer'));
+).pipe(Command.withDescription('Validate an exam pack and check its source files'));
