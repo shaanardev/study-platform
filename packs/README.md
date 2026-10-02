@@ -11,8 +11,11 @@ dump and is safe to import as a starter sample.
 The pack contains a stable exam ID and exam version, a stable pack ID and pack version, weighted
 domains, an optional passing threshold, and single-choice or multiple-choice questions. Each
 question carries its answer IDs, explanation, and one or more source references. Domain weights
-must total 100; question, domain, and option IDs must be unique in their scope. Source paths must
-resolve to files under the same local pack folder.
+must total 100; question, domain, and option IDs must be unique in their scope. Bundled citations
+use `{ "path", "label" }` and resolve under the pack folder. Academy-note citations use
+`{ "kind": "academy_note", "path", "label", "section?", "documentationUrls" }`. Their `path`
+is relative to `ACADEMY_SOURCE_ROOT`, configured locally for the app and CLI; note content is read
+when opened and is not copied into the pack or database. Documentation URLs must use HTTPS.
 
 Importing is explicit: open the local app and select **Import packs from local folder**. Valid
 versions are stored in `.local/exam-packs.sqlite`; personal pack files and local database files are
@@ -23,11 +26,12 @@ duplicate instead of overwriting it.
 
 The Effect CLI builds packs from a JSON authoring file. Its format includes `metadata`, an
 `outputFile`, an `assetsDirectory`, deterministic `shuffle` seeds, and `questions` with option IDs,
-correct option IDs, and local source paths. See
+correct option IDs, bundled source paths, or academy-note citations. See
 [`cli/test/fixtures/multi-domain/authoring.json`](../cli/test/fixtures/multi-domain/authoring.json)
 and the [single-domain example](../cli/test/fixtures/single-domain/authoring.json).
-Source paths in the authoring file are relative to that file. The builder copies them under the
-output directory's asset folder. Run from the repository root:
+Bundled source paths in the authoring file are relative to that file. The builder copies those
+under the output directory's asset folder. Set `ACADEMY_SOURCE_ROOT` to verify academy notes. Run
+from the repository root:
 
 ```bash
 pnpm pack:build cli/test/fixtures/multi-domain/authoring.json /tmp/example-pack

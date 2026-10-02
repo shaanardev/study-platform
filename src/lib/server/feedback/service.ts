@@ -34,6 +34,9 @@ type JsonRecord = Record<string, unknown> & {
   text?: unknown;
   path?: unknown;
   label?: unknown;
+  kind?: unknown;
+  section?: unknown;
+  documentationUrls?: unknown;
   type?: unknown;
   domainId?: unknown;
   prompt?: unknown;
@@ -51,6 +54,10 @@ function readText(row: Record<string, SQLOutputValue>, field: string): string {
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function citationKey(value: JsonRecord): string {
+  return JSON.stringify(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)));
 }
 
 function parseFlags(value: string): FeedbackItem['flags'] {
@@ -89,10 +96,36 @@ function isQuestionCorrection(value: unknown): value is QuestionCorrection {
     if (field === 'sources')
       return (
         Array.isArray(fieldValue) &&
-        fieldValue.every(
-          (source) =>
-            isRecord(source) && typeof source.path === 'string' && typeof source.label === 'string',
-        )
+        fieldValue.every((source) => {
+          if (
+            !isRecord(source) ||
+            typeof source.path !== 'string' ||
+            typeof source.label !== 'string'
+          )
+            return false;
+          if (source.kind === undefined)
+            return Object.keys(source).every((key) => key === 'path' || key === 'label');
+          if (
+            source.kind !== 'academy_note' ||
+            (source.section !== undefined && typeof source.section !== 'string') ||
+            !Array.isArray(source.documentationUrls) ||
+            source.documentationUrls.length === 0
+          )
+            return false;
+          return (
+            Object.keys(source).every((key) =>
+              ['kind', 'path', 'label', 'section', 'documentationUrls'].includes(key),
+            ) &&
+            source.documentationUrls.every((url) => {
+              if (typeof url !== 'string') return false;
+              try {
+                return new URL(url).protocol === 'https:' && Boolean(new URL(url).hostname);
+              } catch {
+                return false;
+              }
+            })
+          );
+        })
       );
     return false;
   });
@@ -175,7 +208,7 @@ function validateCorrection(
       (source) =>
         isRecord(source) &&
         typeof source.path === 'string' &&
-        !original.sources.some((citation) => citation.path === source.path),
+        !original.sources.some((citation) => citationKey(citation) === citationKey(source)),
     )
   ) {
     issues.push('Correction sources must refer to citation files in this imported pack version.');

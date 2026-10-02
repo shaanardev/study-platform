@@ -65,6 +65,7 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
     }[] = [];
     for (const question of validation.pack.questions) {
       for (const source of question.sources) {
+        if ('kind' in source) continue;
         const candidate = resolve(dirname(filePath), source.path);
         if (!isWithin(dirname(filePath), candidate)) {
           sourceError = `source path "${source.path}" escapes the pack folder`;

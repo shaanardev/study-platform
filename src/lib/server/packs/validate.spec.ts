@@ -33,6 +33,52 @@ describe('validateExamPack', () => {
     });
   });
 
+  it('accepts academy-note metadata and HTTPS documentation links without treating its path as a pack asset', () => {
+    const pack = structuredClone(validPack);
+    const question = pack.questions[0];
+    if (!question) throw new Error('Expected the valid pack to contain a question.');
+    Object.assign(question, {
+      sources: [
+        {
+          kind: 'academy_note',
+          path: 'streaming/checkpoints.md',
+          label: 'Streaming notes',
+          section: 'Checkpointing',
+          documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
+        },
+      ],
+    });
+
+    const result = validateExamPack(pack);
+
+    expect(result.valid).toBe(true);
+    if (result.valid) expect(result.pack.questions[0]?.sources).toEqual(question.sources);
+  });
+
+  it('requires academy documentation links to use HTTPS', () => {
+    const pack = structuredClone(validPack);
+    const question = pack.questions[0];
+    if (!question) throw new Error('Expected the valid pack to contain a question.');
+    Object.assign(question, {
+      sources: [
+        {
+          kind: 'academy_note',
+          path: 'streaming/checkpoints.md',
+          label: 'Streaming notes',
+          documentationUrls: ['http://docs.databricks.com/streams/checkpoints.html'],
+        },
+      ],
+    });
+
+    const result = validateExamPack(pack);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid)
+      expect(result.errors).toContain(
+        'questions[0].sources[0].documentationUrls must contain HTTPS URLs.',
+      );
+  });
+
   it('reports unsafe source paths and domain weights that do not total 100', () => {
     const invalidPack = structuredClone(validPack);
     const domain = invalidPack.domains[0];

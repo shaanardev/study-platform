@@ -415,7 +415,11 @@ export const verifyProfile = (packPath: string, pack: PackForVerification, profi
         'Baseline archive hash mismatch',
       );
       report.sourceFilesResolved = new Set(
-        pack.questions.flatMap(({ sources }) => sources.map(({ path: sourcePath }) => sourcePath)),
+        pack.questions.flatMap(({ sources }) =>
+          sources.map(
+            (source) => `${'kind' in source ? 'academy_note' : 'bundled'}:${source.path}`,
+          ),
+        ),
       ).size;
       report.materialFilesVerified = provenance.materialInventory.length + 1;
     }

@@ -1,8 +1,8 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { saveImportedPack } from '#lib/server/db/packs.js';
+import { getImportedSourceAsset, saveImportedPack } from '#lib/server/db/packs.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
 import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
@@ -126,5 +126,96 @@ describe('practice sessions', () => {
     expect(result.errors).toEqual([]);
     expect(source.label).toBe('Synthetic study notes, section 1');
     expect(source.text).toContain('transaction log');
+  });
+
+  it('imports academy-note references as metadata and resolves them on demand within the configured root', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'practice-academy-source-'));
+    directories.push(directory);
+    const incoming = join(directory, 'incoming');
+    const academyRoot = join(directory, 'academy');
+    const outsideNote = join(directory, 'outside.md');
+    const databasePath = join(directory, 'practice.sqlite');
+    await createSamplePackFolder(incoming);
+    await mkdir(join(academyRoot, 'streaming'), { recursive: true });
+    await writeFile(join(academyRoot, 'streaming', 'checkpoints.md'), 'Academy note content.\n');
+    await writeFile(outsideNote, 'Outside note.\n');
+    await symlink(outsideNote, join(academyRoot, 'escape.md'));
+    const packPath = join(incoming, 'sample-databricks-associate.json');
+    const authored = JSON.parse(await readFile(packPath, 'utf8')) as {
+      questions: { id: string; sources: { path: string; label: string }[] }[];
+    };
+    const firstQuestion = authored.questions[0];
+    const bundledCitation = firstQuestion?.sources[0];
+    if (!firstQuestion || !bundledCitation)
+      throw new Error('Missing representative question source.');
+    const noteCitation = {
+      kind: 'academy_note',
+      path: 'streaming/checkpoints.md',
+      label: 'Streaming academy note',
+      section: 'Checkpointing',
+      documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
+    };
+    const escapeCitation = {
+      kind: 'academy_note',
+      path: 'escape.md',
+      label: 'Escaping academy note',
+      documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
+    };
+    firstQuestion.sources.push(noteCitation as never, escapeCitation as never);
+    await writeFile(packPath, JSON.stringify(authored));
+
+    const previousRoot = process.env['ACADEMY_SOURCE_ROOT'];
+    process.env['ACADEMY_SOURCE_ROOT'] = academyRoot;
+    try {
+      const imported = await importPacksFromFolder({ folder: incoming, databasePath });
+      await rm(incoming, { recursive: true, force: true });
+      const bundled = await readQuestionSource(
+        databasePath,
+        'databricks-data-engineer-associate',
+        'synthetic-foundations',
+        '1.0.0',
+        firstQuestion.id,
+        bundledCitation.path,
+      );
+      const note = await readQuestionSource(
+        databasePath,
+        'databricks-data-engineer-associate',
+        'synthetic-foundations',
+        '1.0.0',
+        firstQuestion.id,
+        noteCitation.path,
+      );
+
+      expect(imported.errors).toEqual([]);
+      expect(bundled.text).toContain('transaction log');
+      expect(note).toMatchObject({
+        label: 'Streaming academy note',
+        section: 'Checkpointing',
+        text: 'Academy note content.\n',
+      });
+      expect(
+        getImportedSourceAsset(
+          databasePath,
+          'databricks-data-engineer-associate',
+          'synthetic-foundations',
+          '1.0.0',
+          firstQuestion.id,
+          noteCitation.path,
+        ),
+      ).toBeUndefined();
+      await expect(
+        readQuestionSource(
+          databasePath,
+          'databricks-data-engineer-associate',
+          'synthetic-foundations',
+          '1.0.0',
+          firstQuestion.id,
+          escapeCitation.path,
+        ),
+      ).rejects.toBeDefined();
+    } finally {
+      if (previousRoot === undefined) delete process.env['ACADEMY_SOURCE_ROOT'];
+      else process.env['ACADEMY_SOURCE_ROOT'] = previousRoot;
+    }
   });
 });

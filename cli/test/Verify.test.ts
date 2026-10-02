@@ -116,7 +116,7 @@ describe('verifyPack', () => {
           Effect.provideService(Console.Console, testConsole),
         );
         expect(messages).toEqual([
-          'PASS: 2 questions; structural checks and source-file checks passed.',
+          'PASS: 2 questions; structural checks and citation checks passed.',
         ]);
       }),
     ));
@@ -144,7 +144,7 @@ describe('verifyPack', () => {
           profilePath,
         ]).pipe(Effect.provideService(Console.Console, testConsole));
         expect(messages).toEqual([
-          'PASS: 2 questions; structural checks and source-file checks passed; profile checks passed.',
+          'PASS: 2 questions; structural checks and citation checks passed; profile checks passed.',
           `Verification report: ${path.join(directory, 'assets', 'verification-report.json')}`,
         ]);
       }),
