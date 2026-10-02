@@ -190,6 +190,17 @@ describe('pack verify command', () => {
   });
 
   // oxlint-disable-next-line effecttsgo/async-function
+  it('rejects malformed profile data with a profile validation error', async () => {
+    const { directory, path } = await temporaryPack();
+    const profilePath = join(directory, 'verify-profile.json');
+    await writeFile(profilePath, JSON.stringify({ domains: { domain: { count: 'two', weight: 100 } } }));
+
+    const result = runVerifyWithProfile(path, profilePath);
+    expect(result.status).not.toBe(0);
+    expect(`${result.stderr}${result.stdout}`).toContain('Profile schema validation failed');
+  });
+
+  // oxlint-disable-next-line effecttsgo/async-function
   it('returns a useful failure for a missing source', async () => {
     const { path } = await temporaryPack();
     const pack = JSON.parse(await readFile(path, 'utf8')) as {

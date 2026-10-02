@@ -149,10 +149,11 @@ const verifyOptionalProfile = Effect.fn(function* (
 ) {
   if (!profilePath) return undefined;
   const path = yield* Path.Path;
-  const result = yield* Effect.tryPromise({
-    try: () => verifyProfile(packPath, pack, path.resolve(profilePath)),
-    catch: toVerifyError('Profile verification failed'),
-  });
+  const result = yield* verifyProfile(packPath, pack, path.resolve(profilePath)).pipe(
+    Effect.mapError((error) =>
+      new VerifyError({ message: `Profile verification failed: ${error.message}` }),
+    ),
+  );
   return result.reportPath;
 });
 
