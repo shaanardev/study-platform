@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$repo_root"
+
+set -a
+# Tracked defaults; the ignored project env file may override them locally.
+# shellcheck disable=SC1091
+. ./ordewell.env
+if [[ -f .ordewell/env ]]; then
+	# This project-local file is intentionally untracked and contains shell-style KEY=value lines.
+	# shellcheck disable=SC1091
+	. .ordewell/env
+fi
+set +a
+
+exec ordewell "$@"
