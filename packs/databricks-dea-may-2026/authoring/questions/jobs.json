@@ -28,12 +28,14 @@
     "explanation": "Task dependencies and run-if conditions define the execution graph. All succeeded requires every dependency to succeed. Other run-if conditions support recovery or partial-success flows, so successful upstream execution is not required for every possible task configuration.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > conditional and iterative tasks > run-if conditional",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/run-if",
+          "https://docs.databricks.com/gcp/en/jobs/control-flow"
+        ]
       }
     ]
   },
@@ -66,12 +68,14 @@
     "explanation": "Retry settings control additional task attempts and intervals. They can recover transient failures but do not fix deterministic data or code errors. Final job outcome also depends on downstream control flow and leaf tasks.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > retry policies",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow",
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -104,12 +108,14 @@
     "explanation": "dbutils.jobs.taskValues.set() and get() enable passing key-value pairs between tasks in a multi-task job. A task sets a value: dbutils.jobs.taskValues.set(\"key\", value). Downstream tasks retrieve it: dbutils.jobs.taskValues.get(\"upstream_task\", \"key\"). This enables dynamic workflows where later tasks use outputs from earlier tasks.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > dynamically setting and accessing task parameters",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/task-parameters",
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -142,12 +148,13 @@
     "explanation": "Repair run re-executes failed or selected tasks within the job run recovery workflow. Successful upstream work can be preserved. Compute restart and job run repair are different operations; validate the repaired result.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > handling failures",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/repair-job-failures"
+        ]
       }
     ]
   },
@@ -180,12 +187,13 @@
     "explanation": "For each invokes a nested task for input array elements. Concurrency is configurable; iteration is not necessarily fully parallel. The nested task receives the current input value through a dynamic reference.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > conditional and iterative tasks > for each tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow"
+        ]
       }
     ]
   },
@@ -218,12 +226,13 @@
     "explanation": "Conditional (IF/ELSE) tasks enable branching logic - they evaluate a condition and execute the true or false branch accordingly. This enables dynamic pipelines that adapt based on: presence of data, quality check results, or previous task outcomes. Different downstream paths can be taken based on runtime conditions.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > conditional and iterative tasks > If/Else Tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow"
+        ]
       }
     ]
   },
@@ -256,12 +265,14 @@
     "explanation": "Downstream tasks depend on the For each container. An all-succeeded condition waits for successful completion, rather than relying on an individual iteration or an elapsed-time guess.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > conditional and iterative tasks > for each tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow",
+          "https://docs.databricks.com/aws/en/jobs/run-if"
+        ]
       }
     ]
   },
@@ -294,12 +305,13 @@
     "explanation": "Databricks Workflows is the orchestration service for scheduling and running jobs composed of tasks (notebooks, JARs, Python, SQL, Delta Live Tables). It supports task dependencies, retries, notifications, and monitoring. Workflows enables production deployment of data pipelines with reliable execution and error handling.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > jobs",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -332,12 +344,13 @@
     "explanation": "A job groups tasks with dependencies, parameters, and execution settings. It can be triggered manually, by a schedule, or by data events. Tasks can use supported serverless, jobs compute, or SQL warehouse options according to task type.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > jobs",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -370,12 +383,13 @@
     "explanation": "A Run represents a single execution of a job. Each run has a unique run ID, start/end times, status (pending, running, succeeded, failed), and output logs. You can view run history, compare runs, and rerun specific runs. Runs enable tracking job execution history and debugging failures.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > jobs",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -408,12 +422,13 @@
     "explanation": "max_concurrent_runs limits simultaneous executions of the same job. Default is 1 (only one run at a time). If a new run is triggered while another is running, it queues or skips based on configuration. This prevents resource exhaustion and conflicting operations on the same data.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > jobs",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -446,12 +461,13 @@
     "explanation": "Job parameters make workload code reusable, and run-specific values can override defaults. Notebook code can read parameters through widgets; other task types have their own parameter interfaces. Configuration parameters are distinct from compute sizing.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > Job parameters",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/task-parameters"
+        ]
       }
     ]
   },
@@ -484,12 +500,14 @@
     "explanation": "Use runtime parameters to reuse workload code. Validate any identifier against the intended catalog/schema or approved choices, and use the supported table reader or identifier parameterization. Parameterization does not grant access to otherwise unauthorized tables.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > Job parameters",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/task-parameters",
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -522,12 +540,13 @@
     "explanation": "Task timeout (in DLT and job tasks) sets the maximum duration before automatic termination. This prevents runaway tasks from consuming resources indefinitely. If timeout is reached, the task fails. Useful for: preventing hung queries, controlling costs, and ensuring SLAs are met.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > configuration options",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -560,12 +579,13 @@
     "explanation": "Queuing lets eligible runs wait instead of being immediately skipped when capacity limits apply. Runs remain subject to queue lifetime and other platform limits. This is separate from the number of parallel tasks inside a run.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > jobs",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -598,12 +618,14 @@
     "explanation": "Run-scoped jobs compute reduces environmental interference from interactive use. It still needs explicit dependency configuration and data access permissions. Shared task compute within one run does not establish isolation between task code states.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > compute options",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/configure-task",
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -636,12 +658,13 @@
     "explanation": "Job permissions control access to the job resource. Data access during execution is checked against the Run as identity and the relevant data privileges. Permission labels and operations follow the current job ACL model; job ownership is separate from execution identity.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > jobs",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/"
+        ]
       }
     ]
   },
@@ -674,12 +697,13 @@
     "explanation": "Databricks advanced schedules use Quartz cron syntax with a seconds field. 0 0 3 * * ? means second 0, minute 0, hour 3, every day and month, with no specific day-of-week. Set the time zone explicitly.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > scheduled triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -712,12 +736,13 @@
     "explanation": "Job schedules automatically trigger job runs at defined times or intervals using cron expressions (e.g., daily at midnight, hourly). This enables automation of ETL pipelines, reports, and maintenance tasks without manual intervention. Schedules can be paused, modified, or triggered on-demand.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -750,12 +775,13 @@
     "explanation": "Run Now manually triggers a job execution immediately without waiting for the scheduled time. This is useful for: testing job changes, backfilling data, or ad-hoc execution. The run appears in the job history alongside scheduled runs with the same logging and monitoring.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > manual triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -788,12 +814,13 @@
     "explanation": "A file arrival trigger responds to new files in a configured supported location. Configure the landing path and appropriate access. It starts a job; ingestion logic must still discover and track the files.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > file arrival triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -826,12 +853,13 @@
     "explanation": "A table update trigger responds to changes in selected tables. Configure the watched tables, trigger rule, and timing controls. It avoids relying on an arbitrary time gap between separate jobs.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > table update triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -864,12 +892,13 @@
     "explanation": "Table update triggers can watch multiple tables with an all or any update condition. Choose all when every input must have changed; evaluate whether this matches the required freshness contract.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > table update triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -902,12 +931,13 @@
     "explanation": "Wait after last change delays triggering until a quiet interval after the latest arrival. Minimum time between triggers limits run frequency. Neither setting by itself establishes a transactional completeness guarantee for arbitrary file batches.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > file arrival triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -940,12 +970,13 @@
     "explanation": "A scheduled trigger expresses a clock-based requirement. Configure the time zone and understand daylight saving behavior. Data-driven triggers are appropriate when fresh data, rather than clock time, determines execution.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > schedules and triggers > scheduled triggers",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/triggers"
+        ]
       }
     ]
   },
@@ -978,12 +1009,14 @@
     "explanation": "All done supports cleanup after dependencies reach terminal states regardless of success. All succeeded is a success gate. Configure cleanup logic to handle partial outputs safely.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > conditional and iterative tasks > run-if conditional",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/run-if",
+          "https://docs.databricks.com/gcp/en/jobs/control-flow"
+        ]
       }
     ]
   },
@@ -1016,12 +1049,14 @@
     "explanation": "If/else tasks evaluate conditions using parameters, task values, or supported dynamic references. Downstream tasks attach to the true or false outcome. Run-if conditions instead evaluate dependency execution outcomes.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > conditional and iterative tasks > If/Else Tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow",
+          "https://docs.databricks.com/gcp/en/jobs/task-parameters"
+        ]
       }
     ]
   },
@@ -1054,12 +1089,13 @@
     "explanation": "SQL tasks use SQL warehouses for SQL workload execution. Configure the query or file reference and execution privileges. Control-flow containers do not replace workload compute.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -1092,12 +1128,13 @@
     "explanation": "A pipeline task runs an existing pipeline as part of job orchestration. Task dependencies determine the order. Pipeline dataset dependencies and job task dependencies are related but distinct graphs.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -1130,12 +1167,13 @@
     "explanation": "A dashboard task performs the supported dashboard refresh or publication workload. Set the dependency so the dashboard uses the intended completed data. Data table updates alone do not define that orchestration step.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > tasks",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/configure-task"
+        ]
       }
     ]
   },
@@ -1168,12 +1206,14 @@
     "explanation": "Independent source tasks can execute in parallel if compute capacity permits. The fan-in task waits for both required results. Correct dependencies encode data readiness rather than relying on elapsed time.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Core Components > task orchestration",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow",
+          "https://docs.databricks.com/aws/en/jobs/run-if"
+        ]
       }
     ]
   },
@@ -1206,12 +1246,14 @@
     "explanation": "A retry can repeat code that already committed some output. Use suitable idempotent writes or a transaction design. Retry settings handle execution recovery; they do not automatically deduplicate application-level side effects.",
     "sources": [
       {
-        "path": "sources/jobs/lakeflow-jobs.md",
-        "label": "Reviewed Lakeflow Jobs documentation digest (official Databricks documentation checked October 1, 2026)"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
+        "kind": "academy_note",
+        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
+        "section": "Creating & Scheduling Jobs > retry policies",
+        "documentationUrls": [
+          "https://docs.databricks.com/gcp/en/jobs/control-flow",
+          "https://docs.databricks.com/aws/en/jobs/repair-job-failures"
+        ]
       }
     ]
   }
