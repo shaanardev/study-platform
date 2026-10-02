@@ -28,24 +28,13 @@
     "explanation": "The control plane provides workspace and orchestration services. Processing runs in a compute plane: classic compute uses customer cloud resources, whereas serverless compute uses Databricks-managed resources. Do not generalize the classic deployment location to serverless.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-176.md",
-        "label": "Archived third-party input databricks-engineer-q-176.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: Ingesting Enterprise Data — control and data planes",
+        "section": "Ingesting Enterprise Data — control and data planes",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/getting-started/high-level-architecture"
+        ]
       }
     ]
   },
@@ -78,24 +67,13 @@
     "explanation": "Delta Lake is an open-source storage layer that runs on top of existing data lakes (like S3, ADLS, GCS). It provides ACID transactions, scalable metadata handling, and unified streaming/batch data processing. Delta Lake is not proprietary to Databricks and is a Linux Foundation project.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-002.md",
-        "label": "Archived third-party input databricks-engineer-q-002.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: Delta Lake",
+        "section": "Delta Lake",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta"
+        ]
       }
     ]
   },
@@ -128,24 +106,13 @@
     "explanation": "Delta Lake time travel lets you read an earlier table snapshot with SELECT ... VERSION AS OF n or TIMESTAMP AS OF '...'. It relies on the transaction log and on data files still being retained (not yet removed by VACUUM).",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-163.md",
-        "label": "Archived third-party input databricks-engineer-q-163.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: UC (Unity Catalog) table Components",
+        "section": "UC (Unity Catalog) table Components",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/tables/history"
+        ]
       }
     ]
   },
@@ -178,20 +145,13 @@
     "explanation": "A SQL warehouse (formerly SQL endpoint) is compute optimized for running SQL queries against lakehouse data and serving BI tools and Databricks SQL dashboards. Serverless SQL warehouses start almost instantly and auto-scale.",
     "sources": [
       {
-        "path": "sources/references/compute.md",
-        "label": "Reviewed primary documentation digest: compute"
-      },
-      {
-        "path": "sources/references/sql.md",
-        "label": "Reviewed primary documentation digest: Databricks SQL"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-173.md",
-        "label": "Archived third-party input databricks-engineer-q-173.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-job-workloads/notes.md",
+        "label": "Academy notes: Core Components — SQL warehouse",
+        "section": "Core Components — SQL warehouse",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/compute/sql-warehouse/"
+        ]
       }
     ]
   },
@@ -224,24 +184,13 @@
     "explanation": "The lakehouse stores data in open formats (Delta Lake) on cheap cloud object storage while adding warehouse-grade features: ACID transactions, schema enforcement, governance, and BI/ML performance. This removes the need for separate lake and warehouse systems.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-192.md",
-        "label": "Archived third-party input databricks-engineer-q-192.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: Medallion Architecture",
+        "section": "Medallion Architecture",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/lakehouse"
+        ]
       }
     ]
   },
@@ -274,24 +223,13 @@
     "explanation": "Delta Lake provides ACID transactions using optimistic concurrency control on the transaction log. Commits are atomic and isolated, so a write fully succeeds or leaves the table unchanged, even when multiple jobs write concurrently.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-167.md",
-        "label": "Archived third-party input databricks-engineer-q-167.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: Data Ingestion from Cloud Storage",
+        "section": "Data Ingestion from Cloud Storage",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/lakehouse/acid"
+        ]
       }
     ]
   },
@@ -324,20 +262,13 @@
     "explanation": "A serverless SQL warehouse provides managed SQL compute with fast startup and scaling. It still uses Unity Catalog access controls. Total cost depends on workload and usage; serverless is not a guarantee of a lower bill.",
     "sources": [
       {
-        "path": "sources/references/compute.md",
-        "label": "Reviewed primary documentation digest: compute"
-      },
-      {
-        "path": "sources/references/sql.md",
-        "label": "Reviewed primary documentation digest: Databricks SQL"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-183.md",
-        "label": "Archived third-party input databricks-engineer-q-183.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-job-workloads/notes.md",
+        "label": "Academy notes: Core Components — compute options",
+        "section": "Core Components — compute options",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/compute/sql-warehouse/"
+        ]
       }
     ]
   },
@@ -370,24 +301,13 @@
     "explanation": "Because Delta Lake provides ACID transactions and supports streaming writes and batch reads on the same table, a streaming job can append while analysts run consistent SQL queries against it concurrently, with no separate copies required.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-194.md",
-        "label": "Archived third-party input databricks-engineer-q-194.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "declarative-spark-pipelines/notes.md",
+        "label": "Academy notes: Overview — unified batch and streaming",
+        "section": "Overview — unified batch and streaming",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta"
+        ]
       }
     ]
   },
@@ -420,24 +340,13 @@
     "explanation": "The _delta_log directory holds an ordered series of JSON commit files (and periodic Parquet checkpoints) that record every transaction. Reading the log lets Delta reconstruct the current table state and provides ACID guarantees and time travel.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-162.md",
-        "label": "Archived third-party input databricks-engineer-q-162.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: UC (Unity Catalog) table Components",
+        "section": "UC (Unity Catalog) table Components",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/tables/history"
+        ]
       }
     ]
   },
@@ -470,24 +379,15 @@
     "explanation": "Delta Lake adds table transaction semantics to the underlying data files. Schema enforcement is the default; schema evolution requires appropriate configuration. Historical reads require retained logs and data files.",
     "sources": [
       {
-        "path": "sources/references/delta.md",
-        "label": "Reviewed primary documentation digest: Delta Lake"
-      },
-      {
-        "path": "sources/references/architecture.md",
-        "label": "Reviewed primary documentation digest: Databricks architecture"
-      },
-      {
-        "path": "sources/references/uc.md",
-        "label": "Reviewed primary documentation digest: Unity Catalog"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-007.md",
-        "label": "Archived third-party input databricks-engineer-q-007.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
+        "label": "Academy notes: Data Ingestion from Cloud Storage",
+        "section": "Data Ingestion from Cloud Storage",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/delta",
+          "https://docs.databricks.com/aws/en/tables/schema-enforcement",
+          "https://docs.databricks.com/aws/en/tables/history"
+        ]
       }
     ]
   },
@@ -520,20 +420,13 @@
     "explanation": "Jobs compute is scoped to a job run and terminates when that run completes. Shared jobs compute can serve several tasks within that run. Interactive compute suits exploration; a SQL warehouse runs SQL. Cost depends on workload and configuration.",
     "sources": [
       {
-        "path": "sources/references/compute.md",
-        "label": "Reviewed primary documentation digest: compute"
-      },
-      {
-        "path": "sources/references/sql.md",
-        "label": "Reviewed primary documentation digest: Databricks SQL"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-003.md",
-        "label": "Archived third-party input databricks-engineer-q-003.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "lakeflow-job-workloads/notes.md",
+        "label": "Academy notes: Core Components — compute options",
+        "section": "Core Components — compute options",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/jobs/compute"
+        ]
       }
     ]
   },
@@ -566,20 +459,13 @@
     "explanation": "Standard access mode supports shared compute with user isolation and Unity Catalog access controls. Dedicated compute is assigned to a user or group. Access mode and node count are different settings.",
     "sources": [
       {
-        "path": "sources/references/compute.md",
-        "label": "Reviewed primary documentation digest: compute"
-      },
-      {
-        "path": "sources/references/sql.md",
-        "label": "Reviewed primary documentation digest: Databricks SQL"
-      },
-      {
-        "path": "sources/materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
-        "label": "Supplied academy notes (supplemental; primary documentation takes precedence)"
-      },
-      {
-        "path": "sources/baseline/databricks-engineer-q-009.md",
-        "label": "Archived third-party input databricks-engineer-q-009.md; reviewed answer is authoritative"
+        "kind": "academy_note",
+        "path": "data-privacy/notes.md",
+        "label": "Academy notes: Compute access modes",
+        "section": "Compute access modes",
+        "documentationUrls": [
+          "https://docs.databricks.com/aws/en/compute/standard-overview"
+        ]
       }
     ]
   }
