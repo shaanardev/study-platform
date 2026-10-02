@@ -1,6 +1,13 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
+import type { ExamPack } from '#lib/types/exam-pack.js';
 import PracticePage from './+page.svelte';
+
+const currentPack = JSON.parse(
+  readFileSync(resolve('packs/incoming/databricks-dea-may-2026-v1.2.0.json'), 'utf8'),
+) as ExamPack;
 
 describe('practice page', () => {
   it('updates the available domain choices when a learner switches exam pack versions', async () => {
@@ -172,5 +179,68 @@ describe('practice page', () => {
         ?.getAttribute('href'),
     ).toBe('https://docs.databricks.com/streams/checkpoints.html');
     expect(links.some((link) => link.textContent?.includes('Bundled notes'))).toBe(true);
+  });
+
+  it('renders a current pack note and documentation link after a practice answer', () => {
+    const question = currentPack.questions.find((item) =>
+      item.sources.some((source) => 'kind' in source),
+    );
+    const citation = question?.sources.find((source) => 'kind' in source);
+    if (!question || !citation || !('kind' in citation)) {
+      throw new Error('The current pack has no academy-note citation');
+    }
+    const documentationUrl = citation.documentationUrls[0];
+    if (!documentationUrl) throw new Error('The current citation has no documentation URL');
+
+    const { container } = render(PracticePage, {
+      params: {},
+      data: {
+        packs: [],
+        session: {
+          id: 'dea26-session',
+          examId: currentPack.exam.id,
+          packId: currentPack.pack.id,
+          packVersion: currentPack.pack.version,
+          domainIds: [],
+          questionIds: [question.id],
+          status: 'completed',
+          createdAt: 'now',
+          updatedAt: 'now',
+          answers: [
+            {
+              questionId: question.id,
+              answerIds: question.answerIds,
+              correct: true,
+              answerIdsCorrect: question.answerIds,
+              explanation: question.explanation,
+              answeredAt: 'now',
+              sources: question.sources,
+            },
+          ],
+          questions: [
+            {
+              id: question.id,
+              type: question.type,
+              domainId: question.domainId,
+              prompt: question.prompt,
+              options: question.options,
+              explanation: question.explanation,
+              sources: question.sources,
+            },
+          ],
+        },
+      },
+      form: null,
+    });
+
+    const links = [...container.querySelectorAll('a')];
+    expect(
+      links.some(
+        (link) =>
+          link.textContent?.includes(citation.label) &&
+          link.getAttribute('href')?.includes(encodeURIComponent(citation.path)),
+      ),
+    ).toBe(true);
+    expect(links.some((link) => link.getAttribute('href') === documentationUrl)).toBe(true);
   });
 });

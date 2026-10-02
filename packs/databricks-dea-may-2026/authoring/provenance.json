@@ -19,5 +19,5 @@
     "Supplied academy notes and code cheatsheet",
     "Reviewed third-party baseline"
   ],
-  "assetPolicy": "Only non-video text sources referenced by included questions, the complete baseline audit, this objective map, and this provenance record are packaged."
+  "assetPolicy": "Academy notes and documentation pages are linked by metadata and are not packaged. Note text is resolved from the configured local academy source root only when opened. Generated assets contain only this provenance record, the compact baseline audit, objective coverage, and the verification report."
 }

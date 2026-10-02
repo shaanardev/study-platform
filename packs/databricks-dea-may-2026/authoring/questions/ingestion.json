@@ -29,7 +29,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingesting Semi-Structured Data (JSON)",
         "section": "Ingesting Semi-Structure Data (JSON)",
         "documentationUrls": [
@@ -68,7 +68,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingestion Methods",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -108,7 +108,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -148,7 +148,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Streaming ingestion",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -187,7 +187,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Streaming ingestion",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -226,7 +226,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -266,7 +266,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Streaming ingestion",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -305,7 +305,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Unity Catalog tables",
         "section": "UC (Unity Catalog) table Components",
         "documentationUrls": [
@@ -345,7 +345,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -384,7 +384,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Unity Catalog tables",
         "section": "UC (Unity Catalog) table Components",
         "documentationUrls": [
@@ -424,7 +424,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Unity Catalog tables",
         "section": "UC (Unity Catalog) table Components",
         "documentationUrls": [
@@ -464,7 +464,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Delta Lake",
         "section": "Delta Lake",
         "documentationUrls": [
@@ -503,7 +503,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Delta Lake",
         "section": "Delta Lake",
         "documentationUrls": [
@@ -543,7 +543,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Delta Lake",
         "section": "Delta Lake",
         "documentationUrls": [
@@ -583,7 +583,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -622,7 +622,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -662,7 +662,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Delta Lake",
         "section": "Delta Lake",
         "documentationUrls": [
@@ -701,7 +701,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -741,7 +741,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Medallion Architecture",
         "section": "Medallion Architecture",
         "documentationUrls": [
@@ -780,7 +780,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: COPY INTO ingestion",
         "section": "Copy Into (Incremental Batch)",
         "documentationUrls": [
@@ -819,7 +819,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: COPY INTO ingestion",
         "section": "Copy Into (Incremental Batch)",
         "documentationUrls": [
@@ -858,7 +858,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: COPY INTO ingestion",
         "section": "Copy Into (Incremental Batch)",
         "documentationUrls": [
@@ -897,7 +897,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: COPY INTO ingestion",
         "section": "Copy Into (Incremental Batch)",
         "documentationUrls": [
@@ -936,7 +936,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: COPY INTO ingestion",
         "section": "Copy Into (Incremental Batch)",
         "documentationUrls": [
@@ -975,7 +975,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -1014,7 +1014,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -1053,7 +1053,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -1093,7 +1093,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -1132,7 +1132,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Auto Loader ingestion",
         "section": "Auto Loader Incremental Batch or Streaming",
         "documentationUrls": [
@@ -1172,7 +1172,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingesting Enterprise Data",
         "section": "Ingesting Enterprise Data",
         "documentationUrls": [
@@ -1212,7 +1212,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingesting Enterprise Data",
         "section": "Ingesting Enterprise Data",
         "documentationUrls": [
@@ -1252,7 +1252,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingesting Enterprise Data",
         "section": "Ingesting Enterprise Data",
         "documentationUrls": [
@@ -1291,7 +1291,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingesting Enterprise Data",
         "section": "Ingesting Enterprise Data",
         "documentationUrls": [
@@ -1331,7 +1331,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Lakeflow Connect",
         "section": "LakeFlow Connect Connectors",
         "documentationUrls": [
@@ -1370,7 +1370,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Lakeflow Connect",
         "section": "LakeFlow Connect Connectors",
         "documentationUrls": [
@@ -1410,7 +1410,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingesting Enterprise Data",
         "section": "Ingesting Enterprise Data",
         "documentationUrls": [
@@ -1450,7 +1450,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingestion Methods",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -1489,7 +1489,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingestion Methods",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -1528,7 +1528,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Ingestion Methods",
         "section": "Ingestion Methods",
         "documentationUrls": [
@@ -1567,7 +1567,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Lakeflow Connect and file upload",
         "section": "LakeFlow Connect Connectors",
         "documentationUrls": [
@@ -1607,7 +1607,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Data Ingestion from Cloud Storage",
         "section": "Data Ingestion from Cloud Storage",
         "documentationUrls": [
@@ -1646,7 +1646,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-connect-data-ingestion/notes.md",
+        "path": "lakeflow-connect-data-ingestion/notes.md",
         "label": "Academy: Lakehouse Federation",
         "section": "Additional Features and Ingesting into Existing Delta Tables",
         "documentationUrls": [

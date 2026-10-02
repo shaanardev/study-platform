@@ -29,7 +29,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/admin/users-groups/service-principals",
@@ -69,7 +69,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/types",
@@ -109,7 +109,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/admin/clusters/policies/"
@@ -147,7 +147,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Databricks Academy learning plan: Lakeflow Job Workloads",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/jobs/privileges"
@@ -186,7 +186,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/"
@@ -225,7 +225,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference"
@@ -264,7 +264,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/database-objects/tags",
@@ -304,7 +304,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/"
@@ -343,7 +343,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/securable-objects"
@@ -382,7 +382,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
@@ -421,7 +421,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
@@ -460,7 +460,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference"
@@ -499,7 +499,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
@@ -538,7 +538,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/volumes/"
@@ -577,7 +577,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/types",
@@ -617,7 +617,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification/",
@@ -657,7 +657,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/constraints"
@@ -695,7 +695,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/object-storage-lifecycle"
@@ -734,7 +734,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference",
@@ -774,7 +774,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference"
@@ -813,7 +813,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/security-deny",
@@ -852,7 +852,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
@@ -891,7 +891,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
@@ -930,7 +930,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts",
@@ -970,7 +970,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/admin/governed-tags/",
@@ -1010,7 +1010,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts",
@@ -1050,7 +1050,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/external",
@@ -1090,7 +1090,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/convert-to-managed"
@@ -1128,7 +1128,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/convert-to-managed"
@@ -1166,7 +1166,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/data-privacy/notes.md",
+        "path": "data-privacy/notes.md",
         "label": "Databricks Academy learning plan: Data Privacy",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/managed",

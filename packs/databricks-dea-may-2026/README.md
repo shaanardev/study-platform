@@ -1,14 +1,15 @@
 # Databricks Data Engineer Associate practice pack
 
 This pack prepares for the exam guide effective May 4, 2026. It contains 200 independent practice
-questions with four choices, one correct answer, explanations, and local source references. The
-question bank matches all seven domain weights exactly. It uses the supplied academy notes,
-screenshots, code cheatsheet, and third-party baseline; videos are excluded.
+questions with four choices, one correct answer, explanations, original academy-note citations,
+and Databricks documentation links. The question bank matches all seven domain weights exactly.
+Academy notes are referenced as local metadata and are read on demand; their contents are not copied
+into the repository, generated pack, or database.
 
 The importable file is
-[`../incoming/databricks-dea-may-2026-v1.1.0.json`](../incoming/databricks-dea-may-2026-v1.1.0.json).
-Its required sources and reports are beside it in
-[`../incoming/assets/databricks-dea-may-2026-v1.1.0/`](../incoming/assets/databricks-dea-may-2026-v1.1.0/).
+[`../incoming/databricks-dea-may-2026-v1.2.0.json`](../incoming/databricks-dea-may-2026-v1.2.0.json).
+Its non-source metadata assets and verification report are beside it in
+[`../incoming/assets/databricks-dea-may-2026-v1.2.0/`](../incoming/assets/databricks-dea-may-2026-v1.2.0/).
 Keep that directory with the JSON when moving the pack. The authored input is
 [`authoring/authoring.json`](authoring/authoring.json), with one question file per domain and a
 data-driven verification profile. The generated versioned JSON and required assets are tracked in
@@ -41,7 +42,7 @@ largest-remainder allocator: 3, 9, 10, 7, 5, 4, and 7 respectively. Those rounde
 
 1. Start the app with the existing `pnpm dev` command.
 2. Open the pack library and select **Import packs from local folder**.
-3. Select **May 2026 reviewed baseline and original practice**, version **1.1.0**.
+3. Select **May 2026 reviewed baseline and original practice**, version **1.2.0**.
 4. Use domain practice or configure a timed mock.
 
 The pack follows [the app schema](../exam-pack.schema.json), uses exam version `2026-05-04`, and
@@ -63,21 +64,20 @@ documentation takes precedence over supplied notes when they differ. The syllabu
 May 2026; technical documentation was checked on October 1, 2026. Scenarios with runtime-dependent
 behavior state their supported-compute or eligibility assumptions.
 
-The authoring tree preserves source material for review. The generated pack includes only the
-non-video files referenced by its questions, along with the audit, objective map, provenance, and
-verification report. Source references consumed by the app point to readable Markdown, so
-screenshots remain companion material rather than being passed to its UTF-8 source reader.
-Archived baseline source cards contain the original records and identify reviewed answers.
+Academy-note citations store only the original relative note path, a label, optional section
+metadata, and related Databricks documentation URLs. The app reads an original note on demand from
+`ACADEMY_SOURCE_ROOT`; importing the pack stores the citation metadata without storing note text or
+documentation digests. The generated asset directory contains only the compact baseline audit,
+objective map, provenance record, and verification report.
 
 The asset directory contains:
 
-- `baseline-review.json`: the disposition of every original question and reviewed answer details.
+- `baseline-review.json`: metadata dispositions for all 194 baseline questions, without copied
+  answers or explanations.
 - `objective-coverage.json`: question assignments to all 33 objective groups from the guide.
 - `provenance.json`: guide/date context, baseline dispositions, synthetic-content note, and source
   precedence.
 - `verification-report.json`: actual proportions, objective coverage, answer positions, and app checks.
-- `references/`: concise study digests with primary documentation links.
-- `materials/`: the supplied source archive, with video files excluded.
 
 The local Ordewell and spawned Codex session records informed the import contract, versioning,
 local sources, and weighted mock behavior. They are application design context, not authorities
@@ -89,11 +89,12 @@ Build and verify the pack from the repository root:
 
 ```bash
 pnpm pack:build packs/databricks-dea-may-2026/authoring/authoring.json packs/incoming
-pnpm pack:verify packs/incoming/databricks-dea-may-2026-v1.1.0.json --profile packs/databricks-dea-may-2026/authoring/profile.json
+ACADEMY_SOURCE_ROOT=/path/to/academy-learning-plan pnpm pack:verify packs/incoming/databricks-dea-may-2026-v1.2.0.json --profile packs/databricks-dea-may-2026/authoring/profile.json
 ```
 
-The CLI checks the exam-pack schema, source paths, app import, practice and mock flows, exact guide
-counts and weights, objective coverage, question rules, and baseline audit. The generic authoring
+The CLI checks the exam-pack schema, academy-note path containment, exact domain counts and weights,
+objective coverage, question rules, and baseline dispositions. The root application suite covers
+pack import, on-demand note loading, practice, and review citation rendering. The generic authoring
 input and verification profile are the maintained source for this pack.
 
 The verification report records the pack SHA-256, so its results apply to that precise JSON.

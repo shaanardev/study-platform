@@ -29,7 +29,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/delta/"
@@ -68,7 +68,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframewriter/saveAsTable",
@@ -108,7 +108,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/column/cast",
@@ -147,7 +147,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframenafunctions/fill"
@@ -185,7 +185,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/lakehouse/medallion"
@@ -224,7 +224,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-join"
@@ -262,7 +262,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-join"
@@ -300,7 +300,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/functions/broadcast",
@@ -339,7 +339,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-join"
@@ -377,7 +377,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-cte"
@@ -415,7 +415,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/show"
@@ -453,7 +453,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-alter-table"
@@ -491,7 +491,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/functions/current_date",
@@ -530,7 +530,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/functions/explode"
@@ -568,7 +568,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/functions/concat"
@@ -606,7 +606,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-aux-describe-table"
@@ -644,7 +644,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/functions/date_format"
@@ -682,7 +682,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/functions/lag"
@@ -720,7 +720,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/delta/merge"
@@ -758,7 +758,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-groupby"
@@ -796,7 +796,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/dropDuplicates",
@@ -835,7 +835,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/functions/rank"
@@ -873,7 +873,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/delta/merge",
@@ -913,7 +913,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-qry-select-pivot"
@@ -951,7 +951,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/functions/collect_list"
@@ -989,7 +989,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/ldp/cdc",
@@ -1029,7 +1029,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/delta/merge"
@@ -1067,7 +1067,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/delta/merge"
@@ -1105,7 +1105,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/delta/merge"
@@ -1143,7 +1143,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/repartition"
@@ -1181,7 +1181,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/coalesce"
@@ -1219,7 +1219,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/udf/python",
@@ -1258,7 +1258,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-table-using",
@@ -1297,7 +1297,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-view",
@@ -1336,7 +1336,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/lakehouse/medallion"
@@ -1375,7 +1375,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/structured-streaming/output-mode"
@@ -1413,7 +1413,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/lakehouse/medallion"
@@ -1452,7 +1452,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/tables/constraints"
@@ -1490,7 +1490,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/ldp/expectations"
@@ -1529,7 +1529,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/jobs/tasks/notebook"
@@ -1567,7 +1567,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframe/unionByName"
@@ -1605,7 +1605,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/pyspark/reference/functions/count",
@@ -1645,7 +1645,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/spark/conf",
@@ -1684,7 +1684,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "sources/transformation/academy-learning-plan/notes.md",
+        "path": "declarative-spark-pipelines/notes.md",
         "label": "Academy learning plan: Transformation",
         "documentationUrls": [
           "https://docs.databricks.com/aws/en/ldp/concepts/materialized-views",

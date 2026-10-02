@@ -29,7 +29,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Core Components > jobs and tasks",
         "documentationUrls": [
@@ -68,7 +68,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Creating & Scheduling Jobs > notifications and run monitoring",
         "documentationUrls": [
@@ -107,7 +107,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Creating & Scheduling Jobs > notifications",
         "documentationUrls": [
@@ -147,7 +147,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Code Optimizations > Spark workload performance",
         "documentationUrls": [
@@ -187,7 +187,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Code Optimizations > Spark workload performance",
         "documentationUrls": [
@@ -227,7 +227,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Designing the Foundation > avoid the small file problem",
         "documentationUrls": [
@@ -266,7 +266,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Designing the Foundation > Z-Ordering",
         "documentationUrls": [
@@ -306,7 +306,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Designing the Foundation > Liquid Clustering",
         "documentationUrls": [
@@ -345,7 +345,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Core Components > compute options",
         "documentationUrls": [
@@ -385,7 +385,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Core Components > compute options",
         "documentationUrls": [
@@ -424,7 +424,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Code Optimizations > skew",
         "documentationUrls": [
@@ -464,7 +464,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Code Optimizations > spill",
         "documentationUrls": [
@@ -504,7 +504,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Code Optimizations > shuffles",
         "documentationUrls": [
@@ -543,7 +543,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Designing the Foundation > predictive optimization",
         "documentationUrls": [
@@ -582,7 +582,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Designing the Foundation > Liquid Clustering and Z-Ordering",
         "documentationUrls": [
@@ -622,7 +622,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Designing the Foundation > Liquid Clustering",
         "documentationUrls": [
@@ -662,7 +662,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/performance-optimization/notes.md",
+        "path": "performance-optimization/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Overview > code optimization recommendations",
         "documentationUrls": [
@@ -701,7 +701,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Core Components > compute options",
         "documentationUrls": [
@@ -741,7 +741,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Core Components > compute options",
         "documentationUrls": [
@@ -780,7 +780,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
         "section": "Core Components > task orchestration",
         "documentationUrls": [

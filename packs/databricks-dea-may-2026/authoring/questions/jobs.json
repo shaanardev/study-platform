@@ -29,7 +29,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > conditional and iterative tasks > run-if conditional",
         "documentationUrls": [
@@ -69,7 +69,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > retry policies",
         "documentationUrls": [
@@ -109,7 +109,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > dynamically setting and accessing task parameters",
         "documentationUrls": [
@@ -149,7 +149,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > handling failures",
         "documentationUrls": [
@@ -188,7 +188,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > conditional and iterative tasks > for each tasks",
         "documentationUrls": [
@@ -227,7 +227,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > conditional and iterative tasks > If/Else Tasks",
         "documentationUrls": [
@@ -266,7 +266,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > conditional and iterative tasks > for each tasks",
         "documentationUrls": [
@@ -306,7 +306,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > jobs",
         "documentationUrls": [
@@ -345,7 +345,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > jobs",
         "documentationUrls": [
@@ -384,7 +384,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > jobs",
         "documentationUrls": [
@@ -423,7 +423,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > jobs",
         "documentationUrls": [
@@ -462,7 +462,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > Job parameters",
         "documentationUrls": [
@@ -501,7 +501,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > Job parameters",
         "documentationUrls": [
@@ -541,7 +541,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > configuration options",
         "documentationUrls": [
@@ -580,7 +580,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > jobs",
         "documentationUrls": [
@@ -619,7 +619,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > compute options",
         "documentationUrls": [
@@ -659,7 +659,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > jobs",
         "documentationUrls": [
@@ -698,7 +698,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > scheduled triggers",
         "documentationUrls": [
@@ -737,7 +737,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers",
         "documentationUrls": [
@@ -776,7 +776,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > manual triggers",
         "documentationUrls": [
@@ -815,7 +815,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > file arrival triggers",
         "documentationUrls": [
@@ -854,7 +854,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > table update triggers",
         "documentationUrls": [
@@ -893,7 +893,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > table update triggers",
         "documentationUrls": [
@@ -932,7 +932,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > file arrival triggers",
         "documentationUrls": [
@@ -971,7 +971,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > schedules and triggers > scheduled triggers",
         "documentationUrls": [
@@ -1010,7 +1010,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > conditional and iterative tasks > run-if conditional",
         "documentationUrls": [
@@ -1050,7 +1050,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > conditional and iterative tasks > If/Else Tasks",
         "documentationUrls": [
@@ -1090,7 +1090,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > tasks",
         "documentationUrls": [
@@ -1129,7 +1129,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > tasks",
         "documentationUrls": [
@@ -1168,7 +1168,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > tasks",
         "documentationUrls": [
@@ -1207,7 +1207,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Core Components > task orchestration",
         "documentationUrls": [
@@ -1247,7 +1247,7 @@
     "sources": [
       {
         "kind": "academy_note",
-        "path": "materials/academy-learning-plan/lakeflow-job-workloads/notes.md",
+        "path": "lakeflow-job-workloads/notes.md",
         "label": "Supplied academy learning plan notes; official Databricks documentation is authoritative for current behavior and code.",
         "section": "Creating & Scheduling Jobs > retry policies",
         "documentationUrls": [

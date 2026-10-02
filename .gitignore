@@ -32,6 +32,6 @@ vite.config.ts.timestamp-*
 !/packs/incoming/assets/
 /packs/incoming/assets/*
 !/packs/incoming/sample-databricks-associate.json
-!/packs/incoming/databricks-dea-may-2026-v1.1.0.json
-!/packs/incoming/assets/databricks-dea-may-2026-v1.1.0/
-!/packs/incoming/assets/databricks-dea-may-2026-v1.1.0/**
+!/packs/incoming/databricks-dea-may-2026-v1.2.0.json
+!/packs/incoming/assets/databricks-dea-may-2026-v1.2.0/
+!/packs/incoming/assets/databricks-dea-may-2026-v1.2.0/**
