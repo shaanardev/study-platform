@@ -46,6 +46,27 @@
   },
   "overrides": [
     {
+      "includes": ["cli/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            // Oxlint handles `typescript/no-non-null-assertion`.
+            "noNonNullAssertion": "off",
+            // Oxlint handles `typescript/only-throw-error`.
+            "useThrowOnlyError": "off"
+          },
+          "suspicious": {
+            // Oxlint handles `typescript/no-explicit-any`.
+            "noExplicitAny": "off",
+            // Oxlint handles `import/no-cycle`.
+            "noImportCycles": "off",
+            // Oxlint handles `array-callback-return`.
+            "useIterableCallbackReturn": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.svelte"],
       "formatter": {
         "enabled": true

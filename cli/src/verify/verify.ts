@@ -1,7 +1,7 @@
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 import { verifyProfile } from './profile.js';
-import { BuiltExamPackSchema } from './schema.js';
 import type { PackForVerification } from './schema.js';
+import { BuiltExamPackSchema } from './schema.js';
 
 export class VerifyError extends Data.TaggedError('VerifyError')<{
   readonly message: string;
@@ -13,10 +13,12 @@ export type VerifyResult = {
   profileReportPath?: string;
 };
 
-const toVerifyError = (stage: string) => (cause: unknown): VerifyError =>
-  new VerifyError({
-    message: `${stage}: ${cause instanceof Error ? cause.message : String(cause)}`,
-  });
+const toVerifyError =
+  (stage: string) =>
+  (cause: unknown): VerifyError =>
+    new VerifyError({
+      message: `${stage}: ${cause instanceof Error ? cause.message : String(cause)}`,
+    });
 
 const normalized = (value: string): string =>
   value
@@ -30,9 +32,9 @@ const readPackFile = Effect.fn(function* (packPath: string) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
   const absolutePath = path.resolve(packPath);
-  const contents = yield* fs.readFileString(absolutePath).pipe(
-    Effect.mapError(toVerifyError('Unable to read exam pack')),
-  );
+  const contents = yield* fs
+    .readFileString(absolutePath)
+    .pipe(Effect.mapError(toVerifyError('Unable to read exam pack')));
   return { absolutePath, contents };
 });
 
@@ -43,8 +45,9 @@ const parsePackJson = (contents: string) =>
 
 const validateBuiltPack = (input: unknown) =>
   Schema.decodeUnknownEffect(BuiltExamPackSchema, { onExcessProperty: 'error' })(input).pipe(
-    Effect.mapError((error) =>
-      new VerifyError({ message: `Exam pack schema validation failed: ${String(error)}` }),
+    Effect.mapError(
+      (error) =>
+        new VerifyError({ message: `Exam pack schema validation failed: ${String(error)}` }),
     ),
   );
 
@@ -91,18 +94,24 @@ const verifyGenericStructure = Effect.fn(function* (pack: PackForVerification) {
   }
 });
 
-const sourceFileExists = Effect.fn(function* (packPath: string, questionId: string, sourcePath: string) {
+const sourceFileExists = Effect.fn(function* (
+  packPath: string,
+  questionId: string,
+  sourcePath: string,
+) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
   const candidate = path.resolve(path.dirname(packPath), sourcePath);
-  const actual = yield* fs.realPath(candidate).pipe(
-    Effect.mapError(() =>
-      new VerifyError({ message: `${questionId}: missing source ${sourcePath}` }),
-    ),
-  );
-  const info = yield* fs.stat(actual).pipe(
-    Effect.mapError(toVerifyError(`Unable to inspect source ${sourcePath}`)),
-  );
+  const actual = yield* fs
+    .realPath(candidate)
+    .pipe(
+      Effect.mapError(
+        () => new VerifyError({ message: `${questionId}: missing source ${sourcePath}` }),
+      ),
+    );
+  const info = yield* fs
+    .stat(actual)
+    .pipe(Effect.mapError(toVerifyError(`Unable to inspect source ${sourcePath}`)));
   if (info.type !== 'File')
     return yield* new VerifyError({
       message: `${questionId}: source is not a file (${sourcePath})`,
@@ -118,11 +127,7 @@ const sourceIsContained = Effect.fn(function* (
 ) {
   const path = yield* Path.Path;
   const fromPack = path.relative(packDirectory, actualSource);
-  if (
-    fromPack === '..' ||
-    fromPack.startsWith(`..${path.sep}`) ||
-    path.isAbsolute(fromPack)
-  )
+  if (fromPack === '..' || fromPack.startsWith(`..${path.sep}`) || path.isAbsolute(fromPack))
     return yield* new VerifyError({
       message: `${questionId}: source escapes pack folder (${sourcePath})`,
     });
@@ -131,9 +136,9 @@ const sourceIsContained = Effect.fn(function* (
 const verifySourceFiles = Effect.fn(function* (packPath: string, pack: PackForVerification) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
-  const packDirectory = yield* fs.realPath(path.dirname(packPath)).pipe(
-    Effect.mapError(toVerifyError('Unable to resolve pack directory')),
-  );
+  const packDirectory = yield* fs
+    .realPath(path.dirname(packPath))
+    .pipe(Effect.mapError(toVerifyError('Unable to resolve pack directory')));
   for (const question of pack.questions) {
     for (const source of question.sources) {
       const actual = yield* sourceFileExists(packPath, question.id, source.path);
@@ -150,8 +155,8 @@ const verifyOptionalProfile = Effect.fn(function* (
   if (!profilePath) return undefined;
   const path = yield* Path.Path;
   const result = yield* verifyProfile(packPath, pack, path.resolve(profilePath)).pipe(
-    Effect.mapError((error) =>
-      new VerifyError({ message: `Profile verification failed: ${error.message}` }),
+    Effect.mapError(
+      (error) => new VerifyError({ message: `Profile verification failed: ${error.message}` }),
     ),
   );
   return result.reportPath;

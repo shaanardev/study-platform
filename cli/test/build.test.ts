@@ -1,12 +1,12 @@
 import { NodeServices } from '@effect/platform-node';
-import { Effect, FileSystem, Path, Result, Schema } from 'effect';
+import { Effect, FileSystem, Result, Schema } from 'effect';
 import { afterEach, describe, expect, it } from 'vitest';
 import { AuthoringFile, QuestionFile } from '../src/build/authoring.js';
 import { buildPack } from '../src/build/build.js';
 import { verifyPack } from '../src/verify/verify.js';
 
 const outputs: string[] = [];
-const run = <A, E>(effect: Effect.Effect<A, E, FileSystem.FileSystem | Path.Path>) =>
+const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
   Effect.runPromise(Effect.provide(effect, NodeServices.layer));
 
 const outputDirectory = Effect.gen(function* () {
@@ -431,6 +431,7 @@ describe('build command', () => {
           expect(question.answerIds).toHaveLength(1);
           expect(question.options.some((option) => option.id === question.answerIds[0])).toBe(true);
           const position = question.answerIds[0];
+          if (position === undefined) throw new Error('Expected one correct answer ID');
           positions.set(position, (positions.get(position) ?? 0) + 1);
         }
         expect([...positions.values()]).toEqual([50, 50, 50, 50]);

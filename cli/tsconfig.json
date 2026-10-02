@@ -49,7 +49,7 @@
     /* Faster and cleaner dependency checking */
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "oxlint.config.ts"],
   "exclude": ["node_modules", "dist", "coverage", "**/*.test-d.ts"],
   "plugins": [
     {
