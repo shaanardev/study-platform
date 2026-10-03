@@ -6,9 +6,10 @@
 
 ## Subagent Delegation
 
+- Use `gpt-6-luna` at high reasoning as the model for all subagents
 - For independent research or file discovery, use `explorer` agents in parallel. Reuse an explorer for related follow-ups and ask for concise findings with file references.
 - For small isolated code changes, use `worker` agents with explicit file ownership and acceptance criteria. Tell workers that others share the checkout and not to revert their changes.
-- Use `gpt-6-luna` at high reasoning for general delegated agents. Keep quick or dependent steps with the parent agent, which integrates the results.
+- Keep quick or dependent steps with the parent agent, which integrates the results.
 
 ## Code Verification
 
