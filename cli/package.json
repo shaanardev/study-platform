@@ -7,8 +7,8 @@
   "scripts": {
     "packs": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
+    "lint": "oxlint && biome check src test --error-on-warnings",
+    "lint:fix": "oxlint --fix && biome check --write src test --error-on-warnings --unsafe",
     "test": "vitest run",
     "prepare": "effect-tsgo patch --typescript --oxlint",
     "verify": "pnpm lint:fix && pnpm typecheck && pnpm test"
