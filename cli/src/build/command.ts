@@ -1,6 +1,6 @@
-import { Console, Effect } from 'effect';
+import { Console, Effect, type FileSystem, type Path } from 'effect';
 import { Argument, Command } from 'effect/cli';
-import { buildPack } from './build.js';
+import { type BuildError, buildPack } from './build.js';
 
 export const buildCommand = Command.make(
   'build',
@@ -12,7 +12,10 @@ export const buildCommand = Command.make(
       Argument.withDescription('Directory for the pack JSON and copied source assets'),
     ),
   },
-  Effect.fn(function* ({ authoringFile, outputDirectory }) {
+  Effect.fn('buildCommand')(function* ({
+    authoringFile,
+    outputDirectory,
+  }): Effect.fn.Return<void, BuildError, FileSystem.FileSystem | Path.Path> {
     yield* buildPack(authoringFile, outputDirectory);
     yield* Console.log(`Built pack in ${outputDirectory}`);
   }),

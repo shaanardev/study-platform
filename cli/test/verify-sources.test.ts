@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Result } from 'effect';
+import { Effect, Result } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { verifyPack } from '../src/verify/verify.js';
 import { cloneWithMutableSources, makePack, run, writeJson } from './verify-helpers.js';
@@ -41,16 +41,12 @@ describe('verifyPack', () => {
         source.path = 'assets/missing.md';
         yield* writeJson(packPath, missing);
 
-        const exit = yield* Effect.exit(verifyPack(packPath));
-        expect(Exit.isFailure(exit)).toBe(true);
-        if (Exit.isFailure(exit)) {
-          const failure = Cause.findError(exit.cause);
-          expect(Result.isSuccess(failure)).toBe(true);
-          if (Result.isSuccess(failure)) {
-            expect(failure.success.message).toContain('missing source assets/missing.md');
-            expect(failure.success.cause).toBeDefined();
-            expect(failure.success.cause).not.toBe(failure.success);
-          }
+        const result = yield* Effect.result(verifyPack(packPath));
+        expect(Result.isFailure(result)).toBe(true);
+        if (Result.isFailure(result)) {
+          expect(result.failure.message).toContain('missing source assets/missing.md');
+          expect(result.failure.cause).toBeDefined();
+          expect(result.failure.cause).not.toBe(result.failure);
         }
       }),
     ));

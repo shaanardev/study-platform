@@ -7,9 +7,7 @@ export { run, writeJson };
 
 const outputDirectories = makeTemporaryDirectoryTracker();
 
-export const outputDirectory = Effect.gen(function* () {
-  return yield* outputDirectories.make('pack-build-');
-});
+export const outputDirectory = outputDirectories.make('pack-build-');
 
 export const mutablePreview = Effect.gen(function* () {
   const root = yield* outputDirectory;

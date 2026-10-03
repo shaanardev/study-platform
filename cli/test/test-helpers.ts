@@ -1,5 +1,5 @@
 import { NodeServices } from '@effect/platform-node';
-import { Data, Effect, FileSystem, Result } from 'effect';
+import { Data, Effect, FileSystem, Schema } from 'effect';
 
 class TestJsonError extends Data.TaggedError('TestJsonError')<{
   readonly message: string;
@@ -12,15 +12,9 @@ export const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>
 export const writeJson = (path: string, value: unknown) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const serialized = Result.try({
-      try: () => JSON.stringify(value),
-      catch: (cause) => new TestJsonError({ message: 'Value cannot be serialized as JSON', cause }),
-    });
-    const json = yield* Effect.fromResult(
-      Result.flatMap(serialized, (text) =>
-        text === undefined
-          ? Result.fail(new TestJsonError({ message: 'Value cannot be serialized as JSON' }))
-          : Result.succeed(text),
+    const json = yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown))(value).pipe(
+      Effect.mapError(
+        (cause) => new TestJsonError({ message: 'Value cannot be serialized as JSON', cause }),
       ),
     );
     yield* fs.writeFileString(path, json);

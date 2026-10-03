@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Result, Schema } from 'effect';
+import { ConfigProvider, Effect, FileSystem, Result, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { AuthoringFile } from '../src/build/authoring-schema.js';
 import { buildPack } from '../src/build/build.js';
@@ -78,44 +78,44 @@ describe('build command', () => {
           questionFiles: [],
         });
 
-        const previousRoot = process.env['ACADEMY_SOURCE_ROOT'];
-        process.env['ACADEMY_SOURCE_ROOT'] = academyRoot;
-        try {
-          yield* buildPack(fixture.authoringPath, fixture.output);
-          const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`);
+        const sourceRootLayer = ConfigProvider.layer(
+          ConfigProvider.fromUnknown({ ACADEMY_SOURCE_ROOT: academyRoot }),
+        );
+        yield* buildPack(fixture.authoringPath, fixture.output);
+        const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`).pipe(
+          Effect.provide(sourceRootLayer),
+        );
 
-          expect(pack.questions[0]?.sources).toEqual([
-            { path: 'preview-assets/references/core.md', label: 'Core notes' },
-            citation,
-          ]);
-          expect(
-            yield* fs.exists(`${fixture.output}/preview-assets/engineering/streaming.md`),
-          ).toBe(false);
-          const packPath = `${fixture.output}/preview-pack.json`;
-          const built = (yield* Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(
-            yield* fs.readFileString(packPath),
-          )) as {
-            questions: { sources: { kind?: string; path: string }[] }[];
-          };
-          const academySource = built.questions[0]?.sources.find(
-            (source) => source.kind === 'academy_note',
+        expect(pack.questions[0]?.sources).toEqual([
+          { path: 'preview-assets/references/core.md', label: 'Core notes' },
+          citation,
+        ]);
+        expect(yield* fs.exists(`${fixture.output}/preview-assets/engineering/streaming.md`)).toBe(
+          false,
+        );
+        const packPath = `${fixture.output}/preview-pack.json`;
+        const built = (yield* Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(
+          yield* fs.readFileString(packPath),
+        )) as {
+          questions: { sources: { kind?: string; path: string }[] }[];
+        };
+        const academySource = built.questions[0]?.sources.find(
+          (source) => source.kind === 'academy_note',
+        );
+        if (!academySource) throw new Error('Expected academy-note metadata in the built pack');
+        academySource.path = '../outside.md';
+        yield* fs.writeFileString(
+          packPath,
+          yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown))(built),
+        );
+        const escaped = yield* Effect.result(
+          verifyPack(packPath).pipe(Effect.provide(sourceRootLayer)),
+        );
+        expect(Result.isFailure(escaped)).toBe(true);
+        if (Result.isFailure(escaped))
+          expect(escaped.failure.message).toContain(
+            'academy note path must be relative to configured source root',
           );
-          if (!academySource) throw new Error('Expected academy-note metadata in the built pack');
-          academySource.path = '../outside.md';
-          yield* fs.writeFileString(
-            packPath,
-            yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown))(built),
-          );
-          const escaped = yield* Effect.result(verifyPack(packPath));
-          expect(Result.isFailure(escaped)).toBe(true);
-          if (Result.isFailure(escaped))
-            expect(escaped.failure.message).toContain(
-              'academy note path must be relative to configured source root',
-            );
-        } finally {
-          if (previousRoot === undefined) delete process.env['ACADEMY_SOURCE_ROOT'];
-          else process.env['ACADEMY_SOURCE_ROOT'] = previousRoot;
-        }
       }),
     ));
 

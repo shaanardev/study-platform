@@ -1,4 +1,6 @@
 import { Data, Effect, FileSystem, Path, Result, Schema } from 'effect';
+import { BuiltExamPackSchema, type PackForVerification } from '../core/built-pack-schema.js';
+import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { AuthoringFile, QuestionFile } from './authoring-schema.js';
 import { safeRelativePath, validateAuthoring } from './authoring-validation.js';
 import { shuffleQuestions } from './question-transformation.js';
@@ -59,7 +61,7 @@ const requireInputFile = Effect.fn(function* (filename: string) {
   return yield* (yield* FileSystem.FileSystem).realPath(filename);
 });
 
-export const buildPack = (authoringPath: string, outputDirectory: string) =>
+export const buildPack = Effect.fn('buildPack')((authoringPath: string, outputDirectory: string) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
@@ -100,15 +102,30 @@ export const buildPack = (authoringPath: string, outputDirectory: string) =>
       ),
       ...(input.assetFiles ?? []),
     ]);
-    const artifacts = yield* Effect.forEach(assetPaths, (asset) =>
-      Effect.gen(function* () {
-        const source = yield* requireInputFile(path.resolve(sourceRoot, asset));
-        return { source, destination: path.resolve(assetsRoot, asset) };
-      }),
+    const artifacts = yield* Effect.forEach(
+      assetPaths,
+      (asset) =>
+        Effect.gen(function* () {
+          const source = yield* requireInputFile(path.resolve(sourceRoot, asset));
+          return { source, destination: path.resolve(assetsRoot, asset) };
+        }),
+      { concurrency: CONCURRENCY_LIMIT },
     );
-    const pack = { ...input.metadata, questions: yield* shuffleQuestions(assembled) };
+    const { passingThreshold, ...metadata } = input.metadata;
+    const pack: PackForVerification = {
+      ...metadata,
+      ...(passingThreshold === undefined ? {} : { passingThreshold }),
+      questions: yield* shuffleQuestions(assembled),
+    };
+    const encodedPack = yield* Effect.fromResult(
+      Schema.encodeResult(BuiltExamPackSchema)(pack),
+    ).pipe(
+      Effect.mapError(
+        (cause) => new BuildError({ message: `Invalid built pack: ${cause}`, cause }),
+      ),
+    );
     const packJsonResult = Result.try({
-      try: () => JSON.stringify(pack, null, 2),
+      try: () => JSON.stringify(encodedPack, null, 2),
       catch: toBuildError,
     }).pipe(
       Result.flatMap((json) =>
@@ -123,8 +140,18 @@ export const buildPack = (authoringPath: string, outputDirectory: string) =>
     for (const artifact of artifacts) yield* rejectSymlinks(artifact.destination);
     yield* fs.makeDirectory(outputRoot, { recursive: true });
     yield* fs.writeFileString(packPath, `${packJson}\n`);
-    for (const artifact of artifacts) {
-      yield* fs.makeDirectory(path.dirname(artifact.destination), { recursive: true });
-      yield* fs.copyFile(artifact.source, artifact.destination);
-    }
-  }).pipe(Effect.mapError(toBuildError));
+    const artifactDirectories = new Set(
+      artifacts.map((artifact) => path.dirname(artifact.destination)),
+    );
+    yield* Effect.forEach(
+      artifactDirectories,
+      (directory) => fs.makeDirectory(directory, { recursive: true }),
+      { concurrency: CONCURRENCY_LIMIT },
+    );
+    yield* Effect.forEach(
+      artifacts,
+      (artifact) => fs.copyFile(artifact.source, artifact.destination),
+      { concurrency: CONCURRENCY_LIMIT },
+    );
+  }).pipe(Effect.mapError(toBuildError)),
+);

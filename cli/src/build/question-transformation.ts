@@ -1,10 +1,10 @@
 import { Array as Arr, Effect, Random } from 'effect';
+import type { BuiltExamQuestion } from '../core/built-pack-schema.js';
+import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import type { AssembledAuthoring } from './authoring-validation.js';
 
-export function shuffleQuestions(
-  input: AssembledAuthoring,
-): Effect.Effect<Record<string, unknown>[]> {
-  return Effect.gen(function* () {
+export const shuffleQuestions: (input: AssembledAuthoring) => Effect.Effect<BuiltExamQuestion[]> =
+  Effect.fn('shuffleQuestions')(function* (input: AssembledAuthoring) {
     const groups = new Map<string, { index: number; position: number }[]>();
     const answerPositions = input.questions.map(() => 0);
     for (const [index, question] of input.questions.entries()) {
@@ -25,37 +25,41 @@ export function shuffleQuestions(
         }
       }
     }).pipe(Random.withSeed(input.shuffle.answerSeed));
-    const result = yield* Effect.forEach(Arr.zip(input.questions, answerPositions), ([question, position]) =>
-      Effect.gen(function* () {
-        const correct = question.correctOptionIds.flatMap((id) => {
-          const option = question.options.find((option) => option.id === id);
-          return option === undefined ? [] : [option];
-        });
-        const correctIds = new Set(question.correctOptionIds);
-        const wrong = question.options.filter((option) => !correctIds.has(option.id));
-        const shuffledWrong = yield* Random.shuffle(wrong).pipe(Random.withSeed(question.id));
-        const options = [...shuffledWrong];
-        options.splice(position, 0, ...correct);
-        const letters = options.map((option, index) => ({
-          id: String.fromCharCode(97 + index),
-          text: option.text,
-        }));
-        return {
-          id: question.id,
-          type: question.type,
-          domainId: question.domainId,
-          prompt: question.prompt,
-          options: letters,
-          answerIds: letters.slice(position, position + correct.length).map((option) => option.id),
-          explanation: question.explanation,
-          sources: question.sources.map((source) =>
-            'kind' in source
-              ? source
-              : { ...source, path: `${input.assetsDirectory}/${source.path}` },
-          ),
-        };
-      }),
+    const result = yield* Effect.forEach(
+      Arr.zip(input.questions, answerPositions),
+      ([question, position]) =>
+        Effect.gen(function* () {
+          const correct = question.correctOptionIds.flatMap((id) => {
+            const option = question.options.find((option) => option.id === id);
+            return option === undefined ? [] : [option];
+          });
+          const correctIds = new Set(question.correctOptionIds);
+          const wrong = question.options.filter((option) => !correctIds.has(option.id));
+          const shuffledWrong = yield* Random.shuffle(wrong).pipe(Random.withSeed(question.id));
+          const options = [...shuffledWrong];
+          options.splice(position, 0, ...correct);
+          const letters = options.map((option, index) => ({
+            id: String.fromCharCode(97 + index),
+            text: option.text,
+          }));
+          return {
+            id: question.id,
+            type: question.type,
+            domainId: question.domainId,
+            prompt: question.prompt,
+            options: letters,
+            answerIds: letters
+              .slice(position, position + correct.length)
+              .map((option) => option.id),
+            explanation: question.explanation,
+            sources: question.sources.map((source) =>
+              'kind' in source
+                ? source
+                : { ...source, path: `${input.assetsDirectory}/${source.path}` },
+            ),
+          };
+        }),
+      { concurrency: CONCURRENCY_LIMIT },
     );
     return yield* Random.shuffle(result).pipe(Random.withSeed(input.shuffle.orderSeed));
   });
-}

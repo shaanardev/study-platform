@@ -1,5 +1,5 @@
 import { Schema } from 'effect';
-import { DocumentationUrlsSchema } from '../core/documentation-url-schema.js';
+import { DocumentationUrlsSchema } from './documentation-url-schema.js';
 
 const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
 const sourcePathPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))(?!.*\\)[\s\S]+$/;
@@ -50,7 +50,7 @@ const AcademyNoteSource = Schema.Struct({
   documentationUrls: DocumentationUrlsSchema,
 });
 
-const Question = Schema.Struct({
+export const BuiltExamQuestionSchema = Schema.Struct({
   id: Id,
   type: Schema.Literals(['single_choice', 'multiple_choice']),
   domainId: Id,
@@ -58,7 +58,7 @@ const Question = Schema.Struct({
   options: Schema.Array(Option).check(Schema.isMinLength(2)),
   answerIds: Schema.Array(Id).check(Schema.isMinLength(1)),
   explanation: Text,
-  sources: Schema.Array(Schema.Union([Source, AcademyNoteSource])).check(Schema.isMinLength(1)),
+  sources: Schema.Array(Schema.Union([AcademyNoteSource, Source])).check(Schema.isMinLength(1)),
 });
 
 export const BuiltExamPackSchema = Schema.Struct({
@@ -69,7 +69,8 @@ export const BuiltExamPackSchema = Schema.Struct({
   passingThreshold: Schema.optionalKey(
     Schema.Finite.check(Schema.isGreaterThanOrEqualTo(0), Schema.isLessThanOrEqualTo(100)),
   ),
-  questions: Schema.Array(Question).check(Schema.isMinLength(1)),
+  questions: Schema.Array(BuiltExamQuestionSchema).check(Schema.isMinLength(1)),
 });
 
 export type PackForVerification = typeof BuiltExamPackSchema.Type;
+export type BuiltExamQuestion = typeof BuiltExamQuestionSchema.Type;

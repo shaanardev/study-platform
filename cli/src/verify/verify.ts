@@ -1,6 +1,7 @@
 import { Config, Data, Effect, FileSystem, Option, Path, Schema } from 'effect';
+import { BuiltExamPackSchema, type PackForVerification } from '../core/built-pack-schema.js';
+import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { verifyProfile } from './profile.js';
-import { BuiltExamPackSchema, type PackForVerification } from './schema.js';
 
 export class VerifyError extends Data.TaggedError('VerifyError')<{
   readonly message: string;
@@ -97,7 +98,7 @@ const verifyGenericStructure = Effect.fn(function* (pack: PackForVerification) {
   }
 });
 
-const sourceFileExists = Effect.fn(function* (
+const sourceFileExists = Effect.fn('sourceFileExists')(function* (
   packPath: string,
   questionId: string,
   sourcePath: string,
@@ -105,17 +106,15 @@ const sourceFileExists = Effect.fn(function* (
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
   const candidate = path.resolve(path.dirname(packPath), sourcePath);
-  const actual = yield* fs
-    .realPath(candidate)
-    .pipe(
-      Effect.mapError(
-        (cause) =>
-          new VerifyError({
-            message: `${questionId}: missing source ${sourcePath}`,
-            cause,
-          }),
-      ),
-    );
+  const actual = yield* fs.realPath(candidate).pipe(
+    Effect.mapError(
+      (cause) =>
+        new VerifyError({
+          message: `${questionId}: missing source ${sourcePath}`,
+          cause,
+        }),
+    ),
+  );
   const info = yield* fs
     .stat(actual)
     .pipe(Effect.mapError(toVerifyError(`Unable to inspect source ${sourcePath}`)));
@@ -140,73 +139,102 @@ const sourceIsContained = Effect.fn(function* (
     });
 });
 
-const verifySourceFiles = Effect.fn(function* (packPath: string, pack: PackForVerification) {
+const verifyAcademySource = Effect.fn('verifyAcademySource')(function* (
+  academyRoot: string,
+  questionId: string,
+  sourcePath: string,
+) {
+  const path = yield* Path.Path;
+  const fs = yield* FileSystem.FileSystem;
+  const segments = sourcePath.split('/');
+  const hasInvalidSegment = segments.some((segment) => ['', '.', '..'].includes(segment));
+  const hasInvalidPathCharacters = sourcePath.includes('\\') ||sourcePath.includes('\0');
+  const hasWindowsDrivePrefix = /^[a-zA-Z]:/.test(sourcePath);
+  if (
+    path.isAbsolute(sourcePath) ||
+    hasWindowsDrivePrefix ||
+    hasInvalidPathCharacters ||
+    hasInvalidSegment
+  )
+    return yield* new VerifyError({
+      message: `${questionId}: academy note path must be relative to configured source root (${sourcePath})`,
+    });
+
+  const actual = yield* fs.realPath(path.resolve(academyRoot, sourcePath)).pipe(
+    Effect.mapError(
+      (cause) =>
+        new VerifyError({
+          message: `${questionId}: missing academy note ${sourcePath}`,
+          cause,
+        }),
+    ),
+  );
+
+  const relativePath = path.relative(academyRoot, actual);
+  if (
+    relativePath === '..' ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  )
+    return yield* new VerifyError({
+      message: `${questionId}: academy note escapes configured source root (${sourcePath})`,
+    });
+
+  const info = yield* fs
+    .stat(actual)
+    .pipe(Effect.mapError(toVerifyError(`Unable to inspect academy note ${sourcePath}`)));
+  if (info.type !== 'File')
+    return yield* new VerifyError({
+      message: `${questionId}: academy note is not a file (${sourcePath})`,
+    });
+});
+
+const verifySourceFiles = Effect.fn('verifySourceFiles')(function* (
+  packPath: string,
+  pack: PackForVerification,
+) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
   const packDirectory = yield* fs
     .realPath(path.dirname(packPath))
     .pipe(Effect.mapError(toVerifyError('Unable to resolve pack directory')));
-  for (const question of pack.questions) {
-    for (const source of question.sources) {
-      if ('kind' in source) {
-        const configuredRoot = Option.getOrUndefined(
-          yield* Config.String('ACADEMY_SOURCE_ROOT').pipe(Config.option),
-        );
-        if (!configuredRoot)
-          return yield* new VerifyError({
-            message: 'ACADEMY_SOURCE_ROOT must be set to verify academy-note citations',
-          });
-        const root = yield* fs
-          .realPath(path.resolve(configuredRoot))
-          .pipe(Effect.mapError(toVerifyError('Unable to resolve academy source root')));
-        const segments = source.path.split('/');
-        if (
-          path.isAbsolute(source.path) ||
-          /^[a-zA-Z]:/.test(source.path) ||
-          source.path.includes('\\') ||
-          source.path.includes('\0') ||
-          segments.some((segment) => segment === '' || segment === '.' || segment === '..')
-        )
-          return yield* new VerifyError({
-            message: `${question.id}: academy note path must be relative to configured source root (${source.path})`,
-          });
-        const candidate = path.resolve(root, source.path);
-        const actual = yield* fs
-          .realPath(candidate)
-          .pipe(
-            Effect.mapError(
-              (cause) =>
-                new VerifyError({
-                  message: `${question.id}: missing academy note ${source.path}`,
-                  cause,
-                }),
-            ),
-          );
-        const relativePath = path.relative(root, actual);
-        if (
-          relativePath === '..' ||
-          relativePath.startsWith(`..${path.sep}`) ||
-          path.isAbsolute(relativePath)
-        )
-          return yield* new VerifyError({
-            message: `${question.id}: academy note escapes configured source root (${source.path})`,
-          });
-        const info = yield* fs
-          .stat(actual)
-          .pipe(Effect.mapError(toVerifyError(`Unable to inspect academy note ${source.path}`)));
-        if (info.type !== 'File')
-          return yield* new VerifyError({
-            message: `${question.id}: academy note is not a file (${source.path})`,
-          });
-        continue;
-      }
-      const actual = yield* sourceFileExists(packPath, question.id, source.path);
-      yield* sourceIsContained(packDirectory, actual, question.id, source.path);
-    }
+  const citations = pack.questions.flatMap((question) =>
+    question.sources.map((source) => ({ questionId: question.id, source })),
+  );
+  let academyRoot: string | undefined;
+  if (citations.some(({ source }) => 'kind' in source)) {
+    const configuredRoot = Option.getOrUndefined(
+      yield* Config.String('ACADEMY_SOURCE_ROOT').pipe(Config.option),
+    );
+    if (!configuredRoot)
+      return yield* new VerifyError({
+        message: 'ACADEMY_SOURCE_ROOT must be set to verify academy-note citations',
+      });
+    academyRoot = yield* fs
+      .realPath(path.resolve(configuredRoot))
+      .pipe(Effect.mapError(toVerifyError('Unable to resolve academy source root')));
   }
+
+  // The checks are independent after their shared roots are resolved. Bound
+  // filesystem pressure while retaining Effect.forEach's input result order.
+  yield* Effect.forEach(
+    citations,
+    ({ questionId, source }) => {
+      if ('kind' in source) {
+        if (academyRoot === undefined)
+          return Effect.fail(new VerifyError({ message: 'Academy source root was not resolved' }));
+        return verifyAcademySource(academyRoot, questionId, source.path);
+      }
+      return Effect.gen(function* () {
+        const actual = yield* sourceFileExists(packPath, questionId, source.path);
+        yield* sourceIsContained(packDirectory, actual, questionId, source.path);
+      });
+    },
+    { concurrency: CONCURRENCY_LIMIT },
+  );
 });
 
-export const verifyPack = (packPath: string, profilePath?: string) =>
+export const verifyPack = Effect.fn('verifyPack')((packPath: string, profilePath?: string) =>
   Effect.gen(function* () {
     const { absolutePath, contents } = yield* readPackFile(packPath);
     const input = yield* parsePackJson(contents);
@@ -228,4 +256,5 @@ export const verifyPack = (packPath: string, profilePath?: string) =>
       profileReportPath = result.reportPath;
     }
     return profileReportPath ? { pack, profileReportPath } : { pack };
-  });
+  }),
+);

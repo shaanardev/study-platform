@@ -54,6 +54,73 @@ describe('verifyPack', () => {
       }),
     ));
 
+  it('rejects profile report and objective mapping symlinks that escape the pack folder', () =>
+    run(
+      Effect.gen(function* () {
+        const { directory, packPath } = yield* makePack;
+        const outside = yield* makePack;
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const profilePath = path.join(directory, 'profile.json');
+        const externalReportPath = path.join(outside.directory, 'report.json');
+        const reportPath = path.join(directory, 'assets', 'verification-report.json');
+        yield* fs.writeFileString(externalReportPath, 'leave this file unchanged');
+        yield* fs.symlink(externalReportPath, reportPath);
+        yield* writeJson(profilePath, {});
+
+        const reportResult = yield* Effect.result(verifyPack(packPath, profilePath));
+        expect(Result.isFailure(reportResult)).toBe(true);
+        if (Result.isFailure(reportResult))
+          expect(reportResult.failure.message).toContain('Verification report escapes pack folder');
+        expect(yield* fs.readFileString(externalReportPath)).toBe('leave this file unchanged');
+
+        const externalCoveragePath = path.join(outside.directory, 'coverage.json');
+        const coveragePath = path.join(directory, 'assets', 'objective-coverage.json');
+        yield* writeJson(externalCoveragePath, {
+          questionObjectives: { 'core-q1': ['C1'], 'operations-q1': ['O1'] },
+          objectives: { C1: { title: 'Core' }, O1: { title: 'Operations' } },
+        });
+        yield* fs.remove(reportPath);
+        yield* fs.symlink(externalCoveragePath, coveragePath);
+        yield* writeJson(profilePath, {
+          objectives: {
+            path: 'assets/objective-coverage.json',
+            byDomain: { core: ['C1'], operations: ['O1'] },
+          },
+        });
+
+        const readResult = yield* Effect.result(verifyPack(packPath, profilePath));
+        expect(Result.isFailure(readResult)).toBe(true);
+        if (Result.isFailure(readResult))
+          expect(readResult.failure.message).toContain('Objective mapping escapes pack folder');
+      }),
+    ));
+
+  it('allows report paths through symlinked directories that remain inside the pack folder', () =>
+    run(
+      Effect.gen(function* () {
+        const { directory, packPath } = yield* makePack;
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const profilePath = path.join(directory, 'profile.json');
+        const reportsDirectory = path.join(directory, 'assets', 'reports');
+        const reportLink = path.join(directory, 'assets', 'report-link');
+        yield* fs.makeDirectory(reportsDirectory);
+        yield* fs.symlink(reportsDirectory, reportLink);
+        yield* writeJson(profilePath, {
+          reportPath: 'assets/report-link/verification-report.json',
+        });
+
+        const verified = yield* verifyPack(packPath, profilePath);
+        expect(verified.profileReportPath).toBe(
+          path.join(reportsDirectory, 'verification-report.json'),
+        );
+        expect(yield* fs.exists(path.join(reportsDirectory, 'verification-report.json'))).toBe(
+          true,
+        );
+      }),
+    ));
+
   it('rejects malformed profile data and validates compact baseline metadata', () =>
     run(
       Effect.gen(function* () {

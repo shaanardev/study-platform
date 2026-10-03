@@ -1,11 +1,11 @@
 import { Effect, FileSystem, Result } from 'effect';
 import { describe, expect, it } from 'vitest';
-import { BuildError, buildPack } from '../src/build/build.js';
 import {
   AuthoringValidationError,
   safeRelativePath,
   validateAuthoring,
 } from '../src/build/authoring-validation.js';
+import { BuildError, buildPack } from '../src/build/build.js';
 import { verifyPack } from '../src/verify/verify.js';
 import { mutablePreview, run, writeJson } from './build-helpers.js';
 
@@ -27,9 +27,7 @@ describe('build command', () => {
         expect(Result.isFailure(invalidPath)).toBe(true);
         if (Result.isFailure(invalidPath)) {
           expect(invalidPath.failure).toBeInstanceOf(AuthoringValidationError);
-          expect(invalidPath.failure.message).toBe(
-            'assetFiles path must be a safe relative path',
-          );
+          expect(invalidPath.failure.message).toBe('assetFiles path must be a safe relative path');
         }
       }),
     ));

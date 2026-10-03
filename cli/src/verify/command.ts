@@ -1,6 +1,14 @@
-import { Console, Effect, Option } from 'effect';
+import {
+  type Config,
+  Console,
+  type Crypto,
+  Effect,
+  type FileSystem,
+  Option,
+  type Path,
+} from 'effect';
 import { Argument, Command, Flag } from 'effect/cli';
-import { verifyPack } from './verify.js';
+import { type VerifyError, verifyPack } from './verify.js';
 
 export const verifyCommand = Command.make(
   'verify',
@@ -12,7 +20,14 @@ export const verifyCommand = Command.make(
       Flag.withDescription('Optional path to a JSON verification profile'),
     ),
   },
-  Effect.fn(function* ({ packPath, profilePath }) {
+  Effect.fn('verifyCommand')(function* ({
+    packPath,
+    profilePath,
+  }): Effect.fn.Return<
+    void,
+    VerifyError | Config.ConfigError,
+    Crypto.Crypto | FileSystem.FileSystem | Path.Path
+  > {
     const { pack, profileReportPath } = yield* verifyPack(
       packPath,
       Option.getOrUndefined(profilePath),

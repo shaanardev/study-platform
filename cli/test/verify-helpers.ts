@@ -1,10 +1,14 @@
-import { Effect, FileSystem, Path } from 'effect';
+import { Data, Effect, FileSystem, Path } from 'effect';
 import { afterEach } from 'vitest';
 import { makeTemporaryDirectoryTracker, run, writeJson } from './test-helpers.js';
 
 export { run, writeJson };
 
 const temporaryDirectories = makeTemporaryDirectoryTracker();
+
+class MakePackError extends Data.TaggedError('MakePackError')<{
+  readonly cause: unknown;
+}> {}
 
 export const validPack = {
   schemaVersion: 1,
@@ -55,7 +59,11 @@ export const cloneWithMutableSources = () => ({
   })),
 });
 
-export const makePack = Effect.gen(function* () {
+export const makePack: Effect.Effect<
+  { readonly directory: string; readonly packPath: string },
+  MakePackError,
+  FileSystem.FileSystem | Path.Path
+> = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const directory = yield* temporaryDirectories.make('pack-cli-verify-test-');
@@ -65,8 +73,8 @@ export const makePack = Effect.gen(function* () {
     'Generic source material.',
   );
   const packPath = path.join(directory, 'pack.json');
-  yield* fs.writeFileString(packPath, JSON.stringify(validPack));
+  yield* writeJson(packPath, validPack);
   return { directory, packPath };
-});
+}).pipe(Effect.mapError((cause) => new MakePackError({ cause })));
 
 afterEach(() => run(temporaryDirectories.cleanup()));
