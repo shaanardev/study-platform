@@ -1,420 +1,188 @@
 # Dependency Injection with Layers
 
-## Overview
+`Context.Service` declares a requirement; `Layer` builds and provides its implementation. An effect that yields a service keeps that requirement visible until a layer is provided.
 
-Effect's Layer system provides compile-time dependency injection:
-
-```
-Layer<Out, Error, In>
-        ^    ^     ^
-        |    |     └── Dependencies required to build
-        |    └──────── Errors during construction
-        └───────────── Services provided
+```typescript
+Layer.Layer<Out, Error, In>
+//             ^     ^     ^
+//             |     |     └── Services needed to build the layer
+//             |     └──────── Typed construction errors
+//             └────────────── Services provided
 ```
 
-## Defining Services
+## Define and Use a Service
 
-### Context.Tag Pattern
+Use a service shape when implementations are supplied separately. Put effects in methods so failures and dependencies remain in their types.
 
 ```typescript
 import { Context, Effect, Layer } from "effect"
 
-// 1. Define the service shape and key
 class UserRepository extends Context.Service<UserRepository, {
-  readonly findById: (id: string) => Effect.Effect<User, NotFoundError>
-  readonly findByEmail: (email: string) => Effect.Effect<User, NotFoundError>
+  readonly findById: (id: string) => Effect.Effect<User, NotFoundError | DatabaseError>
   readonly save: (user: User) => Effect.Effect<void, DatabaseError>
-  readonly delete: (id: string) => Effect.Effect<void, DatabaseError>
 }>()("UserRepository") {}
 
-// 2. Use in effects - service becomes requirement
 const getUser = (id: string) => Effect.gen(function* () {
-  const repo = yield* UserRepository  // Yields the service
-  return yield* repo.findById(id)
+  const users = yield* UserRepository // Requirement: UserRepository
+  return yield* users.findById(id)
 })
-// Type: Effect<User, NotFoundError, UserRepository>
+// Effect<User, NotFoundError | DatabaseError, UserRepository>
 
-// 3. Create live implementation
 const UserRepositoryLive = Layer.succeed(UserRepository, {
-  findById: (id) => Effect.gen(function* () {
-    const result = yield* db.query(`SELECT * FROM users WHERE id = $1`, [id])
-    if (!result) return yield* Effect.fail(new NotFoundError({ id }))
-    return result
-  }),
-  findByEmail: (email) => /* ... */,
-  save: (user) => /* ... */,
-  delete: (id) => /* ... */,
+  findById: (id) => db.query<User | undefined>("SELECT ...", [id]).pipe(
+    Effect.flatMap((user) => user === undefined
+      ? Effect.fail(new NotFoundError({ id }))
+      : Effect.succeed(user))
+  ),
+  save: (user) => db.query<void>("INSERT ...", [user.id]),
 })
 ```
 
-### Effect.Service Pattern (Simplified)
+Use `Layer.succeed` for an already-built service value. Use a constructor service when there is one canonical implementation:
 
 ```typescript
-// Define the service and its implementation layer separately
-class Logger extends Context.Service<Logger, {
-  readonly info: (msg: string) => void
-  readonly error: (msg: string) => void
-}>()("Logger") {}
+class Logger extends Context.Service<Logger>()("Logger", {
+  make: Effect.succeed({
+    info: (message: string) => Effect.log(message),
+    error: (message: string) => Effect.logError(message),
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
-const LoggerLive = Layer.succeed(Logger, {
-  info: (msg) => console.log(`[INFO] ${msg}`),
-  error: (msg) => console.error(`[ERROR] ${msg}`),
+const greet = Effect.gen(function* () {
+  const logger = yield* Logger
+  yield* logger.info("Hello")
 })
 
-// Access the service through its generated use helper
-const greet = Logger.use((logger) => Effect.sync(() => logger.info("Hello")))
-Effect.provide(greet, LoggerLive)
+const runnable = greet.pipe(Effect.provide(Logger.layer))
 ```
 
-### Effect.Service with Dependencies
+`make` is the construction effect; `Layer.effect(this, this.make)` exposes it as a layer. Use another layer when the implementation varies, for example in tests.
+
+## Build Layers with Dependencies
+
+`Layer.effect` builds a service from an effect. Services yielded during construction become layer inputs; supply them by composing layers.
 
 ```typescript
 class Config extends Context.Service<Config, {
-  readonly logLevel: string
   readonly dbUrl: string
 }>()("Config") {}
 
 class Database extends Context.Service<Database, {
-  readonly query: (sql: string) => Effect.Effect<unknown>
-  readonly close: () => Effect.Effect<void>
+  readonly query: <A>(sql: string, params: ReadonlyArray<unknown>) => Effect.Effect<A, DatabaseError>
 }>()("Database") {}
 
 const ConfigLive = Layer.succeed(Config, {
-  logLevel: process.env.LOG_LEVEL ?? "info",
-  dbUrl: process.env.DATABASE_URL!,
+  dbUrl: process.env.DATABASE_URL ?? "postgres://localhost/app",
 })
 
 const DatabaseLive = Layer.effect(
   Database,
   Effect.gen(function* () {
-    const config = yield* Config
-    const pool = yield* Effect.tryPromise(() => createPool(config.dbUrl))
+    const config = yield* Config // Database construction requires Config
+    const pool = yield* Effect.tryPromise({
+      try: () => createPool(config.dbUrl),
+      catch: (cause) => new DatabaseError({ cause }),
+    })
     return {
-      query: (sql: string) => Effect.tryPromise(() => pool.query(sql)),
-      close: () => Effect.promise(() => pool.end()),
+      query: <A>(sql: string, params: ReadonlyArray<unknown>) => Effect.tryPromise({
+        try: () => pool.query<A>(sql, params),
+        catch: (cause) => new DatabaseError({ cause }),
+      }),
     }
-  })
-).pipe(Layer.provide(ConfigLive))
+  }),
+)
+
+const DatabaseWithConfig = Layer.provide(DatabaseLive, ConfigLive)
+// Layer.Layer<Database, DatabaseError>; Config is supplied and not included in the output.
 ```
 
-### Scoped Services (with Cleanup)
+Use `Layer.provide(layer, dependencies)` when the dependency should be consumed. Use `Layer.provideMerge` when downstream layers also need the dependency in the output:
 
 ```typescript
-class ConnectionPool extends Context.Service<ConnectionPool, { readonly pool: Pool }>()("ConnectionPool") {}
+const DatabaseAndConfig = Layer.provideMerge(DatabaseLive, ConfigLive)
+// Layer.Layer<Database | Config, DatabaseError>
 
-const ConnectionPoolLive = Layer.effect(
-  ConnectionPool,
-  Effect.gen(function* () {
-    const config = yield* Config
-
-    // Acquire
-    const pool = yield* Effect.tryPromise(() => createPool(config.dbUrl))
-    yield* Effect.log("Connection pool created")
-
-    // Register cleanup
-    yield* Effect.addFinalizer(() =>
-      Effect.gen(function* () {
-        yield* Effect.promise(() => pool.end())
-        yield* Effect.log("Connection pool closed")
-      })
-    )
-
-    return { pool }
-  })
-).pipe(Layer.provide(ConfigLive))
+const AppLayer = Layer.merge(Logger.layer, DatabaseAndConfig)
+// Independent layers can be merged; outputs and requirements are combined.
 ```
 
-## Layer Construction
+## Provide at the Boundary
 
-### Layer.succeed (Sync Value)
+Provide requirements where an application or test becomes runnable. Keep reusable effects unprovided so callers can choose implementations.
+
+`Clock`, `ConfigProvider`, `Console`, `Random`, and `Tracer` have default services. Override a default only when the program needs different behavior; use a module helper such as `Random.withSeed` when available.
 
 ```typescript
-const ConfigLayer = Layer.succeed(Config, {
-  logLevel: "info",
-  dbUrl: "postgres://localhost/mydb"
+const app = Effect.provide(greet, AppLayer)
+
+// For a local one-service override, provide the value directly.
+const debugApp = Effect.provideService(greet, Logger, {
+  info: (message) => Effect.logDebug(message),
+  error: (message) => Effect.logError(message),
 })
 ```
 
-### Layer.effect (From Effect)
+
+## Scoped Resources
+
+Acquire resources inside layer construction and register their release with `Effect.acquireRelease`; the layer scope runs the finalizer when disposed.
 
 ```typescript
-const DatabaseLayer = Layer.effect(
-  Database,
-  Effect.gen(function* () {
-    const config = yield* Config
-    return {
-      query: (sql) => Effect.tryPromise(() => runQuery(config.dbUrl, sql))
-    }
-  })
-)
-// Type: Layer<Database, never, Config>
-```
-
-### Layer.scoped (With Cleanup)
-
-```typescript
-const PoolLayer = Layer.effect(
+const PoolLive = Layer.effect(
   ConnectionPool,
   Effect.gen(function* () {
     const config = yield* Config
     const pool = yield* Effect.acquireRelease(
-      Effect.tryPromise(() => createPool(config.dbUrl)),
-      (pool) => Effect.promise(() => pool.end())
+      Effect.tryPromise({
+        try: () => createPool(config.dbUrl),
+        catch: (cause) => new DatabaseError({ cause }),
+      }),
+      (pool) => Effect.promise(() => pool.end()),
     )
     return { pool }
-  })
+  }),
 )
 ```
 
-### Layer.function (Factory)
+## Tests and Runtime
 
+Provide a test implementation at the test boundary; do not make the production service depend on test infrastructure.
+
+Use `ManagedRuntime` when many effects should share one built layer. Dispose it at shutdown to release scoped resources.
 ```typescript
-// Create layer from function
-const makeUserRepo = (db: Database): UserRepository => ({
-  findById: (id) => db.query(`SELECT * FROM users WHERE id = $1`, [id]),
-  // ...
+const LoggerTest = Layer.succeed(Logger, {
+  info: (message) => Effect.log(`[test] ${message}`),
+  error: (message) => Effect.logError(`[test] ${message}`),
 })
 
-const UserRepoLayer = Layer.effect(
-  UserRepository,
-  Effect.map(Database, makeUserRepo)
-)
+const test = greet.pipe(Effect.provide(LoggerTest))
 ```
 
-## Layer Composition
 
-### Layer.merge (Combine Independent)
-
-```typescript
-// Two independent layers
-const ConfigLayer: Layer<Config, never, never> = /* ... */
-const LoggerLayer: Layer<Logger, never, never> = /* ... */
-
-// Merge into one
-const BaseLayer = Layer.merge(ConfigLayer, LoggerLayer)
-// Type: Layer<Config | Logger, never, never>
-```
-
-### Layer.provide (Satisfy Dependencies)
-
-```typescript
-// DatabaseLayer needs Config
-const DatabaseLayer: Layer<Database, DbError, Config> = /* ... */
-
-// Provide Config to Database
-const DatabaseWithConfig = Layer.provide(DatabaseLayer, ConfigLayer)
-// Type: Layer<Database, DbError, never>
-```
-
-### Layer.provideMerge (Provide + Keep)
-
-```typescript
-// Provide dependency AND keep it in output
-const AppLayer = Layer.provideMerge(DatabaseLayer, ConfigLayer)
-// Type: Layer<Database | Config, DbError, never>
-```
-
-### Full Application Layer
-
-```typescript
-// Build complete application layer
-const AppLayer = pipe(
-  // Start with base layers
-  Layer.merge(ConfigLive, LoggerLive),
-  // Add database (needs Config)
-  Layer.provideMerge(DatabaseLive),
-  // Add repositories (need Database)
-  Layer.provideMerge(
-    Layer.merge(UserRepositoryLive, PostRepositoryLive)
-  ),
-  // Add services (need repositories)
-  Layer.provideMerge(
-    Layer.merge(UserServiceLive, PostServiceLive)
-  )
-)
-
-// Or using Layer.mergeAll for cleaner composition
-const AppLayer = Layer.mergeAll(
-  ConfigLive,
-  LoggerLive,
-  DatabaseLive,
-  UserRepositoryLive,
-  UserServiceLive
-).pipe(
-  Layer.provide(/* ... dependencies ... */)
-)
-```
-
-## Providing Layers
-
-### Effect.provide
-
-```typescript
-// Provide single layer
-const runnable = Effect.provide(program, UserRepositoryLive)
-
-// Provide multiple layers
-const runnable = Effect.provide(program, Layer.merge(ConfigLive, LoggerLive))
-
-// Provide full app layer
-const runnable = Effect.provide(program, AppLayer)
-```
-
-### Effect.provideService (Single Service)
-
-```typescript
-// Quick way to provide one service
-const runnable = Effect.provideService(program, Config, {
-  logLevel: "debug",
-  dbUrl: "postgres://localhost/test"
-})
-```
-
-### ManagedRuntime (Production)
 
 ```typescript
 import { ManagedRuntime } from "effect"
 
-// Create runtime from layer
 const runtime = ManagedRuntime.make(AppLayer)
-
-// Run effects
-await runtime.runPromise(program)
-
-// Cleanup when done
+const exit = await runtime.runPromiseExit(greet)
 await runtime.dispose()
 ```
 
-## Layer Memoization
+## Sharing Layer Instances
 
-Layers are automatically memoized by reference:
-
-```typescript
-// Same layer instance = constructed once
-const ConfigLayer = Layer.succeed(Config, { /* ... */ })
-
-const DbLayer = Layer.provide(DatabaseLive, ConfigLayer)
-const CacheLayer = Layer.provide(CacheLive, ConfigLayer)
-
-// ConfigLayer only constructed once even though used twice
-const AppLayer = Layer.merge(DbLayer, CacheLayer)
-```
-
-### Fresh Layers (Disable Memoization)
+Layers are memoized by reference during one build. Reuse the same value when sibling layers should share a dependency; use `Layer.fresh` when a new independent instance is required.
 
 ```typescript
-// Force fresh construction each time
-const FreshDbLayer = Layer.fresh(DatabaseLive)
-```
+class ConnectionPool extends Context.Service<ConnectionPool, {
+  readonly pool: Pool
+}>()("ConnectionPool") {}
 
-## Testing with Layers
+const DatabaseLayer = Layer.provideMerge(DatabaseLive, ConfigLive)
+const PoolLayer = Layer.provideMerge(PoolLive, ConfigLive)
+const SharedInfrastructure = Layer.merge(DatabaseLayer, PoolLayer)
+// ConfigLive is the same layer reference in both branches, so it is built once.
 
-### Test Implementations
-
-```typescript
-// Live implementation
-const UserRepositoryLive = Layer.succeed(UserRepository, {
-  findById: (id) => db.query(id),
-  // ...
-})
-
-// Test implementation
-const UserRepositoryTest = Layer.succeed(UserRepository, {
-  findById: (id) =>
-    id === "test-id"
-      ? Effect.succeed(testUser)
-      : Effect.fail(new NotFoundError({ id })),
-  // ...
-})
-
-// Use in tests
-const testProgram = Effect.provide(program, UserRepositoryTest)
-```
-
-### Mock Layers
-
-```typescript
-// Create mock from production service
-const MockUserRepo = Layer.succeed(UserRepository, {
-  findById: () => Effect.succeed(mockUser),
-  findByEmail: () => Effect.succeed(mockUser),
-  save: () => Effect.void,
-  delete: () => Effect.void,
-})
-```
-
-### ConfigProvider for Tests
-
-```typescript
-import { ConfigProvider } from "effect"
-
-// Mock config provider
-const TestConfig = ConfigProvider.layer(
-  ConfigProvider.fromMap(
-    new Map([
-      ["LOG_LEVEL", "debug"],
-      ["DATABASE_URL", "postgres://test"],
-    ])
-  )
-)
-
-const testRunnable = Effect.provide(program, TestConfig)
-```
-
-## Best Practices
-
-### 1. One Service Per Concern
-
-```typescript
-// DO: Focused services
-class UserRepository { /* only user data access */ }
-class EmailService { /* only email sending */ }
-class UserService { /* orchestrates user operations */ }
-
-// DON'T: God service
-class AppService { /* everything */ }
-```
-
-### 2. Interface Segregation
-
-```typescript
-// DO: Small, focused interfaces
-class UserReader { readonly find: (id) => Effect<User> }
-class UserWriter { readonly save: (user) => Effect<void> }
-
-// DON'T: Huge interfaces
-class UserRepository {
-  readonly find: ...
-  readonly save: ...
-  readonly delete: ...
-  readonly search: ...
-  readonly count: ...
-  readonly paginate: ...
-  // 20 more methods
-}
-```
-
-### 3. Layer at Composition Root
-
-```typescript
-// DO: Compose layers at entry point
-// main.ts
-const AppLayer = Layer.mergeAll(/* all layers */)
-const runtime = ManagedRuntime.make(AppLayer)
-
-// DON'T: Scattered layer provision
-// some-module.ts
-Effect.provide(effect, RandomLayer)  // Loses composability
-```
-
-### 4. Use accessors: true for Common Services
-
-```typescript
-class Logger extends Context.Service<Logger, {
-  readonly info: (msg: string) => Effect.Effect<void>
-  readonly error: (msg: string) => Effect.Effect<void>
-}>()("Logger") {}
-
-// Accessors use the service through Logger.use
-const starting = Logger.use((logger) => logger.info("Starting"))
+const IsolatedDatabase = Layer.fresh(DatabaseLive)
 ```

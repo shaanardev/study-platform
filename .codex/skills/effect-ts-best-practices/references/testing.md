@@ -1,496 +1,123 @@
-# Testing Effect-TS Applications
+# Testing Effect Programs
 
-## Testing Strategy
+Use Vitest to run effects at the test boundary. Use `Effect.runPromise` for success assertions and `Effect.result` when asserting typed failures; use `Effect.runPromiseExit` only when defects or interruption are part of the assertion.
 
-| Test Type | Approach | Tools |
-|-----------|----------|-------|
-| Unit Tests | Test pure functions, isolated effects | Vitest + Effect |
-| Service Tests | Mock dependencies via layers | Test layers, stubs |
-| Integration | Real dependencies, controlled env | Test containers, MSW |
+## Test a Service with a Test Layer
 
-## Vitest Setup
-
-### Installation
-
-```bash
-npm install -D vitest @vitest/coverage-v8
-```
-
-### Configuration
+Provide a deterministic service implementation at the boundary. Keep the production effect reusable and the test layer independent of live infrastructure.
 
 ```typescript
-// vitest.config.ts
-import { defineConfig } from "vitest/config"
+import { describe, expect, it } from "vitest"
+import { Effect, Layer, Result } from "effect"
+import { NotFoundError, UserRepository, findUser } from "./users"
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: "node",
-    include: ["**/*.test.ts"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-    },
-  },
-})
-```
+const testUser = { id: "user-1", name: "Test User", email: "test@example.com" }
 
-## Basic Effect Testing
-
-### Running Effects in Tests
-
-```typescript
-import { describe, it, expect } from "vitest"
-import { Cause, Effect, Exit, Option } from "effect"
-
-describe("MyService", () => {
-  it("should process data", async () => {
-    const program = Effect.gen(function* () {
-      const result = yield* processData(input)
-      return result
-    })
-
-    const result = await Effect.runPromise(program)
-    expect(result).toEqual(expectedOutput)
-  })
-
-  it("should fail with InvalidInput", async () => {
-    const program = processData(invalidInput)
-
-    const exit = await Effect.runPromiseExit(program)
-    expect(Exit.isFailure(exit)).toBe(true)
-
-    if (Exit.isFailure(exit)) {
-      const error = Cause.findErrorOption(exit.cause)
-      expect(Option.isSome(error)).toBe(true)
-      expect(error.value._tag).toBe("InvalidInputError")
-    }
-  })
-})
-```
-
-### Testing Error Cases
-
-```typescript
-import { Effect, Exit, Cause, Option } from "effect"
-
-it("should handle not found error", async () => {
-  const program = findUser("non-existent-id")
-
-  const exit = await Effect.runPromiseExit(program)
-
-  expect(Exit.isFailure(exit)).toBe(true)
-  if (Exit.isFailure(exit)) {
-    const error = Cause.findErrorOption(exit.cause)
-    expect(Option.getOrNull(error)?._tag).toBe("NotFoundError")
-  }
-})
-
-// Helper for cleaner error assertions
-const expectFailure = async <A, E>(
-  effect: Effect.Effect<A, E>,
-  check: (error: E) => void
-) => {
-  const exit = await Effect.runPromiseExit(effect)
-  expect(Exit.isFailure(exit)).toBe(true)
-  if (Exit.isFailure(exit)) {
-    const error = Cause.findErrorOption(exit.cause)
-    expect(Option.isSome(error)).toBe(true)
-    check(error.value)
-  }
-}
-
-// Usage
-it("should fail with NotFoundError", async () => {
-  await expectFailure(findUser("bad-id"), (e) => {
-    expect(e._tag).toBe("NotFoundError")
-    expect(e.id).toBe("bad-id")
-  })
-})
-```
-
-## Mocking Services
-
-### Test Layers
-
-```typescript
-import { Context, Effect, Layer } from "effect"
-
-// Production implementation
-class UserRepository extends Context.Service<UserRepository>()("UserRepository", {
-  make: Effect.gen(function* () {
-    const db = yield* Database
-    return {
-      findById: (id: string) => db.query(`SELECT * FROM users WHERE id = $1`, [id]),
-      save: (user: User) => db.query(`INSERT INTO users...`, [user]),
-    }
-  }),
-}) {}
-
-// The layer retains the Database requirement for callers to provide.
-const UserRepositoryLive = Layer.effect(UserRepository)(UserRepository.make)
-
-// Test implementation
 const UserRepositoryTest = Layer.succeed(UserRepository, {
-  findById: (id) =>
-    id === "existing-user"
-      ? Effect.succeed({ id, name: "Test User", email: "test@example.com" })
-      : Effect.fail(new NotFoundError({ id })),
+  findById: (id) => id === testUser.id
+    ? Effect.succeed(testUser)
+    : Effect.fail(new NotFoundError({ id })),
   save: () => Effect.void,
 })
 
-// Use in tests
-describe("UserService", () => {
-  const TestLayer = Layer.merge(UserRepositoryTest, LoggerTest)
-
-  it("should find existing user", async () => {
-    const program = pipe(
-      getUserById("existing-user"),
-      Effect.provide(TestLayer)
-    )
-
-    const result = await Effect.runPromise(program)
-    expect(result.name).toBe("Test User")
-  })
-})
-```
-
-### Mock Factories
-
-```typescript
-// Create configurable mocks
-const makeUserRepositoryMock = (options: {
-  users?: Map<string, User>
-  shouldFail?: boolean
-}) => Layer.succeed(UserRepository, {
-  findById: (id) => {
-    if (options.shouldFail) {
-      return Effect.fail(new DatabaseError({ message: "Connection failed" }))
-    }
-    const user = options.users?.get(id)
-    return user
-      ? Effect.succeed(user)
-      : Effect.fail(new NotFoundError({ id }))
-  },
-  save: (user) => {
-    if (options.shouldFail) {
-      return Effect.fail(new DatabaseError({ message: "Connection failed" }))
-    }
-    options.users?.set(user.id, user)
-    return Effect.void
-  },
-})
-
-// Usage
-it("should handle database failure", async () => {
-  const TestLayer = makeUserRepositoryMock({ shouldFail: true })
-
-  const program = pipe(
-    getUserById("any-id"),
-    Effect.provide(TestLayer)
-  )
-
-  await expectFailure(program, (e) => {
-    expect(e._tag).toBe("DatabaseError")
-  })
-})
-```
-
-### Using DefaultWithoutDependencies
-
-```typescript
-import { Context, Effect, Layer } from "effect"
-import { FileSystem } from "effect"
-
-// Service with dependencies
-class Cache extends Context.Service<Cache>()("Cache") {}
-
-// Test with mocked dependency only
-const FileSystemTest = FileSystem.layerNoop({
-  readFileString: () => Effect.succeed("cached-value"),
-  writeFileString: () => Effect.void,
-})
-
-const CacheTest = Layer.effect(Cache)(Effect.gen(function* () {
-  const fs = yield* FileSystem
-  return {
-    get: (key: string) => fs.readFileString(`cache/${key}`),
-    set: (key: string, value: string) => fs.writeFileString(`cache/${key}`, value),
-  }
-}))
-
-const program = pipe(
-  cacheOperation,
-  Effect.provide(Layer.provide(CacheTest, FileSystemTest))
-)
-```
-
-## Mocking Config
-
-```typescript
-import { ConfigProvider, Effect } from "effect"
-
-// Create test config provider
-const TestConfigProvider = ConfigProvider.fromUnknown({
-  DATABASE_URL: "postgres://test:test@localhost/test",
-  LOG_LEVEL: "debug",
-  API_KEY: "test-api-key",
-})
-
-const TestConfigLayer = ConfigProvider.layer(TestConfigProvider)
-
-// Use in tests
-it("should use test config", async () => {
-  const program = pipe(
-    getConfig,
-    Effect.provide(TestConfigLayer)
-  )
-
-  const config = await Effect.runPromise(program)
-  expect(config.logLevel).toBe("debug")
-})
-```
-
-## Testing with MSW (HTTP Mocking)
-
-```typescript
-import { http, HttpResponse } from "msw"
-import { setupServer } from "msw/node"
-
-const handlers = [
-  http.get("/api/users/:id", ({ params }) => {
-    if (params.id === "123") {
-      return HttpResponse.json({ id: "123", name: "Test User" })
-    }
-    return new HttpResponse(null, { status: 404 })
-  }),
-]
-
-const server = setupServer(...handlers)
-
-beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
-
-describe("API Client", () => {
-  it("should fetch user", async () => {
-    const program = fetchUser("123")
-
+describe("findUser", () => {
+  it("should return the user", async () => {
+    const program = findUser(testUser.id).pipe(Effect.provide(UserRepositoryTest))
     const user = await Effect.runPromise(program)
-    expect(user.name).toBe("Test User")
+    expect(user).toEqual(testUser)
   })
 
-  it("should handle 404", async () => {
-    const program = fetchUser("non-existent")
+  it("should preserve the typed not-found error", async () => {
+    const program = findUser("missing").pipe(Effect.provide(UserRepositoryTest))
+    const result = await Effect.runPromise(Effect.result(program))
 
-    await expectFailure(program, (e) => {
-      expect(e._tag).toBe("NotFoundError")
-    })
-  })
-
-  // Override handler for specific test
-  it("should handle server error", async () => {
-    server.use(
-      http.get("/api/users/:id", () => {
-        return new HttpResponse(null, { status: 500 })
-      })
-    )
-
-    const program = fetchUser("123")
-
-    await expectFailure(program, (e) => {
-      expect(e._tag).toBe("ServerError")
-    })
+    expect(Result.isFailure(result)).toBe(true)
+    if (Result.isFailure(result)) {
+      expect(result.failure._tag).toBe("NotFoundError")
+      expect(result.failure.id).toBe("missing")
+    }
   })
 })
 ```
 
-## Testing Concurrent Code
+Use `Layer.succeed` for a ready test value and `Layer.effect` only when test service construction itself needs effects or services. See [layers.md](./layers.md) for layer composition; see [config.md](./config.md) for test `ConfigProvider` setup.
+
+For pure validation, assert the returned `Result` directly; do not run it through an Effect runtime.
+
+```typescript
+const result = validateEmail("invalid")
+expect(Result.isFailure(result)).toBe(true)
+```
+
+## Isolate Stateful Tests
+
+Create a fresh layer or mock state per test when a test mutates it. Share immutable test layers freely.
+
+```typescript
+import { Effect, Layer, Result } from "effect"
+import { NotFoundError, UserRepository, findUser, createUser, type User } from "./users"
+
+const makeUserRepositoryTest = (users: Map<string, User>) =>
+  Layer.succeed(UserRepository, {
+    findById: (id) => {
+      const user = users.get(id)
+      return user === undefined
+        ? Effect.fail(new NotFoundError({ id }))
+        : Effect.succeed(user)
+    },
+    save: (user) => Effect.sync(() => { users.set(user.id, user) }),
+  })
+
+it("should use isolated repository state", async () => {
+  const writerLayer = makeUserRepositoryTest(new Map())
+  const readerLayer = makeUserRepositoryTest(new Map())
+  await Effect.runPromise(createUser(testUser).pipe(Effect.provide(writerLayer)))
+
+  const result = await Effect.runPromise(Effect.result(
+    findUser(testUser.id).pipe(Effect.provide(readerLayer))
+  ))
+  expect(Result.isFailure(result)).toBe(true) // the reader has its own empty state
+})
+```
+
+## Test Time-Dependent Effects
+
+Use `TestClock` instead of waiting for real time. Advance the clock only after forking work that is waiting on it.
 
 ```typescript
 import { Effect, Fiber, Option } from "effect"
 import { TestClock } from "effect/testing"
 
-describe("Concurrent operations", () => {
-  it("should timeout after 5 seconds", async () => {
-    const program = Effect.gen(function* () {
-      const fiber = yield* Effect.forkChild(
-        slowOperation.pipe(Effect.timeout("5 seconds"))
-      )
-
-      // Advance time
-      yield* TestClock.adjust("6 seconds")
-
-      const result = yield* Fiber.join(fiber)
-      return result
-    }).pipe(Effect.provide(TestClock.layer()))
-
-    const result = await Effect.runPromise(program)
-    expect(Option.isNone(result)).toBe(true)
-  })
-
-  it("should retry 3 times", async () => {
-    let attempts = 0
-    const flaky = Effect.gen(function* () {
-      attempts++
-      if (attempts < 3) {
-        return yield* Effect.fail(new Error("flaky"))
-      }
-      return "success"
-    })
-
-    const program = Effect.retry(flaky, Schedule.recurs(3))
-
-    const result = await Effect.runPromise(program)
-    expect(result).toBe("success")
-    expect(attempts).toBe(3)
-  })
-})
-```
-
-## Testing Streams
-
-```typescript
-import { Stream, Chunk } from "effect"
-
-describe("Stream processing", () => {
-  it("should transform stream", async () => {
-    const input = Stream.fromIterable([1, 2, 3, 4, 5])
-
-    const program = input.pipe(
-      Stream.map((n) => n * 2),
-      Stream.filter((n) => n > 4),
-      Stream.runCollect
+const program = Effect.gen(function* () {
+  const fiber = yield* Effect.forkChild(
+    Effect.sleep("10 seconds").pipe(
+      Effect.map((value) => Option.some(value)),
+      Effect.timeoutOrElse({
+        duration: "5 seconds",
+        orElse: () => Effect.succeed(Option.none<void>()),
+      }),
     )
-
-    const result = await Effect.runPromise(program)
-    expect(Chunk.toArray(result)).toEqual([6, 8, 10])
-  })
-
-  it("should handle stream errors", async () => {
-    const input = Stream.fromIterable([1, 2, 3]).pipe(
-      Stream.mapEffect((n) =>
-        n === 2
-          ? Effect.fail(new Error("boom"))
-          : Effect.succeed(n)
-      )
-    )
-
-    const exit = await Effect.runPromiseExit(Stream.runCollect(input))
-    expect(Exit.isFailure(exit)).toBe(true)
-  })
-})
-```
-
-## Test Helpers
-
-```typescript
-// test/helpers.ts
-import { Effect, Exit, Cause, Option, Layer } from "effect"
-
-export const runTest = <A, E>(
-  effect: Effect.Effect<A, E>,
-  layer?: Layer.Layer<any, any, any>
-) => {
-  const program = layer ? Effect.provide(effect, layer) : effect
-  return Effect.runPromise(program)
-}
-
-export const runTestExit = <A, E>(
-  effect: Effect.Effect<A, E>,
-  layer?: Layer.Layer<any, any, any>
-) => {
-  const program = layer ? Effect.provide(effect, layer) : effect
-  return Effect.runPromiseExit(program)
-}
-
-export const expectSuccess = async <A, E>(
-  effect: Effect.Effect<A, E>,
-  check?: (value: A) => void
-) => {
-  const exit = await Effect.runPromiseExit(effect)
-  expect(Exit.isSuccess(exit)).toBe(true)
-  if (Exit.isSuccess(exit) && check) {
-    check(exit.value)
-  }
-}
-
-export const expectFailure = async <A, E>(
-  effect: Effect.Effect<A, E>,
-  check?: (error: E) => void
-) => {
-  const exit = await Effect.runPromiseExit(effect)
-  expect(Exit.isFailure(exit)).toBe(true)
-  if (Exit.isFailure(exit) && check) {
-    const error = Cause.findErrorOption(exit.cause)
-    expect(Option.isSome(error)).toBe(true)
-    if (Option.isSome(error)) {
-      check(error.value)
-    }
-  }
-}
-```
-
-## Best Practices
-
-### 1. Test Effects, Not Implementations
-
-```typescript
-// DO: Test behavior through effects
-it("should save user", async () => {
-  const program = createUser({ name: "John" }).pipe(
-    Effect.provide(TestLayer)
   )
-  const user = await runTest(program)
-  expect(user.id).toBeDefined()
-})
+  yield* TestClock.adjust("6 seconds")
+  return yield* Fiber.join(fiber)
+}).pipe(Effect.provide(TestClock.layer()))
 
-// DON'T: Test internal implementation
-it("should call repository.save", async () => {
-  // Testing implementation details makes tests brittle
-})
+const result = await Effect.runPromise(program)
+expect(Option.isNone(result)).toBe(true)
 ```
 
-### 2. Use Layers for Isolation
+## Test Streams
+
+Collect a finite stream and assert its values. Use `Effect.runPromiseExit` when the test must inspect a defect or interruption as well as typed failures.
 
 ```typescript
-// DO: Each test gets isolated dependencies
-const makeTestLayer = () => Layer.merge(
-  makeUserRepoMock({ users: new Map() }),
-  makeLoggerMock()
+import { Effect, Stream } from "effect"
+
+const program = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.map((n) => n * 2),
+  Stream.runCollect,
 )
 
-it("test 1", () => {
-  const layer = makeTestLayer()
-  // ...
-})
-
-it("test 2", () => {
-  const layer = makeTestLayer()  // Fresh state
-  // ...
-})
-```
-
-### 3. Test Error Paths
-
-```typescript
-// Test happy path
-it("should create user", /* ... */)
-
-// Test error paths
-it("should fail with ValidationError for invalid email", /* ... */)
-it("should fail with DuplicateError for existing email", /* ... */)
-it("should fail with DatabaseError on connection failure", /* ... */)
-```
-
-### 4. Keep Test Setup Minimal
-
-```typescript
-// DO: Minimal mock for specific test
-const TestLayer = Layer.succeed(UserRepository, {
-  findById: () => Effect.succeed(testUser),
-  save: () => Effect.void,  // Unused in this test
-})
-
-// DON'T: Full mock when only one method matters
+const values = await Effect.runPromise(program)
+expect(values).toEqual([2, 4, 6])
 ```

@@ -1,6 +1,6 @@
 ---
 name: effect-ts-best-practices
-description: Guidance on writing fast, robust, idiomatic  Effect-TS applications written in Typescript. Load this skill working with Effect-TS, asks to "write Effect code", "use Effect", "functional TypeScript", "handle errors with Effect", "dependency injection Effect", "Effect Layer", or needs expert-level guidance on Effect-TS patterns, error handling, concurrency, and best practices.
+description: Guidance on writing fast, robust, idiomatic Effect applications in TypeScript. Load this skill when working with Effect, writing Effect code, handling typed errors, using dependency injection or layers, or applying Effect concurrency and resource-management patterns.
 ---
 
 # Effect-TS Expert
@@ -19,27 +19,31 @@ Effect<Success, Error, Requirements>
 //     └─────────────────── Success value type
 ```
 
-**Key insight:** Effects are lazy descriptions of computations. They don't execute until run.
+An `Effect<A, E, R>` describes a computation that may succeed with `A`, fail with `E`, and require services in `R`. Constructing an Effect does not run it.
 
 ### Creating Effects
 
 ```typescript
-import { Effect } from "effect"
+import { Data, Effect } from "effect"
+
+class ExampleError extends Data.TaggedError("ExampleError")<{}> {}
 
 // From pure values
 const success = Effect.succeed(42)
-const failure = Effect.fail(new Error("oops"))
+const failure = Effect.fail(new ExampleError())
 
 
-// From async code
-const promise = Effect.promise(() => fetch(url))
+// For a Promise that does not reject.
+const promise = Effect.promise(() => Promise.resolve("ready"))
+
+// Map rejection from an external API to a typed failure.
 const tryPromise = Effect.tryPromise({
-  try: () => fetch(url).then(r => r.json()),
-  catch: (e) => new FetchError(e)
+  try: (signal) => fetch(url, { signal }).then(r => r.json()),
+  catch: (cause) => new FetchError({ cause })
 })
 
 // From callbacks
-const callback = Effect.async<string, Error>((resume) => {
+const callback = Effect.callback<string, Error>((resume) => {
   someCallbackApi((err, result) => {
     if (err) resume(Effect.fail(err))
     else resume(Effect.succeed(result))
@@ -50,58 +54,99 @@ const callback = Effect.async<string, Error>((resume) => {
 ### Running Effects
 
 ```typescript
-// Development/testing
-Effect.runSync(effect)           // Sync, throws on async/error
-Effect.runPromise(effect)        // Returns Promise<A>
+// At application boundaries and in tests
+Effect.runSync(effect)           // Synchronous only; throws on failure or async work
+Effect.runPromise(effect)        // Returns Promise<A>; rejects on failure
 Effect.runPromiseExit(effect)    // Returns Promise<Exit<A, E>>
 
 // Production (with runtime)
-const runtime = ManagedRuntime.make(AppLayer)
-await runtime.runPromise(effect)
+import { Effect, ManagedRuntime } from "effect"
+
+const AppRuntime = ManagedRuntime.make(AppLayer)
+
+// Keep the runtime outcome in Exit, then dispose its services.
+const exit = await AppRuntime.runPromiseExit(
+  program.pipe(
+    Effect.tapError((error) =>
+      Effect.logError("Application effect failed", error)
+    )
+  )
+)
+
+await AppRuntime.dispose()
 ```
 
 ## Building Pipelines
 
 ### pipe and Effect.gen
 
-```typescript
-import { Effect, pipe } from "effect"
+Define reusable Effect-returning functions with `Effect.fn("name")` when they are useful tracing boundaries and `Effect.fnUntraced` when they are not; avoid wrappers that only return `Effect.gen` without adding value.
 
-// Using pipe (point-free style)
+```typescript
+import { Data, Effect, pipe } from "effect"
+
+class TooSmallError extends Data.TaggedError("TooSmallError")<{}> {}
+
+// Use pipe for a short transformation chain with explicit callbacks.
 const program = pipe(
   Effect.succeed(5),
-  Effect.map(n => n * 2),
-  Effect.flatMap(n => n > 5
+  Effect.map((n) => n * 2),
+  Effect.flatMap((n) => n > 5
     ? Effect.succeed(n)
-    : Effect.fail(new Error("too small"))
+    : Effect.fail(new TooSmallError())
   ),
-  Effect.tap(n => Effect.log(`Result: ${n}`))
+  Effect.tap((n) => Effect.log(`Result: ${n}`))
 )
 
-// Using Effect.gen (generator style - RECOMMENDED)
+// Using Effect.gen (generator style - RECOMMENDED) for inline workflows with sequencing or branching
 const program = Effect.gen(function* () {
   const n = yield* Effect.succeed(5)
   const doubled = n * 2
   if (doubled <= 5) {
-    return yield* Effect.fail(new Error("too small"))
+    return yield* new TooSmallError()
   }
   yield* Effect.log(`Result: ${doubled}`)
   return doubled
 })
 ```
 
-**Recommendation:** Prefer `Effect.gen` for readability. Use `pipe` for simple transformations.
-
 ## Error Handling
+
+### Result Values
+
+Use `Result` for computations whose work is synchronous, such as validation and parsing. A `Result` can still be returned from async code or yielded inside an `Effect` workflow; use `Effect` to model the async or effectful work itself.
+
+```typescript
+import { Data, Effect, Result } from "effect"
+
+class InvalidAge extends Data.TaggedError("InvalidAge")<{
+  readonly age: number
+}> {}
+
+const validateAge = (age: number): Result.Result<number, InvalidAge> =>
+  age >= 18
+    ? Result.succeed(age)
+    : Result.fail(new InvalidAge({ age }))
+
+declare const saveUser: (age: number) => Effect.Effect<string>
+
+const register = (age: number) => Effect.gen(function* () {
+  // converts its failure into a typed Effect failure, so subsequent effectful steps compose normally
+  const validAge = yield* validateAge(age)
+  return yield* saveUser(validAge)
+})
+```
 
 ### Typed Errors vs Defects
 
 | Type | Use Case | Recovery |
 |------|----------|----------|
 | **Typed Error** | Domain failures (validation, not found, permissions) | Yes - caller can handle |
-| **Defect** | Bugs, invariant violations, unrecoverable | No - terminates fiber |
+| **Defect** | Bugs and violated invariants | Not handled by typed-error recovery; defects fail the fiber |
 
 ```typescript
+import { Data, Effect } from "effect"
+
 // Typed errors - tracked in type system
 class NotFoundError extends Data.TaggedError("NotFoundError")<{
   readonly id: string
@@ -111,13 +156,15 @@ class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly message: string
 }> {}
 
-const findUser = (id: string): Effect.Effect<User, NotFoundError> =>
-  pipe(
-    db.query(id),
-    Effect.flatMap(user =>
-      user ? Effect.succeed(user) : Effect.fail(new NotFoundError({ id }))
-    )
-  )
+class RepositoryError extends Data.TaggedError("RepositoryError")<{
+  readonly cause: unknown
+}> {}
+
+const findUser = Effect.fn("findUser")(function* (id: string) {
+  const user = yield* db.query(id)
+  if (!user) return yield* Effect.fail(new NotFoundError({ id }))
+  return user
+})
 
 // Defects - for bugs, not domain errors
 const divide = (a: number, b: number): Effect.Effect<number> =>
@@ -130,7 +177,9 @@ const divide = (a: number, b: number): Effect.Effect<number> =>
 
 ```typescript
 // Handle all typed errors
-Effect.catch(effect, (error) => Effect.succeed(fallback))
+const withFallback = effect.pipe(
+  Effect.catch((_error) => Effect.succeed(fallback))
+)
 
 // Catch specific tagged errors
 Effect.catchTag(effect, "NotFoundError", (e) =>
@@ -157,42 +206,49 @@ Effect.retry(effect, Schedule.recurs(3))
 import { Schema } from "effect"
 
 class ApiError extends Schema.TaggedError<ApiError>()("ApiError", {
-  status: Schema.Number,
+  status: Schema.Int,
   message: Schema.String,
 }) {}
 
-// DON'T: Use plain Error or strings
-Effect.fail(new Error("something went wrong"))  // Loses type info
-Effect.fail("error")  // Not an Error type
+// Prefer named, tagged errors for recoverable domain failures.
+// Plain Error and strings provide no stable tag for typed recovery.
 ```
 
 ## Dependency Injection
 
-### Services with Context.Tag
+### Services with Context.Service
 
 ```typescript
 import { Context, Effect, Layer } from "effect"
 
 // 1. Define service interface
-class UserRepository extends Context.Tag("UserRepository")<
-  UserRepository,
-  {
-    readonly findById: (id: string) => Effect.Effect<User, NotFoundError>
-    readonly save: (user: User) => Effect.Effect<void>
-  }
->() {}
+class UserRepository extends Context.Service<UserRepository, {
+  readonly findById: (id: string) => Effect.Effect<User, NotFoundError | RepositoryError>
+  readonly save: (user: User) => Effect.Effect<void, RepositoryError>
+}>()("UserRepository") {}
 
 // 2. Use in effects
-const getUser = (id: string) => Effect.gen(function* () {
+const getUser = Effect.fn("getUser")(function* (id: string) {
   const repo = yield* UserRepository
   return yield* repo.findById(id)
 })
-// Type: Effect<User, NotFoundError, UserRepository>
+// Type: Effect<User, NotFoundError | RepositoryError, UserRepository>
 
 // 3. Create layer implementation
 const UserRepositoryLive = Layer.succeed(UserRepository, {
-  findById: (id) => Effect.tryPromise(() => db.users.find(id)),
-  save: (user) => Effect.tryPromise(() => db.users.save(user))
+  // Map database rejection to RepositoryError.
+  findById: (id) => Effect.tryPromise({
+    try: () => db.users.find(id),
+    catch: (cause) => new RepositoryError({ cause })
+  }).pipe(
+    Effect.flatMap((user) => user === undefined
+      ? Effect.fail(new NotFoundError({ id }))
+      : Effect.succeed(user))
+  ),
+  save: (user) => Effect.tryPromise({
+    try: () => db.users.save(user),
+    catch: (cause) => new RepositoryError({ cause })
+  })
 })
 
 // 4. Provide to run
@@ -200,33 +256,29 @@ const program = getUser("123")
 const runnable = Effect.provide(program, UserRepositoryLive)
 ```
 
-### Effect.Service (Simplified Pattern)
+### Build an effectful service layer
 
 ```typescript
-// Combines Tag + Layer in one declaration
-class Logger extends Effect.Service<Logger>()("Logger", {
-  // Option 1: Sync implementation
-  sync: () => ({
-    log: (msg: string) => console.log(msg)
-  }),
+import { Context, Effect, Layer } from "effect"
 
-  // Option 2: Effect-based with dependencies
-  effect: Effect.gen(function* () {
-    const config = yield* Config
-    return {
-      log: (msg: string) => Effect.sync(() =>
-        console.log(`[${config.level}] ${msg}`)
-      )
-    }
-  }),
-  dependencies: [ConfigLive]
-}) {}
+class Logger extends Context.Service<Logger, {
+  readonly log: (message: string) => Effect.Effect<void>
+}>()("Logger") {}
 
-// Use directly
-const program = Logger.log("Hello")
+const LoggerLive = Layer.effect(Logger, Effect.gen(function* () {
+  const config = yield* Config
+  return {
+    log: (message: string) => Effect.log(`[${config.level}] ${message}`)
+  }
+}))
 
-// Access via Layer
-Effect.provide(program, Logger.Default)
+const LoggerWithConfig = Layer.provide(LoggerLive, ConfigLive)
+
+const program = Effect.gen(function* () {
+  const logger = yield* Logger
+  yield* logger.log("Hello")
+})
+const runnable = Effect.provide(program, LoggerWithConfig)
 ```
 
 ### Layer Composition
@@ -240,9 +292,10 @@ const DbLayer = Layer.provide(DatabaseLive, ConfigLive)
 
 // Full composition
 const AppLayer = pipe(
-  Layer.merge(ConfigLive, LoggerLive),
-  Layer.provideMerge(DatabaseLive),
-  Layer.provideMerge(UserRepositoryLive)
+  UserRepositoryLive,
+  Layer.provideMerge(
+    Layer.provideMerge(DatabaseLive, Layer.merge(ConfigLive, LoggerLive))
+  )
 )
 ```
 
@@ -254,7 +307,7 @@ See `references/layers.md` for advanced patterns.
 
 ```typescript
 // Fork to run concurrently
-const fiber = yield* Effect.fork(longRunningTask)
+const fiber = yield* Effect.forkChild(longRunningTask)
 
 // Wait for result
 const result = yield* Fiber.join(fiber)
@@ -262,11 +315,11 @@ const result = yield* Fiber.join(fiber)
 // Interrupt
 yield* Fiber.interrupt(fiber)
 
-// Race - first to complete wins
+// Race - first successful result wins; a failed racer does not win.
 const fastest = yield* Effect.race(task1, task2)
 
-// All - run all, collect results
-const results = yield* Effect.all([task1, task2, task3])
+// Effect.all is sequential by default; set concurrency to run effects concurrently.
+const results = yield* Effect.all([task1, task2, task3], { concurrency: 5 })
 
 // All with concurrency limit
 const results = yield* Effect.all(tasks, { concurrency: 5 })
@@ -275,6 +328,8 @@ const results = yield* Effect.all(tasks, { concurrency: 5 })
 ### Synchronization Primitives
 
 ```typescript
+import { Deferred, Effect, Fiber, Queue, Ref, Semaphore } from "effect"
+
 // Ref - mutable reference
 const counter = yield* Ref.make(0)
 yield* Ref.update(counter, n => n + 1)
@@ -286,8 +341,8 @@ yield* Queue.offer(queue, 42)
 const item = yield* Queue.take(queue)
 
 // Semaphore - limit concurrent access
-const sem = yield* Effect.makeSemaphore(3)
-yield* sem.withPermits(1)(expensiveOperation)
+const sem = yield* Semaphore.make(3)
+yield* Semaphore.withPermits(sem, 1, expensiveOperation)
 
 // Deferred - one-shot signal
 const deferred = yield* Deferred.make<string, Error>()
@@ -339,13 +394,14 @@ const runnable = Effect.scoped(program)
 | `Effect.flatMap` | Chain effects (monadic bind) |
 | `Effect.tap` | Side effect, keep original value |
 | `Effect.andThen` | Sequence, can be value or effect |
-| `Effect.catch` | Handle all typed errors |
+| `Effect.catch` | Recover from all typed errors |
+| `Effect.catchIf` | Recover from typed errors matching a predicate |
 | `Effect.catchTag` | Handle specific tagged error |
 | `Effect.provide` | Inject dependencies |
 | `Effect.retry` | Retry with schedule |
 | `Effect.timeout` | Add timeout |
-| `Effect.fork` | Run concurrently |
-| `Effect.all` | Parallel execution |
+| `Effect.forkChild` | Fork a child fiber tied to the parent |
+| `Effect.all` | Combine effects; sequential unless concurrency is set |
 
 ### When to Use What
 
@@ -353,10 +409,10 @@ const runnable = Effect.scoped(program)
 |----------|-----|
 | Transform value | `Effect.map` |
 | Chain effects | `Effect.flatMap` or `Effect.gen` |
-| Error recovery | `Effect.catchTag` / `Effect.catch` |
+| Error recovery | `Effect.catch`, `Effect.catchTag`, or `Effect.catchIf` |
 | Add logging | `Effect.tap` + `Effect.log` |
 | Run in parallel | `Effect.all` with `concurrency` |
-| Limit concurrency | `Semaphore` |
+| Limit access to a resource | `Semaphore.withPermits` |
 | Share mutable state | `Ref` |
 | Producer/consumer | `Queue` |
 | One-time signal | `Deferred` |
@@ -369,7 +425,6 @@ const runnable = Effect.scoped(program)
 - **`references/concurrency.md`** - Fibers, synchronization, parallelism
 - **`references/streams.md`** - Stream, Sink, Channel patterns
 - **`references/schema.md`** - Validation, encoding/decoding
+- **`references/code-styles.md`** - Effect specific code styles
 - **`references/testing.md`** - Test layers, mocking, vitest integration
-- **`references/fp-ts-migration.md`** - Mapping fp-ts patterns to Effect
 - **`references/config.md`** - Configuration management
-- **`references/anti-patterns.md`** - Common mistakes and fixes
