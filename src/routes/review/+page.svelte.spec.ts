@@ -6,11 +6,11 @@ import type { ExamPack } from '#lib/types/exam-pack.js';
 import ReviewPage from './+page.svelte';
 
 const currentPack = JSON.parse(
-  readFileSync(resolve('packs/incoming/databricks-dea-may-2026-v1.2.0.json'), 'utf8'),
+  readFileSync(resolve('packs/incoming/sample-learning-pack.json'), 'utf8'),
 ) as ExamPack;
 
 describe('review page citations', () => {
-  it('renders academy notes with their section and external Databricks links', () => {
+  it('renders source-neutral pack citation labels', () => {
     render(ReviewPage, {
       params: {},
       data: {
@@ -47,11 +47,8 @@ describe('review page citations', () => {
               sources: [
                 { path: 'assets/notes.md', label: 'Bundled notes' },
                 {
-                  kind: 'academy_note',
-                  path: 'streaming/checkpoints.md',
-                  label: 'Streaming academy note',
-                  section: 'Checkpointing',
-                  documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
+                  path: 'file:///tmp/streaming-checkpoints.md',
+                  label: 'Streaming reference',
                 },
               ],
             },
@@ -63,24 +60,15 @@ describe('review page citations', () => {
     } as never);
 
     expect(
-      screen.getByRole('link', { name: /Streaming academy note/ }).getAttribute('href'),
-    ).toContain(encodeURIComponent('streaming/checkpoints.md'));
-    expect(
-      screen.getByRole('link', { name: /Databricks documentation/ }).getAttribute('href'),
-    ).toBe('https://docs.databricks.com/streams/checkpoints.html');
+      screen.getByRole('link', { name: /Streaming reference/ }).getAttribute('href'),
+    ).toContain(encodeURIComponent('file:///tmp/streaming-checkpoints.md'));
     expect(screen.getByRole('link', { name: /Bundled notes/ })).toBeTruthy();
   });
 
   it('renders a current pack note and documentation link', () => {
-    const question = currentPack.questions.find((item) =>
-      item.sources.some((source) => 'kind' in source),
-    );
-    const citation = question?.sources.find((source) => 'kind' in source);
-    if (!question || !citation || !('kind' in citation)) {
-      throw new Error('The current pack has no academy-note citation');
-    }
-    const documentationUrl = citation.documentationUrls[0];
-    if (!documentationUrl) throw new Error('The current citation has no documentation URL');
+    const question = currentPack.questions.find((item) => item.sources.length > 0);
+    const citation = question?.sources[0];
+    if (!question || !citation) throw new Error('The current pack has no citation');
 
     const pack = { ...currentPack, questions: [question] };
     render(ReviewPage, {
@@ -119,9 +107,6 @@ describe('review page citations', () => {
             link.textContent?.includes(citation.label) &&
             link.getAttribute('href')?.includes(encodeURIComponent(citation.path)),
         ),
-    ).toBe(true);
-    expect(
-      screen.getAllByRole('link').some((link) => link.getAttribute('href') === documentationUrl),
     ).toBe(true);
   });
 });

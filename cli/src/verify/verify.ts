@@ -1,4 +1,4 @@
-import { Config, Data, Effect, FileSystem, Option, Path, Schema } from 'effect';
+import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 import { BuiltExamPackSchema, type PackForVerification } from '../core/built-pack-schema.js';
 import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { verifyProfile } from './profile.js';
@@ -139,53 +139,43 @@ const sourceIsContained = Effect.fn(function* (
     });
 });
 
-const verifyAcademySource = Effect.fn('verifyAcademySource')(function* (
-  academyRoot: string,
+const verifyFileUrlSource = Effect.fn('verifyFileUrlSource')(function* (
   questionId: string,
-  sourcePath: string,
+  sourceUrl: string,
 ) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
-  const segments = sourcePath.split('/');
-  const hasInvalidSegment = segments.some((segment) => ['', '.', '..'].includes(segment));
-  const hasInvalidPathCharacters = sourcePath.includes('\\') ||sourcePath.includes('\0');
-  const hasWindowsDrivePrefix = /^[a-zA-Z]:/.test(sourcePath);
-  if (
-    path.isAbsolute(sourcePath) ||
-    hasWindowsDrivePrefix ||
-    hasInvalidPathCharacters ||
-    hasInvalidSegment
-  )
+  const parsed = URL.parse(sourceUrl);
+  if (parsed?.protocol !== 'file:' || parsed.hostname || parsed.username || parsed.password)
     return yield* new VerifyError({
-      message: `${questionId}: academy note path must be relative to configured source root (${sourcePath})`,
+      message: `${questionId}: invalid local file URL (${sourceUrl})`,
     });
-
-  const actual = yield* fs.realPath(path.resolve(academyRoot, sourcePath)).pipe(
+  const localPath = yield* path
+    .fromFileUrl(parsed)
+    .pipe(
+      Effect.mapError(
+        () => new VerifyError({ message: `${questionId}: invalid local file URL (${sourceUrl})` }),
+      ),
+    );
+  if (!path.isAbsolute(localPath))
+    return yield* new VerifyError({
+      message: `${questionId}: local file URL must reference an absolute path (${sourceUrl})`,
+    });
+  const actual = yield* fs.realPath(localPath).pipe(
     Effect.mapError(
       (cause) =>
         new VerifyError({
-          message: `${questionId}: missing academy note ${sourcePath}`,
+          message: `${questionId}: missing local file ${sourceUrl}`,
           cause,
         }),
     ),
   );
-
-  const relativePath = path.relative(academyRoot, actual);
-  if (
-    relativePath === '..' ||
-    relativePath.startsWith(`..${path.sep}`) ||
-    path.isAbsolute(relativePath)
-  )
-    return yield* new VerifyError({
-      message: `${questionId}: academy note escapes configured source root (${sourcePath})`,
-    });
-
   const info = yield* fs
     .stat(actual)
-    .pipe(Effect.mapError(toVerifyError(`Unable to inspect academy note ${sourcePath}`)));
+    .pipe(Effect.mapError(toVerifyError(`Unable to inspect local file ${sourceUrl}`)));
   if (info.type !== 'File')
     return yield* new VerifyError({
-      message: `${questionId}: academy note is not a file (${sourcePath})`,
+      message: `${questionId}: local source is not a file (${sourceUrl})`,
     });
 });
 
@@ -201,30 +191,12 @@ const verifySourceFiles = Effect.fn('verifySourceFiles')(function* (
   const citations = pack.questions.flatMap((question) =>
     question.sources.map((source) => ({ questionId: question.id, source })),
   );
-  let academyRoot: string | undefined;
-  if (citations.some(({ source }) => 'kind' in source)) {
-    const configuredRoot = Option.getOrUndefined(
-      yield* Config.String('ACADEMY_SOURCE_ROOT').pipe(Config.option),
-    );
-    if (!configuredRoot)
-      return yield* new VerifyError({
-        message: 'ACADEMY_SOURCE_ROOT must be set to verify academy-note citations',
-      });
-    academyRoot = yield* fs
-      .realPath(path.resolve(configuredRoot))
-      .pipe(Effect.mapError(toVerifyError('Unable to resolve academy source root')));
-  }
-
   // The checks are independent after their shared roots are resolved. Bound
   // filesystem pressure while retaining Effect.forEach's input result order.
   yield* Effect.forEach(
     citations,
     ({ questionId, source }) => {
-      if ('kind' in source) {
-        if (academyRoot === undefined)
-          return Effect.fail(new VerifyError({ message: 'Academy source root was not resolved' }));
-        return verifyAcademySource(academyRoot, questionId, source.path);
-      }
+      if (source.path.startsWith('file:')) return verifyFileUrlSource(questionId, source.path);
       return Effect.gen(function* () {
         const actual = yield* sourceFileExists(packPath, questionId, source.path);
         yield* sourceIsContained(packDirectory, actual, questionId, source.path);

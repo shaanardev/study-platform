@@ -9,7 +9,7 @@
     "governance": { "count": 30, "weight": 15 }
   },
   "objectives": {
-    "path": "assets/databricks-dea-may-2026-v1.2.0/objective-coverage.json",
+    "path": "assets/databricks-dea-may-2026-v1.2.1/objective-coverage.json",
     "byDomain": {
       "platform": ["P1", "P2"],
       "ingestion": ["I1", "I2", "I3", "I4", "I5", "I6", "I7"],
@@ -28,11 +28,11 @@
   },
   "answerPositions": { "a": 50, "b": 50, "c": 50, "d": 50 },
   "baselineAudit": {
-    "path": "assets/databricks-dea-may-2026-v1.2.0/baseline-review.json",
+    "path": "assets/databricks-dea-may-2026-v1.2.1/baseline-review.json",
     "total": 194,
     "included": 128,
     "excluded": 66,
     "idPrefix": "dea26-baseline-"
   },
-  "reportPath": "assets/databricks-dea-may-2026-v1.2.0/verification-report.json"
+  "reportPath": "assets/databricks-dea-may-2026-v1.2.1/verification-report.json"
 }

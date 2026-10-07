@@ -50,4 +50,22 @@ describe('verifyPack', () => {
         }
       }),
     ));
+
+  it('validates absolute file URL sources as existing regular files', () =>
+    run(
+      Effect.gen(function* () {
+        const { directory, packPath } = yield* makePack;
+        const pack = cloneWithMutableSources();
+        const source = pack.questions[0]?.sources[0];
+        if (!source) throw new Error('Expected a source in the file URL fixture');
+        source.path = `file://${directory}`;
+        yield* writeJson(packPath, pack);
+
+        const result = yield* Effect.result(verifyPack(packPath));
+
+        expect(Result.isFailure(result)).toBe(true);
+        if (Result.isFailure(result))
+          expect(result.failure.message).toContain('local source is not a file');
+      }),
+    ));
 });

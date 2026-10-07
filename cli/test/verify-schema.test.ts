@@ -1,5 +1,6 @@
-import { Effect, FileSystem, Result } from 'effect';
+import { Effect, FileSystem, Path, Result, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
+import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { verifyPack } from '../src/verify/verify.js';
 import { makePack, run, validPack, writeJson } from './verify-helpers.js';
 
@@ -102,8 +103,8 @@ describe('verifyPack', () => {
                   ...validPack.questions[0],
                   sources: [
                     {
-                      kind: 'academy_note',
-                      path: 'notes/streaming.md',
+                      kind: 'legacy_note',
+                      path: 'assets/source.md',
                       label: 'Streaming notes',
                       documentationUrls: ['http://docs.example.com/streaming'],
                     },
@@ -111,7 +112,7 @@ describe('verifyPack', () => {
                 },
               ],
             },
-            message: 'Exam pack schema validation failed',
+            message: '',
           },
           { value: { ...validPack, passingThreshold: 100 }, message: '' },
         ];
@@ -122,6 +123,40 @@ describe('verifyPack', () => {
           if (Result.isFailure(result) && scenario.message)
             expect(result.failure.message).toContain(scenario.message);
         }
+      }),
+    ));
+
+  it('verifies the migrated v1.2.1 artifact and retains citation metadata', () =>
+    run(
+      Effect.gen(function* () {
+        const { packPath } = yield* makePack;
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const migratedArtifact = yield* path
+          .fromFileUrl(
+            new URL('../../packs/incoming/databricks-dea-may-2026-v1.2.1.json', import.meta.url),
+          )
+          .pipe(Effect.flatMap((artifactPath) => fs.readFileString(artifactPath)));
+        const input = yield* Schema.decodeEffect(Schema.fromJsonString(BuiltExamPackSchema))(
+          migratedArtifact,
+        );
+        const portablePack = {
+          ...input,
+          questions: input.questions.map((question) => ({
+            ...question,
+            sources: question.sources.map((source) => ({ ...source, path: 'assets/source.md' })),
+          })),
+        };
+        yield* writeJson(packPath, portablePack);
+
+        const result = yield* verifyPack(packPath);
+
+        expect(result.pack.questions).toHaveLength(200);
+        expect(result.pack.questions[0]?.sources[0]).toMatchObject({
+          kind: 'academy_note',
+          section: expect.any(String),
+          documentationUrls: expect.any(Array),
+        });
       }),
     ));
 });

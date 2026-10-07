@@ -14,6 +14,30 @@ const isId = (value: unknown): value is string =>
   typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(value);
 const isQuestionType = (value: unknown): value is PackQuestion['type'] =>
   value === 'single_choice' || value === 'multiple_choice';
+const isCitationPath = (value: string): boolean => {
+  if (value.startsWith('file:')) {
+    try {
+      const url = new URL(value);
+      return (
+        value.startsWith('file:///') &&
+        url.protocol === 'file:' &&
+        url.hostname === '' &&
+        url.pathname.startsWith('/') &&
+        !url.search &&
+        !url.hash
+      );
+    } catch {
+      return false;
+    }
+  }
+  return (
+    !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value) &&
+    !value.startsWith('/') &&
+    !value.includes('\\') &&
+    !value.includes('\0') &&
+    value.split('/').every((segment) => segment && segment !== '.' && segment !== '..')
+  );
+};
 const hasUniqueIds = (items: { id: string }[]) =>
   new Set(items.map((item) => item.id)).size === items.length;
 
@@ -157,55 +181,37 @@ export function validateExamPack(input: unknown): PackValidation {
       const rawSources = getProperty(value, 'sources');
       if (Array.isArray(rawSources)) {
         for (const [sourceIndex, source] of rawSources.entries()) {
-          const kind = isRecord(source) ? getProperty(source, 'kind') : undefined;
           const sourceKeys = isRecord(source) ? Object.keys(source) : [];
           const path = isRecord(source) ? getProperty(source, 'path') : undefined;
           const label = isRecord(source) ? getProperty(source, 'label') : undefined;
+          const kind = isRecord(source) ? getProperty(source, 'kind') : undefined;
           const section = isRecord(source) ? getProperty(source, 'section') : undefined;
           const documentationUrls = isRecord(source)
             ? getProperty(source, 'documentationUrls')
             : undefined;
-          if (kind === 'academy_note') {
-            const exactFields = sourceKeys.every((key) =>
-              ['kind', 'path', 'label', 'section', 'documentationUrls'].includes(key),
-            );
-            const validUrls =
-              Array.isArray(documentationUrls) &&
-              documentationUrls.length > 0 &&
-              documentationUrls.every((url) => {
-                if (typeof url !== 'string') return false;
-                try {
-                  return new URL(url).protocol === 'https:' && Boolean(new URL(url).hostname);
-                } catch {
-                  return false;
-                }
-              });
-            if (!validUrls)
-              errors.push(
-                `questions[${index}].sources[${sourceIndex}].documentationUrls must contain HTTPS URLs.`,
-              );
-            if (
-              isText(path) &&
-              isText(label) &&
-              exactFields &&
-              (section === undefined || isText(section)) &&
-              validUrls
-            ) {
-              sources.push({
-                kind,
-                path,
-                label,
-                ...(section === undefined ? {} : { section }),
-                documentationUrls,
-              });
-            }
-          } else if (
-            kind === undefined &&
-            sourceKeys.every((key) => key === 'path' || key === 'label') &&
+          const supportedSourceKeys = ['path', 'label', 'kind', 'section', 'documentationUrls'];
+          if (
+            sourceKeys.every((key) => supportedSourceKeys.includes(key)) &&
             isText(path) &&
-            isText(label)
+            isText(label) &&
+            (kind === undefined || isText(kind)) &&
+            (section === undefined || isText(section)) &&
+            (documentationUrls === undefined ||
+              (Array.isArray(documentationUrls) && documentationUrls.every(isText)))
           ) {
-            sources.push({ path, label });
+            if (!isCitationPath(path)) {
+              errors.push(
+                `questions[${index}] source path "${path}" must be a safe relative path or absolute file URL.`,
+              );
+              continue;
+            }
+            sources.push({
+              path,
+              label,
+              ...(kind === undefined ? {} : { kind }),
+              ...(section === undefined ? {} : { section }),
+              ...(documentationUrls === undefined ? {} : { documentationUrls }),
+            });
           } else {
             errors.push(`questions[${index}].sources[${sourceIndex}] is not a valid citation.`);
           }
@@ -233,21 +239,6 @@ export function validateExamPack(input: unknown): PackValidation {
       }
       if (!domains.some((domain) => domain.id === domainId)) {
         errors.push(`questions[${index}] references unknown domain "${domainId}".`);
-      }
-      for (const source of sources) {
-        if (
-          !('kind' in source) &&
-          (source.path.startsWith('/') ||
-            source.path.includes('\\') ||
-            source.path.includes('\0') ||
-            source.path
-              .split('/')
-              .some((segment) => segment === '..' || segment === '.' || !segment))
-        ) {
-          errors.push(
-            `questions[${index}] source path "${source.path}" must be a safe relative path.`,
-          );
-        }
       }
       questions.push({
         id,

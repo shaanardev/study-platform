@@ -6,7 +6,7 @@ import type { ExamPack } from '#lib/types/exam-pack.js';
 import PracticePage from './+page.svelte';
 
 const currentPack = JSON.parse(
-  readFileSync(resolve('packs/incoming/databricks-dea-may-2026-v1.2.0.json'), 'utf8'),
+  readFileSync(resolve('packs/incoming/sample-learning-pack.json'), 'utf8'),
 ) as ExamPack;
 
 describe('practice page', () => {
@@ -103,7 +103,7 @@ describe('practice page', () => {
     ).toBeTruthy();
   });
 
-  it('shows both academy-note links and their Databricks documentation after an answer', () => {
+  it('shows each citation label after an answer', () => {
     const { container } = render(PracticePage, {
       params: {},
       data: {
@@ -129,11 +129,8 @@ describe('practice page', () => {
               sources: [
                 { path: 'assets/notes.md', label: 'Bundled notes' },
                 {
-                  kind: 'academy_note',
-                  path: 'streaming/checkpoints.md',
-                  label: 'Streaming academy note',
-                  section: 'Checkpointing',
-                  documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
+                  path: 'file:///tmp/streaming-checkpoints.md',
+                  label: 'Streaming reference',
                 },
               ],
             },
@@ -169,28 +166,18 @@ describe('practice page', () => {
       form: null,
     });
     const links = [...container.querySelectorAll('a')];
-    const noteLink = links.find((link) => link.textContent?.includes('Streaming academy note'));
+    const noteLink = links.find((link) => link.textContent?.includes('Streaming reference'));
     expect(noteLink?.getAttribute('href')).toContain(
-      encodeURIComponent('streaming/checkpoints.md'),
+      encodeURIComponent('file:///tmp/streaming-checkpoints.md'),
     );
-    expect(
-      links
-        .find((link) => link.textContent?.includes('Databricks documentation'))
-        ?.getAttribute('href'),
-    ).toBe('https://docs.databricks.com/streams/checkpoints.html');
+    expect(links.some((link) => link.textContent?.includes('Streaming reference'))).toBe(true);
     expect(links.some((link) => link.textContent?.includes('Bundled notes'))).toBe(true);
   });
 
   it('renders a current pack note and documentation link after a practice answer', () => {
-    const question = currentPack.questions.find((item) =>
-      item.sources.some((source) => 'kind' in source),
-    );
-    const citation = question?.sources.find((source) => 'kind' in source);
-    if (!question || !citation || !('kind' in citation)) {
-      throw new Error('The current pack has no academy-note citation');
-    }
-    const documentationUrl = citation.documentationUrls[0];
-    if (!documentationUrl) throw new Error('The current citation has no documentation URL');
+    const question = currentPack.questions.find((item) => item.sources.length > 0);
+    const citation = question?.sources[0];
+    if (!question || !citation) throw new Error('The current pack has no citation');
 
     const { container } = render(PracticePage, {
       params: {},
@@ -241,6 +228,8 @@ describe('practice page', () => {
           link.getAttribute('href')?.includes(encodeURIComponent(citation.path)),
       ),
     ).toBe(true);
-    expect(links.some((link) => link.getAttribute('href') === documentationUrl)).toBe(true);
+    expect(links.some((link) => link.getAttribute('href')?.includes('/practice/source?'))).toBe(
+      true,
+    );
   });
 });

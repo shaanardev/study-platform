@@ -450,7 +450,7 @@ export const verifyProfile = Effect.fn('verifyProfile')(
         report.sourceFilesResolved = new Set(
           pack.questions.flatMap(({ sources }) =>
             sources.map(
-              (source) => `${'kind' in source ? 'academy_note' : 'bundled'}:${source.path}`,
+              (source) => `${source.path.startsWith('file:') ? 'local' : 'bundled'}:${source.path}`,
             ),
           ),
         ).size;

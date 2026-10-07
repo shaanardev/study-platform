@@ -1,6 +1,7 @@
 import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
 import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
+import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
 
@@ -34,9 +35,6 @@ type JsonRecord = Record<string, unknown> & {
   text?: unknown;
   path?: unknown;
   label?: unknown;
-  kind?: unknown;
-  section?: unknown;
-  documentationUrls?: unknown;
   type?: unknown;
   domainId?: unknown;
   prompt?: unknown;
@@ -44,6 +42,7 @@ type JsonRecord = Record<string, unknown> & {
   answerIds?: unknown;
   explanation?: unknown;
   sources?: unknown;
+  questions?: unknown;
 };
 
 function readText(row: Record<string, SQLOutputValue>, field: string): string {
@@ -103,28 +102,7 @@ function isQuestionCorrection(value: unknown): value is QuestionCorrection {
             typeof source.label !== 'string'
           )
             return false;
-          if (source.kind === undefined)
-            return Object.keys(source).every((key) => key === 'path' || key === 'label');
-          if (
-            source.kind !== 'academy_note' ||
-            (source.section !== undefined && typeof source.section !== 'string') ||
-            !Array.isArray(source.documentationUrls) ||
-            source.documentationUrls.length === 0
-          )
-            return false;
-          return (
-            Object.keys(source).every((key) =>
-              ['kind', 'path', 'label', 'section', 'documentationUrls'].includes(key),
-            ) &&
-            source.documentationUrls.every((url) => {
-              if (typeof url !== 'string') return false;
-              try {
-                return new URL(url).protocol === 'https:' && Boolean(new URL(url).hostname);
-              } catch {
-                return false;
-              }
-            })
-          );
+          return Object.keys(source).every((key) => key === 'path' || key === 'label');
         })
       );
     return false;
@@ -133,8 +111,21 @@ function isQuestionCorrection(value: unknown): value is QuestionCorrection {
 
 function parseCorrection(value: string): QuestionCorrection {
   const parsed: unknown = JSON.parse(value);
-  if (!isQuestionCorrection(parsed)) throw new Error('Stored question correction is invalid.');
-  return parsed;
+  const normalized = normalizeLegacyCitations({
+    questions: [{ sources: isRecord(parsed) ? parsed.sources : undefined }],
+  }) as JsonRecord;
+  const questions = normalized.questions;
+  const sources = Array.isArray(questions) ? questions[0] : undefined;
+  const correction = isRecord(parsed)
+    ? {
+        ...parsed,
+        ...(isRecord(sources) && Array.isArray(sources.sources)
+          ? { sources: sources.sources }
+          : {}),
+      }
+    : parsed;
+  if (!isQuestionCorrection(correction)) throw new Error('Stored question correction is invalid.');
+  return correction;
 }
 
 function feedbackRow(row: FeedbackRow) {

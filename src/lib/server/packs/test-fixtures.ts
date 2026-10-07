@@ -3,13 +3,13 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const samplePack = fileURLToPath(
-  new URL('../../../../packs/incoming/sample-databricks-associate.json', import.meta.url),
+  new URL('../../../../packs/incoming/sample-learning-pack.json', import.meta.url),
 );
 
 export async function createSamplePackFolder(folder: string) {
   const assets = join(folder, 'assets');
   await mkdir(assets, { recursive: true });
-  await cp(samplePack, join(folder, 'sample-databricks-associate.json'));
+  await cp(samplePack, join(folder, 'sample-learning-pack.json'));
   await writeFile(
     join(assets, 'synthetic-notes.md'),
     [

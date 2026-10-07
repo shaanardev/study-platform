@@ -1,5 +1,4 @@
 import { Schema } from 'effect';
-import { DocumentationUrlsSchema } from '../core/documentation-url-schema.js';
 
 const Id = Schema.String.pipe(Schema.check(Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/)));
 const Text = Schema.String.pipe(Schema.check(Schema.isPattern(/\S/)));
@@ -33,14 +32,12 @@ const Metadata = Schema.Struct({
 });
 const Option = Schema.Struct({ id: Id, text: Text });
 const BundledSource = Schema.Struct({ path: Text, label: Text });
-const AcademyNoteSource = Schema.Struct({
-  kind: Schema.Literal('academy_note'),
+const LocalNoteSource = Schema.Struct({
+  kind: Schema.Literal('local_note'),
   path: Text,
   label: Text,
-  section: Schema.optional(Text),
-  documentationUrls: DocumentationUrlsSchema,
 });
-const Source = Schema.Union([BundledSource, AcademyNoteSource]);
+const Source = Schema.Union([BundledSource, LocalNoteSource]);
 const Question = Schema.Struct({
   id: Id,
   type: Schema.Literals(['single_choice', 'multiple_choice']),

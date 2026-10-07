@@ -1,11 +1,40 @@
-import { ConfigProvider, Effect, FileSystem, Result, Schema } from 'effect';
+import { Console, Effect, FileSystem, Result, Schema } from 'effect';
+import { Command } from 'effect/cli';
 import { describe, expect, it } from 'vitest';
 import { AuthoringFile } from '../src/build/authoring-schema.js';
 import { buildPack } from '../src/build/build.js';
+import { buildCommand } from '../src/build/command.js';
 import { verifyPack } from '../src/verify/verify.js';
 import { mutablePreview, outputDirectory, run, writeJson } from './build-helpers.js';
 
 describe('build command', () => {
+  it('accepts a per-pack local-note root option', () =>
+    run(
+      Effect.gen(function* () {
+        const fixture = yield* mutablePreview;
+        const fs = yield* FileSystem.FileSystem;
+        const localNoteRoot = `${fixture.root}/notes`;
+        yield* fs.makeDirectory(localNoteRoot);
+        const messages: unknown[] = [];
+        const testConsole: Console.Console = new Proxy(console, {
+          get(target, property, receiver) {
+            return property === 'log'
+              ? (...values: ReadonlyArray<unknown>) => messages.push(...values)
+              : (Reflect.get(target, property, receiver) as unknown);
+          },
+        });
+
+        yield* Command.runWith(buildCommand, { version: '0.0.0' })([
+          fixture.authoringPath,
+          fixture.output,
+          '--local-note-root',
+          localNoteRoot,
+        ]).pipe(Effect.provideService(Console.Console, testConsole));
+
+        expect(messages).toEqual([`Built pack in ${fixture.output}`]);
+      }),
+    ));
+
   it('copies declared audit and provenance assets without adding them as question sources', () =>
     run(
       Effect.gen(function* () {
@@ -51,26 +80,23 @@ describe('build command', () => {
       }),
     ));
 
-  it('keeps academy-note citations as metadata without copying the note into pack assets', () =>
+  it('builds local-note citations as absolute file URLs without copying notes into pack assets', () =>
     run(
       Effect.gen(function* () {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
-        const academyRoot = `${fixture.root}/academy`;
-        yield* fs.makeDirectory(`${academyRoot}/engineering`, { recursive: true });
+        const localNoteRoot = `${fixture.root}/notes`;
+        yield* fs.makeDirectory(`${localNoteRoot}/engineering`, { recursive: true });
         yield* fs.writeFileString(
-          `${academyRoot}/engineering/streaming.md`,
+          `${localNoteRoot}/engineering/streaming.md`,
           'Checkpointing notes.\n',
         );
-        yield* fs.writeFileString(`${fixture.root}/outside.md`, 'outside\n');
         const first = fixture.questions[0];
         if (!first) throw new Error('Missing preview question');
         const citation = {
-          kind: 'academy_note',
+          kind: 'local_note',
           path: 'engineering/streaming.md',
           label: 'Streaming guide',
-          section: 'Checkpointing',
-          documentationUrls: ['https://docs.databricks.com/streams/checkpointing.html'],
         };
         yield* writeJson(fixture.authoringPath, {
           ...fixture.input,
@@ -78,48 +104,20 @@ describe('build command', () => {
           questionFiles: [],
         });
 
-        const sourceRootLayer = ConfigProvider.layer(
-          ConfigProvider.fromUnknown({ ACADEMY_SOURCE_ROOT: academyRoot }),
-        );
-        yield* buildPack(fixture.authoringPath, fixture.output);
-        const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`).pipe(
-          Effect.provide(sourceRootLayer),
-        );
+        yield* buildPack(fixture.authoringPath, fixture.output, localNoteRoot);
+        const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`);
 
         expect(pack.questions[0]?.sources).toEqual([
           { path: 'preview-assets/references/core.md', label: 'Core notes' },
-          citation,
+          { path: `file://${localNoteRoot}/engineering/streaming.md`, label: 'Streaming guide' },
         ]);
         expect(yield* fs.exists(`${fixture.output}/preview-assets/engineering/streaming.md`)).toBe(
           false,
         );
-        const packPath = `${fixture.output}/preview-pack.json`;
-        const built = (yield* Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(
-          yield* fs.readFileString(packPath),
-        )) as {
-          questions: { sources: { kind?: string; path: string }[] }[];
-        };
-        const academySource = built.questions[0]?.sources.find(
-          (source) => source.kind === 'academy_note',
-        );
-        if (!academySource) throw new Error('Expected academy-note metadata in the built pack');
-        academySource.path = '../outside.md';
-        yield* fs.writeFileString(
-          packPath,
-          yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown))(built),
-        );
-        const escaped = yield* Effect.result(
-          verifyPack(packPath).pipe(Effect.provide(sourceRootLayer)),
-        );
-        expect(Result.isFailure(escaped)).toBe(true);
-        if (Result.isFailure(escaped))
-          expect(escaped.failure.message).toContain(
-            'academy note path must be relative to configured source root',
-          );
       }),
     ));
 
-  it('rejects non-HTTPS academy documentation URLs before building', () =>
+  it('rejects local-note citations without a configured local-note root', () =>
     run(
       Effect.gen(function* () {
         const fixture = yield* mutablePreview;
@@ -133,10 +131,9 @@ describe('build command', () => {
               ...first,
               sources: [
                 {
-                  kind: 'academy_note',
+                  kind: 'local_note',
                   path: 'engineering/streaming.md',
                   label: 'Streaming guide',
-                  documentationUrls: ['http://docs.databricks.com/streams/checkpointing.html'],
                 },
               ],
             },
@@ -146,8 +143,7 @@ describe('build command', () => {
         const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
 
         expect(Result.isFailure(result)).toBe(true);
-        if (Result.isFailure(result))
-          expect(result.failure.message).toContain('Invalid authoring file');
+        if (Result.isFailure(result)) expect(result.failure.message).toContain('local-note root');
       }),
     ));
 

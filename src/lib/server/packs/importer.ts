@@ -1,15 +1,21 @@
 import type { Dirent } from 'node:fs';
 import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   type ImportedSourceAsset,
   listImportedPacks,
+  refreshApprovedLocalSources,
   saveImportedPack,
 } from '#lib/server/db/packs.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 
-export type ImportResult = { imported: string[]; errors: string[] };
-export type ImportOptions = { folder?: string; databasePath?: string };
+export type ImportResult = { imported: string[]; refreshed: string[]; errors: string[] };
+export type ImportOptions = {
+  folder?: string;
+  databasePath?: string;
+  approvedSourceRoot?: string;
+};
 
 const defaultFolder = resolve('packs/incoming');
 const defaultDatabase = resolve('.local/exam-packs.sqlite');
@@ -28,12 +34,34 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
   const folder = resolve(options.folder ?? defaultFolder);
   const databasePath = resolve(options.databasePath ?? defaultDatabase);
   const imported: string[] = [];
+  const refreshed: string[] = [];
   const errors: string[] = [];
+  let approvedSourceRoot: string | undefined;
+  if (options.approvedSourceRoot?.trim()) {
+    try {
+      approvedSourceRoot = await realpath(resolve(options.approvedSourceRoot));
+      if (!(await stat(approvedSourceRoot)).isDirectory()) {
+        throw new Error('not a directory');
+      }
+    } catch {
+      return {
+        imported,
+        refreshed,
+        errors: [
+          `Approved local source root is not a readable directory: ${options.approvedSourceRoot}`,
+        ],
+      };
+    }
+  }
   let entries: Dirent[];
   try {
     entries = await readdir(folder, { withFileTypes: true });
   } catch {
-    return { imported, errors: [`Import folder does not exist or cannot be read: ${folder}`] };
+    return {
+      imported,
+      refreshed,
+      errors: [`Import folder does not exist or cannot be read: ${folder}`],
+    };
   }
   const files = entries
     .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
@@ -65,16 +93,50 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
     }[] = [];
     for (const question of validation.pack.questions) {
       for (const source of question.sources) {
-        if ('kind' in source) continue;
-        const candidate = resolve(dirname(filePath), source.path);
-        if (!isWithin(dirname(filePath), candidate)) {
-          sourceError = `source path "${source.path}" escapes the pack folder`;
-          break;
+        let candidate: string;
+        if (source.path.startsWith('file:')) {
+          if (!approvedSourceRoot) {
+            sourceError = `absolute local citation "${source.path}" requires an explicitly approved local source root`;
+            break;
+          }
+          try {
+            const url = new URL(source.path);
+            if (
+              url.protocol !== 'file:' ||
+              url.hostname !== '' ||
+              !url.pathname.startsWith('/') ||
+              url.search ||
+              url.hash
+            ) {
+              throw new Error('unsupported file URL');
+            }
+            candidate = fileURLToPath(url);
+          } catch {
+            sourceError = `absolute local citation "${source.path}" is not a valid local file URL`;
+            break;
+          }
+          if (!isWithin(approvedSourceRoot, resolve(candidate))) {
+            sourceError = `absolute local citation "${source.path}" is outside the approved local source root`;
+            break;
+          }
+        } else {
+          candidate = resolve(dirname(filePath), source.path);
+          if (!isWithin(dirname(filePath), candidate)) {
+            sourceError = `source path "${source.path}" escapes the pack folder`;
+            break;
+          }
         }
         try {
           const actualPath = await realpath(candidate);
-          if (!isWithin(packDirectory, actualPath) || !(await stat(actualPath)).isFile()) {
-            sourceError = `source path "${source.path}" is not a file within the pack folder`;
+          const allowedRoot = source.path.startsWith('file:') ? approvedSourceRoot : packDirectory;
+          if (
+            !allowedRoot ||
+            !isWithin(allowedRoot, actualPath) ||
+            !(await stat(actualPath)).isFile()
+          ) {
+            sourceError = source.path.startsWith('file:')
+              ? `absolute local citation "${source.path}" resolves outside the approved local source root or is not a file`
+              : `source path "${source.path}" is not a file within the pack folder`;
             break;
           }
           sourceFiles.push({ questionId: question.id, source, filePath: actualPath });
@@ -106,20 +168,40 @@ export async function importPacksFromFolder(options: ImportOptions = {}): Promis
     }
 
     try {
-      saveImportedPack(databasePath, validation.pack, sourceAssets);
+      saveImportedPack(databasePath, validation.pack, sourceAssets, approvedSourceRoot);
       imported.push(
         `${validation.pack.exam.id}/${validation.pack.pack.id}@${validation.pack.pack.version}`,
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown database error';
       if (message.includes('UNIQUE constraint failed')) {
-        errors.push(`${entry.name}: this exam, pack, and pack version are already imported.`);
+        try {
+          const reauthorized = approvedSourceRoot
+            ? refreshApprovedLocalSources(
+                databasePath,
+                validation.pack,
+                sourceAssets,
+                approvedSourceRoot,
+              )
+            : false;
+          if (reauthorized) {
+            refreshed.push(
+              `${validation.pack.exam.id}/${validation.pack.pack.id}@${validation.pack.pack.version}`,
+            );
+          } else {
+            errors.push(`${entry.name}: this exam, pack, and pack version are already imported.`);
+          }
+        } catch (refreshError) {
+          const reason =
+            refreshError instanceof Error ? refreshError.message : 'unknown database error';
+          errors.push(`${entry.name}: could not refresh approved local citations (${reason}).`);
+        }
       } else {
         errors.push(`${entry.name}: could not store this pack (${message}).`);
       }
     }
   }
-  return { imported, errors };
+  return { imported, refreshed, errors };
 }
 
 export function getPackIndex(databasePath = defaultDatabase) {

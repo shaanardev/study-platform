@@ -1,8 +1,8 @@
 import { Schema } from 'effect';
-import { DocumentationUrlsSchema } from './documentation-url-schema.js';
 
 const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
-const sourcePathPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))(?!.*\\)[\s\S]+$/;
+const sourcePathPattern =
+  /^(?:file:\/\/\/[\s\S]+|(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))(?!.*\\)[\s\S]+)$/;
 
 const Id = Schema.String.check(Schema.isPattern(idPattern));
 const Text = Schema.String.check(Schema.isMinLength(1));
@@ -41,15 +41,10 @@ const Option = Schema.Struct({
 const Source = Schema.Struct({
   path: SourcePath,
   label: Text,
-});
-const AcademyNoteSource = Schema.Struct({
-  kind: Schema.Literal('academy_note'),
-  path: Text,
-  label: Text,
+  kind: Schema.optionalKey(Text),
   section: Schema.optionalKey(Text),
-  documentationUrls: DocumentationUrlsSchema,
+  documentationUrls: Schema.optionalKey(Schema.Array(Text)),
 });
-
 export const BuiltExamQuestionSchema = Schema.Struct({
   id: Id,
   type: Schema.Literals(['single_choice', 'multiple_choice']),
@@ -58,7 +53,7 @@ export const BuiltExamQuestionSchema = Schema.Struct({
   options: Schema.Array(Option).check(Schema.isMinLength(2)),
   answerIds: Schema.Array(Id).check(Schema.isMinLength(1)),
   explanation: Text,
-  sources: Schema.Array(Schema.Union([AcademyNoteSource, Source])).check(Schema.isMinLength(1)),
+  sources: Schema.Array(Source).check(Schema.isMinLength(1)),
 });
 
 export const BuiltExamPackSchema = Schema.Struct({

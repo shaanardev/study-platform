@@ -1,10 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { readFile, realpath, stat } from 'node:fs/promises';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
 import { error } from '@sveltejs/kit';
-import { getImportedPack, getImportedSourceAsset, openPackDatabase } from '#lib/server/db/packs.js';
+import {
+  getApprovedSourceRoot,
+  getImportedPack,
+  getImportedSourceAsset,
+  openPackDatabase,
+} from '#lib/server/db/packs.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
+import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
 
@@ -65,8 +70,11 @@ function parsePracticeStatus(value: unknown): PracticeSession['status'] {
 }
 
 function parseQuestionSnapshot(value: unknown, basePack: ExamPack): PackQuestion[] {
-  const questions: unknown = JSON.parse(String(value));
-  const result = validateExamPack({ ...basePack, questions });
+  const questions: unknown = normalizeLegacyCitations({
+    ...basePack,
+    questions: JSON.parse(String(value)),
+  });
+  const result = validateExamPack(questions);
   if (!result.valid) throw new Error('Stored practice session questions are invalid.');
   return result.pack.questions;
 }
@@ -358,47 +366,21 @@ export async function readQuestionSource(
   packVersion: string,
   questionId: string,
   sourcePath: string,
-  sourceKind?: 'academy_note' | 'bundled',
 ) {
   const pack = getImportedPack(examId, packId, packVersion, dbPath(databasePath));
   const source = pack?.questions
     .find((question) => question.id === questionId)
-    ?.sources.find(
-      (item) =>
-        item.path === sourcePath &&
-        (sourceKind === undefined ||
-          (sourceKind === 'academy_note' ? 'kind' in item : !('kind' in item))),
-    );
-  if (!source) error(404, 'Source excerpt not found.');
-  if ('kind' in source) {
-    const configuredRoot = process.env['ACADEMY_SOURCE_ROOT'];
-    if (!configuredRoot) error(503, 'Academy source root is not configured.');
-    const root = await realpath(resolve(configuredRoot)).catch(() => undefined);
-    if (!root) error(404, 'Academy source root is unavailable.');
-    const candidate = resolve(root, source.path);
-    const relativePath = relative(root, candidate);
-    if (
-      source.path.startsWith('/') ||
-      /^[a-zA-Z]:/.test(source.path) ||
-      source.path.includes('\\') ||
-      source.path.includes('\0') ||
-      source.path.split('/').some((part) => !part || part === '.' || part === '..') ||
-      relativePath === '..' ||
-      relativePath.startsWith(`..${sep}`) ||
-      isAbsolute(relativePath)
-    )
-      error(404, 'Academy note is outside the configured source root.');
-    const actual = await realpath(candidate).catch(() => undefined);
-    if (!actual) error(404, 'Academy note is unavailable.');
-    const resolvedRelative = relative(root, actual);
-    if (
-      resolvedRelative === '..' ||
-      resolvedRelative.startsWith(`..${sep}`) ||
-      isAbsolute(resolvedRelative) ||
-      !(await stat(actual)).isFile()
-    )
-      error(404, 'Academy note is outside the configured source root.');
-    return { label: source.label, text: await readFile(actual, 'utf8'), section: source.section };
+    ?.sources.find((item) => item.path === sourcePath);
+  if (!source) {
+    if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(sourcePath) && !sourcePath.startsWith('file:///')) {
+      error(400, 'Citation URL scheme is unsupported.');
+    }
+    error(404, 'Source excerpt not found.');
+  }
+  if (source.path.startsWith('file:')) {
+    if (!getApprovedSourceRoot(dbPath(databasePath), examId, packId, packVersion)) {
+      error(404, 'Local citation is unavailable because no approved source root was recorded.');
+    }
   }
   const asset = getImportedSourceAsset(
     dbPath(databasePath),

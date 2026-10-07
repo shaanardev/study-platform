@@ -1,8 +1,8 @@
 # One question from authoring to learner citation
 
-This example follows the repository's current local-file source contract. It demonstrates the shape and round trip; use current paths and commands if the implementation changes.
+This example uses both citation forms: a bundled reference that travels with the pack and a local note that stays on the machine building and running the app.
 
-Create `/tmp/pack-one/authoring.json` and `/tmp/pack-one/references/academy-notes.md`:
+Create `/tmp/pack-one/authoring.json`, `/tmp/pack-one/references/concept.md`, and `/tmp/pack-one/local-notes/review.md`:
 
 ```json
 {
@@ -26,22 +26,25 @@ Create `/tmp/pack-one/authoring.json` and `/tmp/pack-one/references/academy-note
         { "id": "workspace", "text": "Assigning a workspace" }
       ],
       "correctOptionIds": ["grant"],
-      "explanation": "Object-level grants control access to selected securables.",
-      "sources": [{ "path": "references/academy-notes.md", "label": "Academy notes: object privileges" }]
+      "explanation": "Object-level grants control access to selected resources.",
+      "sources": [
+        { "path": "references/concept.md", "label": "Access control reference" },
+        { "kind": "local_note", "path": "review.md", "label": "Review note" }
+      ]
     }
   ]
 }
 ```
 
-Put the supporting source text in `references/academy-notes.md`, with enough context to substantiate the answer and explanation. Source paths in authoring JSON are relative to that JSON file. The CLI copies each referenced file beneath `assetsDirectory` in the built pack and writes its generated relative path into `sources[].path`.
+Put the portable supporting text in `references/concept.md`. Put any private or machine-local context in `local-notes/review.md`. A bundled source's path is relative to the authoring file. The CLI copies it under `assetsDirectory` and writes that relative asset path into the built pack. A local note's path is relative to the directory supplied with `--local-note-root`; it must be a safe relative path and resolve to a regular file within that root.
 
-From the repository root, build and verify:
+Build and verify from the repository root:
 
 ```bash
-pnpm pack:build /tmp/pack-one/authoring.json /tmp/pack-one/out
+pnpm pack:build /tmp/pack-one/authoring.json /tmp/pack-one/out --local-note-root /tmp/pack-one/local-notes
 pnpm pack:verify /tmp/pack-one/out/sample-pack.json
 ```
 
-Check `/tmp/pack-one/out/sample-pack.json` against `packs/exam-pack.schema.json`. The generated question has `answerIds` (the CLI transforms `correctOptionIds` and shuffles option IDs), and its source path points into the copied assets directory. Verify the copied asset exists and the label remains useful without seeing the authoring file.
+Check `/tmp/pack-one/out/sample-pack.json` against `packs/exam-pack.schema.json`. The bundled source path should be `assets/references/concept.md`, and that file should exist in the output pack. The local note's path should be an absolute `file:///...` URL. The verifier checks both source types exist as regular files, and bundled paths must remain inside the pack folder.
 
-The app importer reads that local source file into the local pack database. In practice, a learner sees the source label as a link; the app's `/practice/source` route retrieves the stored text for that question and path. The current source item contains a path and label, not an external URL field. Therefore this example cannot produce a direct Databricks docs link. If direct external links are required alongside local academy notes, decide and implement a compatible schema/import/display contract first, then update this example and re-run the one-question round trip before bulk conversion.
+On import, the app saves bundled source text with the imported pack. For absolute file citations, enter and explicitly approve the intended local source root in the app. The importer checks the resolved cited files stay inside that root and saves their excerpts in the local database. When a learner opens a citation, the app serves the saved excerpt and does not read the file URL. Reimporting the exact same pack with an approved root can refresh excerpts without changing pack content or practice history. Network URLs such as `https://...` are not supported citation paths.

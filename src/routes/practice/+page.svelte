@@ -211,41 +211,16 @@
             </p>
             <p class="mb-4">{latestAnswer.explanation}</p>
             <div class="flex flex-wrap gap-x-5 gap-y-3">
-              {#each latestAnswer.sources as source (('kind' in source ? 'academy:' : 'bundled:') + source.path)}
-                {#if 'kind' in source}
-                  <a
-                    href={resolve(
-    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}&kind=academy_note`,
+              {#each latestAnswer.sources as source (source.path)}
+                <a
+                  href={resolve(
+    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`,
   )}
-                    target="_blank"
-                    rel="noopener"
-                    class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
-                    >{source.label}
-                    {#if source.section}
-                      · {source.section}
-                    {/if}
-                    <span aria-hidden="true"> ↗</span></a
-                  >
-                  {#each source.documentationUrls as documentationUrl (documentationUrl)}
-                    <a
-                      href={documentationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
-                      >Databricks documentation <span aria-hidden="true">↗</span></a
-                    >
-                  {/each}
-                {:else}
-                  <a
-                    href={resolve(
-    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}&kind=bundled`,
-  )}
-                    target="_blank"
-                    rel="noopener"
-                    class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
-                    >{source.label} <span aria-hidden="true">↗</span></a
-                  >
-                {/if}
+                  target="_blank"
+                  rel="noopener"
+                  class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
+                  >{source.label} <span aria-hidden="true">↗</span></a
+                >
               {/each}
             </div>
           </div>

@@ -22,8 +22,8 @@
       { "id": "governance", "title": "Governance and Security", "weight": 15 }
     ]
   },
-  "outputFile": "databricks-dea-may-2026-v1.2.0.json",
-  "assetsDirectory": "assets/databricks-dea-may-2026-v1.2.0",
+  "outputFile": "databricks-dea-may-2026-v1.2.1.json",
+  "assetsDirectory": "assets/databricks-dea-may-2026-v1.2.1",
   "shuffle": {
     "answerSeed": 20260504,
     "orderSeed": 20260505

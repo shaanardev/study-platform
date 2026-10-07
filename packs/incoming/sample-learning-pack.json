@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "exam": {
-    "id": "databricks-data-engineer-associate",
-    "title": "Databricks Data Engineer Associate (synthetic practice)",
+    "id": "sample-engineer-exam",
+    "title": "Sample Engineer Exam (synthetic practice)",
     "version": "2025.1"
   },
   "pack": {

@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync, type SQLOutputValue } from 'node:sqlite';
+import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 import type { ExamPack } from '#lib/types/exam-pack.js';
 
@@ -12,6 +13,11 @@ function readTextColumn(row: DatabaseRow, column: string): string {
   return value;
 }
 
+function readOptionalTextColumn(row: DatabaseRow, column: string): string | undefined {
+  const value = row[column];
+  return typeof value === 'string' ? value : undefined;
+}
+
 function readNumberColumn(row: DatabaseRow, column: string): number {
   const value = row[column];
   if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -21,7 +27,7 @@ function readNumberColumn(row: DatabaseRow, column: string): number {
 }
 
 function parseStoredPack(content: string): ExamPack {
-  const parsed: unknown = JSON.parse(content);
+  const parsed: unknown = normalizeLegacyCitations(JSON.parse(content));
   const result = validateExamPack(parsed);
   if (!result.valid) throw new Error('Stored exam pack is invalid.');
   return result.pack;
@@ -69,6 +75,7 @@ export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlit
       question_count INTEGER NOT NULL,
       domain_count INTEGER NOT NULL,
       content_json TEXT NOT NULL,
+      approved_source_root TEXT,
       imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (exam_id, pack_id, pack_version)
     );
@@ -137,6 +144,13 @@ export function openPackDatabase(databasePath = resolve('.local/exam-packs.sqlit
       PRIMARY KEY (exam_id, pack_id, pack_version, question_id)
     );
   `);
+  const importedPackColumns = database
+    .prepare('PRAGMA table_info(imported_packs)')
+    .all()
+    .map((row) => readTextColumn(row, 'name'));
+  if (!importedPackColumns.includes('approved_source_root')) {
+    database.exec('ALTER TABLE imported_packs ADD COLUMN approved_source_root TEXT');
+  }
   for (const [table, column] of [
     ['practice_sessions', 'question_snapshot_json'],
     ['mock_attempts', 'question_snapshot_json'],
@@ -154,6 +168,7 @@ export function saveImportedPack(
   databasePath: string,
   pack: ExamPack,
   sourceAssets: ImportedSourceAsset[] = [],
+  approvedSourceRoot?: string,
 ): void {
   const database = openPackDatabase(databasePath);
   try {
@@ -162,8 +177,8 @@ export function saveImportedPack(
       .prepare(`
       INSERT INTO imported_packs (
         exam_id, exam_title, exam_version, pack_id, pack_title, pack_version,
-        synthetic, question_count, domain_count, content_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        synthetic, question_count, domain_count, content_json, approved_source_root
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
       .run(
         pack.exam.id,
@@ -176,6 +191,7 @@ export function saveImportedPack(
         pack.questions.length,
         pack.domains.length,
         JSON.stringify(pack),
+        approvedSourceRoot ?? null,
       );
     database
       .prepare(`
@@ -215,6 +231,93 @@ export function saveImportedPack(
       // The original SQLite error is the useful one to report.
     }
     throw error;
+  } finally {
+    database.close();
+  }
+}
+
+export function refreshApprovedLocalSources(
+  databasePath: string,
+  pack: ExamPack,
+  sourceAssets: ImportedSourceAsset[],
+  approvedSourceRoot: string,
+): boolean {
+  const localSourceAssets = sourceAssets.filter(({ source }) => source.path.startsWith('file:'));
+  if (localSourceAssets.length === 0) return false;
+
+  const database = openPackDatabase(databasePath);
+  try {
+    database.exec('BEGIN IMMEDIATE');
+    const existing = database
+      .prepare(`
+      SELECT content_json AS contentJson FROM imported_packs
+      WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
+    `)
+      .get(pack.exam.id, pack.pack.id, pack.pack.version);
+    if (!existing || readTextColumn(existing, 'contentJson') !== JSON.stringify(pack)) {
+      database.exec('ROLLBACK');
+      return false;
+    }
+
+    database
+      .prepare(`
+      UPDATE imported_packs SET approved_source_root = ?
+      WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
+    `)
+      .run(approvedSourceRoot, pack.exam.id, pack.pack.id, pack.pack.version);
+    database
+      .prepare(`
+      DELETE FROM saved_source_assets
+      WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
+        AND substr(source_path, 1, 5) = 'file:'
+    `)
+      .run(pack.exam.id, pack.pack.id, pack.pack.version);
+    const insertSourceAsset = database.prepare(`
+      INSERT INTO saved_source_assets (
+        exam_id, pack_id, pack_version, question_id, source_path, label, excerpt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const { questionId, source, excerpt } of localSourceAssets) {
+      insertSourceAsset.run(
+        pack.exam.id,
+        pack.pack.id,
+        pack.pack.version,
+        questionId,
+        source.path,
+        source.label,
+        excerpt,
+      );
+    }
+    database.exec('COMMIT');
+    return true;
+  } catch (error) {
+    try {
+      database.exec('ROLLBACK');
+    } catch {
+      // Preserve the original SQLite error.
+    }
+    throw error;
+  } finally {
+    database.close();
+  }
+}
+
+export function getApprovedSourceRoot(
+  databasePath: string,
+  examId: string,
+  packId: string,
+  packVersion: string,
+): string | undefined {
+  const database = openPackDatabase(databasePath);
+  try {
+    const row = database
+      .prepare(`
+      SELECT approved_source_root AS approvedSourceRoot FROM imported_packs
+      WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
+    `)
+      .get(examId, packId, packVersion);
+    if (!row) return undefined;
+    return readOptionalTextColumn(row, 'approvedSourceRoot');
   } finally {
     database.close();
   }

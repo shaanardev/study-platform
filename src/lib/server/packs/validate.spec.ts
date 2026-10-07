@@ -1,4 +1,6 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
+import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 
 const validPack = {
@@ -33,49 +35,84 @@ describe('validateExamPack', () => {
     });
   });
 
-  it('accepts academy-note metadata and HTTPS documentation links without treating its path as a pack asset', () => {
+  it('accepts and preserves supported citation metadata', () => {
     const pack = structuredClone(validPack);
     const question = pack.questions[0];
     if (!question) throw new Error('Expected the valid pack to contain a question.');
-    Object.assign(question, {
-      sources: [
-        {
-          kind: 'academy_note',
-          path: 'streaming/checkpoints.md',
-          label: 'Streaming notes',
-          section: 'Checkpointing',
-          documentationUrls: ['https://docs.databricks.com/streams/checkpoints.html'],
-        },
-      ],
-    });
+    const source = {
+      kind: 'academy_note',
+      path: 'streaming/checkpoints.md',
+      label: 'Streaming notes',
+      section: 'Checkpointing',
+      documentationUrls: ['https://example.com/streaming/checkpoints'],
+    };
+    question.sources = [source];
 
     const result = validateExamPack(pack);
 
-    expect(result.valid).toBe(true);
-    if (result.valid) expect(result.pack.questions[0]?.sources).toEqual(question.sources);
+    expect(result).toEqual({
+      valid: true,
+      pack: { ...pack, questions: [{ ...question, sources: [source] }] },
+      errors: [],
+    });
   });
 
-  it('requires academy documentation links to use HTTPS', () => {
+  it('accepts migrated v1.2.1 and legacy v1.2.0 pack citations', async () => {
+    const current = JSON.parse(
+      await readFile(
+        new URL('../../../../packs/incoming/databricks-dea-may-2026-v1.2.1.json', import.meta.url),
+        'utf8',
+      ),
+    ) as unknown;
+    const legacy = JSON.parse(
+      await readFile(
+        new URL('../../../../packs/incoming/databricks-dea-may-2026-v1.2.0.json', import.meta.url),
+        'utf8',
+      ),
+    ) as unknown;
+
+    const currentResult = validateExamPack(current);
+    const legacyResult = validateExamPack(normalizeLegacyCitations(legacy));
+
+    expect(currentResult.valid).toBe(true);
+    expect(legacyResult.valid).toBe(true);
+    if (currentResult.valid) {
+      expect(currentResult.pack.questions[0]?.sources[0]).toMatchObject({
+        kind: 'academy_note',
+        section: expect.any(String),
+        documentationUrls: expect.any(Array),
+      });
+    }
+    if (legacyResult.valid) {
+      expect(legacyResult.pack.questions[0]?.sources[0]).toMatchObject({
+        kind: 'academy_note',
+        section: expect.any(String),
+        documentationUrls: expect.any(Array),
+      });
+    }
+  });
+
+  it('accepts an absolute local file URL as a generic citation', () => {
     const pack = structuredClone(validPack);
     const question = pack.questions[0];
     if (!question) throw new Error('Expected the valid pack to contain a question.');
-    Object.assign(question, {
-      sources: [
-        {
-          kind: 'academy_note',
-          path: 'streaming/checkpoints.md',
-          label: 'Streaming notes',
-          documentationUrls: ['http://docs.databricks.com/streams/checkpoints.html'],
-        },
-      ],
-    });
+    question.sources = [{ path: 'file:///tmp/reference%20notes.md', label: 'Local reference' }];
+
+    expect(validateExamPack(pack)).toEqual({ valid: true, pack, errors: [] });
+  });
+
+  it('rejects unsupported URL schemes as citation paths', () => {
+    const pack = structuredClone(validPack);
+    const source = pack.questions[0]?.sources[0];
+    if (!source) throw new Error('Expected the valid pack to contain a source.');
+    source.path = 'https://example.com/notes.md';
 
     const result = validateExamPack(pack);
 
     expect(result.valid).toBe(false);
     if (!result.valid)
       expect(result.errors).toContain(
-        'questions[0].sources[0].documentationUrls must contain HTTPS URLs.',
+        'questions[0] source path "https://example.com/notes.md" must be a safe relative path or absolute file URL.',
       );
   });
 
@@ -94,7 +131,7 @@ describe('validateExamPack', () => {
     if (!result.valid) {
       expect(result.errors).toContain('Domain weights must total 100.');
       expect(result.errors).toContain(
-        'questions[0] source path "../private/notes.md" must be a safe relative path.',
+        'questions[0] source path "../private/notes.md" must be a safe relative path or absolute file URL.',
       );
     }
   });

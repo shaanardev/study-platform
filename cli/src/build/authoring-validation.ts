@@ -103,9 +103,7 @@ export function validateAuthoring(
         );
       }
       for (const source of question.sources) {
-        if (!('kind' in source)) {
-          yield* safeRelativePath(source.path, `Question ${question.id} source path`);
-        }
+        yield* safeRelativePath(source.path, `Question ${question.id} source path`);
       }
     }
 

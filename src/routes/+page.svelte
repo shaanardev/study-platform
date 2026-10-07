@@ -67,7 +67,8 @@
         <p class="mb-2 text-surface-600-400">
           Place versioned JSON packs in
           <code class="rounded bg-surface-200-800 px-1 py-0.5 text-[0.9em]">packs/incoming/</code>,
-          then import them here.
+          then import them here. Reimport the same pack with its approved source root to refresh
+          local citations without changing pack content or progress.
         </p>
         <a
           class="font-semibold text-primary-700-300 underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
@@ -76,11 +77,28 @@
         >
       </div>
       <form method="POST" action={resolve('/?/import')} class="w-full sm:w-auto">
+        <label class="mb-3 block text-sm text-surface-600-400">
+          Approved local source root for absolute file citations
+          <input
+            class="input mt-1 min-h-11 w-full"
+            type="text"
+            name="approvedSourceRoot"
+            placeholder="/path/to/source/folder"
+            autocomplete="off"
+          >
+        </label>
+        <label class="mb-3 flex items-start gap-2 text-sm text-surface-600-400">
+          <input class="mt-1" type="checkbox" name="approveLocalSourceRoot">
+          <span>
+            I approve reading cited files beneath this folder during import. Their excerpts will be
+            saved with the pack.
+          </span>
+        </label>
         <button
-          class="btn preset-filled-primary-700-300 min-h-11 w-full whitespace-nowrap focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3 sm:w-auto"
+          class="btn preset-filled-primary-700-300 min-h-11 w-full whitespace-nowrap focus-visible:outline-3 focus-visible:outline-amber-500 focus-visible:outline-offset-3"
           type="submit"
         >
-          Import packs from local folder
+          Import or refresh local citations
         </button>
       </form>
     </section>
@@ -94,10 +112,18 @@
         {#if form.importResult.imported.length > 0}
           <p class="my-1">Imported {form.importResult.imported.length} pack version(s).</p>
         {/if}
+        {#if form.importResult.refreshed.length > 0}
+          <p class="my-1">
+            Reapproved and refreshed local citations for {form.importResult.refreshed.length}
+            existing pack version(s).
+          </p>
+        {/if}
         {#each form.importResult.errors as message (message)}
           <p class="my-1 text-error-700-300">{message}</p>
         {/each}
-        {#if form.importResult.imported.length === 0 && form.importResult.errors.length === 0}
+        {#if form.importResult.imported.length === 0 &&
+    form.importResult.refreshed.length === 0 &&
+    form.importResult.errors.length === 0}
           <p class="my-1">No new pack versions were imported.</p>
         {/if}
       </div>

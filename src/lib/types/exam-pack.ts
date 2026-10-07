@@ -1,12 +1,10 @@
-export type PackSource =
-  | { path: string; label: string }
-  | {
-      kind: 'academy_note';
-      path: string;
-      label: string;
-      section?: string;
-      documentationUrls: string[];
-    };
+export type PackSource = {
+  path: string;
+  label: string;
+  kind?: string;
+  section?: string;
+  documentationUrls?: string[];
+};
 export type PackOption = { id: string; text: string };
 export type PackQuestion = {
   id: string;

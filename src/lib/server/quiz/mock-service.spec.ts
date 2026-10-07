@@ -21,7 +21,7 @@ async function setup() {
   dirs.push(directory);
   const databasePath = join(directory, 'packs.sqlite');
   const validated = validateExamPack(
-    JSON.parse(await readFile(resolve('packs/incoming/sample-databricks-associate.json'), 'utf8')),
+    JSON.parse(await readFile(resolve('packs/incoming/sample-learning-pack.json'), 'utf8')),
   );
   if (!validated.valid) throw new Error(validated.errors.join(' '));
   const pack = validated.pack;

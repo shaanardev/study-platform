@@ -6,6 +6,12 @@
 ## Domain design & rules
 Requirements and domain design/rules can be found in requirements.md
 
+## Provider-neutral pack behavior
+
+- Exam identity, weighted domains, questions, and their source labels are authored pack data.
+- CLI and frontend behavior must read those values from the selected pack and must not assume a particular provider, certification vendor, training academy, exam name, or domain set.
+- Keep provider-specific terminology and learning content inside authored packs and documentation describing that content. Generic UI wording and shared code stay provider-neutral.
+
 ## Subagent Delegation
 
 - Use `gpt-6-luna` at high reasoning as the model for all subagents
