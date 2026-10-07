@@ -25,3 +25,6 @@
 - Make generated questions traceable to the local note or document section that informed them.
 - Avoid unnecessary architecture such as microservices, distributed systems, complex databases, mobile apps, or real-time collaboration.
 - Make the first version a minimum viable product focused on importing notes, generating quizzes, adapting practice, tracking gaps, and running grilling sessions.
+- Exam identity, weighted domains, questions, and their source labels are authored pack data.
+- CLI and frontend behavior must read those values from the selected pack and must not assume a particular provider, certification vendor, training academy, exam name, or domain set.
+- Keep provider-specific terminology and learning content inside authored packs and documentation describing that content. Generic UI wording and shared code stay provider-neutral.

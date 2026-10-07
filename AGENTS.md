@@ -2,7 +2,9 @@
 
 - **Language**: TypeScript
 - **Package Manager**: pnpm
-- **Add-ons**: vitest, ai-tools, experimental
+
+## Domain design & rules
+Requirements and domain design/rules can be found in requirements.md
 
 ## Subagent Delegation
 
