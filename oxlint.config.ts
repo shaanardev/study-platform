@@ -17,6 +17,7 @@ const config: OxlintConfig = defineConfig({
       files: ['apps/web/src/**/*.svelte', 'apps/web/src/**/*.svelte.{js,ts}'],
     },
   ],
+  plugins: [...(core.plugins ?? []), ...(vitest.plugins ?? []), 'effecttsgo'],
   rules: {
     'import/no-cycle': 'error',
     'import/no-self-import': 'error',

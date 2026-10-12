@@ -2,12 +2,12 @@
 
 ## Implementation Update — 2026-10-12
 
-The migration is implemented in the current `main` checkout. The sections below this update retain the original research snapshot; their old paths and proposed next actions describe the pre-migration state. Use [README.md](README.md) and [AGENTS.md](AGENTS.md) for current commands and conventions.
+The migration is implemented in the current checkout. The sections below this update retain the original research snapshot; their old paths and proposed next actions describe the pre-migration state. Use [README.md](README.md) and [AGENTS.md](AGENTS.md) for current commands and conventions.
 
 - Web app: `apps/web/`; pack CLI: `apps/pack-cli/`. Root `package.json` orchestrates the workspace.
-- Biome dependency/configuration/commands are removed. Root `oxlint.config.ts` and `oxfmt.config.ts` extend Ultracite's Oxlint and Oxfmt presets and retain the repository's custom rules and formatting settings. The CLI has its own config with the Effect preset and type-aware rules.
-- The web app retains TypeScript 6. ESLint and the official Svelte plugin cover components, rune modules, framework rules, and selected typed safety checks; Prettier handles its formatting. `svelte-check` remains required.
-- Both workspace `lint` scripts use `ultracite check`, and both `lint:fix` scripts use `ultracite fix`. The root scripts aggregate these workspace commands.
+- Biome dependency/configuration/commands are removed. Root `oxlint.config.ts` and `oxfmt.config.ts` extend Ultracite's Oxlint and Oxfmt presets and retain the repository's custom rules and formatting settings. Root Ultracite performs one monorepo pass with CLI-scoped Effect TS-Go rules and type-aware Oxlint.
+- The web app retains TypeScript 6. ESLint and the official Svelte plugin cover components, rune modules, framework rules, and Tailwind checks. Root Oxfmt formats Svelte through its Prettier-backed implementation; the web Prettier provider ignores those files to avoid duplicate formatting. `svelte-check` remains required and fails on warnings.
+- The web workspace uses Ultracite's ESLint provider for Svelte-aware checks. Root Ultracite owns the global Oxlint/Oxfmt pass; `lint` includes both passes, `verify` scopes the global pass to web files, and `verify:all` runs the global pass once across the repository before web and CLI checks.
 - General CSS semantic lint checks remain omitted. Tailwind linting is enforced through the web ESLint configuration using `eslint-plugin-better-tailwindcss`: shorthand and canonical utilities, duplicate/conflicting/unknown/deprecated classes, and restrictions approximating Biome's arbitrary values/properties and raw palette color policies. Exact existing styles use named theme tokens and utilities. Some Biome-only style/type checks and dedicated JSON duplicate-key linting have no replacement; these omissions are documented.
 - Packs remain repository content. The web app resolves packs and `.local/exam-packs.sqlite` from the workspace root independent of its launch directory. Existing user data was not relocated.
 - Fixture paths, nested output ignores, editor settings, pack instructions, and Svelte agent check commands are updated. No worktrees or commits were created.
