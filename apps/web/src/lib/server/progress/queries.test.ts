@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -16,57 +16,58 @@ import type { ExamPack } from '#lib/types/exam-pack.js';
 
 const directories: string[] = [];
 
-afterEach(() => {
-  for (const directory of directories.splice(0))
-    rmSync(directory, { recursive: true, force: true });
-});
-
-function fixture() {
-  const directory = mkdtempSync(join(tmpdir(), 'orde-progress-'));
+const fixture = () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'orde-progress-'));
   directories.push(directory);
-  const databasePath = join(directory, 'progress.sqlite');
+  const databasePath = path.join(directory, 'progress.sqlite');
   const pack: ExamPack = {
-    schemaVersion: 1,
-    exam: { id: 'exam-a', title: 'Cloud exam', version: '2026' },
-    pack: { id: 'pack-a', title: 'Cloud foundations', version: '1.0', synthetic: false },
     domains: [
       { id: 'storage', title: 'Storage', weight: 60 },
       { id: 'compute', title: 'Compute', weight: 40 },
     ],
+    exam: { id: 'exam-a', title: 'Cloud exam', version: '2026' },
+    pack: { id: 'pack-a', synthetic: false, title: 'Cloud foundations', version: '1.0' },
     questions: [
       {
-        id: 'q-storage',
-        type: 'single_choice',
+        answerIds: ['yes'],
         domainId: 'storage',
-        prompt: 'Storage?',
+        explanation: 'Yes.',
+        id: 'q-storage',
         options: [
           { id: 'yes', text: 'Yes' },
           { id: 'no', text: 'No' },
         ],
-        answerIds: ['yes'],
-        explanation: 'Yes.',
-        sources: [{ path: 'notes.md', label: 'Notes' }],
+        prompt: 'Storage?',
+        sources: [{ label: 'Notes', path: 'notes.md' }],
+        type: 'single_choice',
       },
       {
-        id: 'q-compute',
-        type: 'single_choice',
+        answerIds: ['yes'],
         domainId: 'compute',
-        prompt: 'Compute?',
+        explanation: 'Yes.',
+        id: 'q-compute',
         options: [
           { id: 'yes', text: 'Yes' },
           { id: 'no', text: 'No' },
         ],
-        answerIds: ['yes'],
-        explanation: 'Yes.',
-        sources: [{ path: 'notes.md', label: 'Notes' }],
+        prompt: 'Compute?',
+        sources: [{ label: 'Notes', path: 'notes.md' }],
+        type: 'single_choice',
       },
     ],
+    schemaVersion: 1,
   };
   saveImportedPack(databasePath, pack);
   return { databasePath, pack };
-}
+};
 
 describe('progress queries', () => {
+  afterEach(() => {
+    for (const directory of directories.splice(0)) {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
   it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', () => {
     const { databasePath, pack } = fixture();
     const session = createPracticeSession({
@@ -84,52 +85,52 @@ describe('progress queries', () => {
 
     expect(progress.recentAttempts).toHaveLength(1);
     expect(progress.recentAttempts[0]).toMatchObject({
-      kind: 'practice',
+      answeredCount: 2,
+      correctCount: 1,
       examTitle: 'Cloud exam',
+      kind: 'practice',
       packTitle: 'Cloud foundations',
       packVersion: '1.0',
-      correctCount: 1,
-      answeredCount: 2,
       questionCount: 2,
     });
-    expect(progress.domainScores).toEqual([
+    expect(progress.domainScores).toStrictEqual([
       {
+        answeredCount: 1,
+        correctCount: 0,
+        domainId: 'compute',
+        domainTitle: 'Compute',
         examId: 'exam-a',
         examTitle: 'Cloud exam',
         packId: 'pack-a',
         packTitle: 'Cloud foundations',
         packVersion: '1.0',
-        domainId: 'compute',
-        domainTitle: 'Compute',
-        correctCount: 0,
-        answeredCount: 1,
         percent: 0,
       },
       {
+        answeredCount: 1,
+        correctCount: 1,
+        domainId: 'storage',
+        domainTitle: 'Storage',
         examId: 'exam-a',
         examTitle: 'Cloud exam',
         packId: 'pack-a',
         packTitle: 'Cloud foundations',
         packVersion: '1.0',
-        domainId: 'storage',
-        domainTitle: 'Storage',
-        correctCount: 1,
-        answeredCount: 1,
         percent: 100,
       },
     ]);
-    expect(progress.missedQuestions).toEqual([
+    expect(progress.missedQuestions).toStrictEqual([
       {
-        examId: 'exam-a',
-        packId: 'pack-a',
-        packVersion: '1.0',
-        examTitle: 'Cloud exam',
-        packTitle: 'Cloud foundations',
-        questionId: 'q-compute',
-        prompt: 'Compute?',
         domainId: 'compute',
         domainTitle: 'Compute',
+        examId: 'exam-a',
+        examTitle: 'Cloud exam',
         missCount: 1,
+        packId: 'pack-a',
+        packTitle: 'Cloud foundations',
+        packVersion: '1.0',
+        prompt: 'Compute?',
+        questionId: 'q-compute',
       },
     ]);
   });
@@ -138,13 +139,13 @@ describe('progress queries', () => {
     const { databasePath, pack } = fixture();
     const attempt = createMockAttempt({
       databasePath,
+      durationMinutes: 30,
       examId: pack.exam.id,
+      now: 10_000,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionCount: 2,
-      durationMinutes: 30,
       random: () => 0,
-      now: 10_000,
     });
     saveMockAnswer(databasePath, attempt.id, 'q-storage', ['yes'], 11_000);
     saveMockAnswer(databasePath, attempt.id, 'q-compute', ['no'], 12_000);
@@ -154,15 +155,15 @@ describe('progress queries', () => {
 
     expect(progress.recentAttempts).toContainEqual(
       expect.objectContaining({
+        answeredCount: 2,
+        correctCount: 1,
+        examTitle: 'Cloud exam',
         id: attempt.id,
         kind: 'mock',
-        examTitle: 'Cloud exam',
         packTitle: 'Cloud foundations',
         packVersion: '1.0',
-        status: 'submitted',
-        correctCount: 1,
-        answeredCount: 2,
         questionCount: 2,
+        status: 'submitted',
       }),
     );
   });

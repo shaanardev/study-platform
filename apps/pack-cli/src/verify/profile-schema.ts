@@ -8,56 +8,56 @@ const DomainExpectation = Schema.Struct({
 });
 
 export const ProfileSchema = Schema.Struct({
+  answerPositions: Schema.optionalKey(Schema.Record(Schema.String, NonNegativeInteger)),
+  baselineAudit: Schema.optionalKey(
+    Schema.Struct({
+      excluded: NonNegativeInteger,
+      idPrefix: Schema.optionalKey(Schema.String),
+      included: NonNegativeInteger,
+      path: NonEmptyText,
+      total: NonNegativeInteger,
+    }),
+  ),
   domains: Schema.optionalKey(Schema.Record(Schema.String, DomainExpectation)),
   objectives: Schema.optionalKey(
     Schema.Struct({
-      path: NonEmptyText,
       byDomain: Schema.Record(Schema.String, Schema.Array(NonEmptyText)),
+      path: NonEmptyText,
     }),
   ),
   questionRules: Schema.optionalKey(
     Schema.Struct({
-      type: Schema.optionalKey(Schema.Literals(['single_choice', 'multiple_choice'])),
+      explanationMinWords: Schema.optionalKey(NonNegativeInteger),
       optionCount: Schema.optionalKey(
         Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(2)),
       ),
-      explanationMinWords: Schema.optionalKey(NonNegativeInteger),
       requiredSourcePathFragment: Schema.optionalKey(NonEmptyText),
+      type: Schema.optionalKey(Schema.Literals(['single_choice', 'multiple_choice'])),
     }),
   ),
-  answerPositions: Schema.optionalKey(Schema.Record(Schema.String, NonNegativeInteger)),
-  baselineAudit: Schema.optionalKey(
-    Schema.Struct({
-      path: NonEmptyText,
-      total: NonNegativeInteger,
-      included: NonNegativeInteger,
-      excluded: NonNegativeInteger,
-      idPrefix: Schema.optionalKey(Schema.String),
-    }),
-  ),
-  sourceIntegrity: Schema.optionalKey(Schema.Struct({ provenancePath: NonEmptyText })),
   reportPath: Schema.optionalKey(NonEmptyText),
+  sourceIntegrity: Schema.optionalKey(Schema.Struct({ provenancePath: NonEmptyText })),
 });
 
 export const CoverageSchema = Schema.Struct({
-  questionObjectives: Schema.Record(Schema.String, Schema.Array(Schema.String)),
   objectives: Schema.Record(Schema.String, Schema.Unknown),
+  questionObjectives: Schema.Record(Schema.String, Schema.Array(Schema.String)),
 });
 
 const IncludedBaselineEntrySchema = Schema.Struct({
   baselineId: NonEmptyText,
-  number: NonNegativeInteger,
-  status: Schema.Literals(['rewritten', 'retained-with-terminology-normalization']),
-  packQuestionId: NonEmptyText,
   domainId: NonEmptyText,
+  number: NonNegativeInteger,
   objective: NonEmptyText,
+  packQuestionId: NonEmptyText,
+  status: Schema.Literals(['rewritten', 'retained-with-terminology-normalization']),
 });
 
 const ExcludedBaselineEntrySchema = Schema.Struct({
   baselineId: NonEmptyText,
   number: NonNegativeInteger,
-  status: Schema.Literal('excluded'),
   reason: NonEmptyText,
+  status: Schema.Literal('excluded'),
 });
 
 export const BaselineEntrySchema = Schema.Union([
@@ -66,9 +66,9 @@ export const BaselineEntrySchema = Schema.Union([
 ]);
 
 export const ProvenanceSchema = Schema.Struct({
-  materialInventory: Schema.Array(Schema.Struct({ path: NonEmptyText, sha256: NonEmptyText })),
   baselinePath: NonEmptyText,
   baselineSha256: NonEmptyText,
+  materialInventory: Schema.Array(Schema.Struct({ path: NonEmptyText, sha256: NonEmptyText })),
 });
 
 export type BaselineEntry = typeof BaselineEntrySchema.Type;

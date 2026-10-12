@@ -1,5 +1,6 @@
 import { Data, Effect, FileSystem, Path, Result, Schema } from 'effect';
-import { BuiltExamPackSchema, type PackForVerification } from '../core/built-pack-schema.js';
+import type { PackForVerification } from '../core/built-pack-schema.js';
+import { BuiltExamPackSchema } from '../core/built-pack-schema.js';
 import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { AuthoringFile, QuestionFile } from './authoring-schema.js';
 import { safeRelativePath, validateAuthoring } from './authoring-validation.js';
@@ -13,7 +14,7 @@ export class BuildError extends Data.TaggedError('BuildError')<{
 const toBuildError = (cause: unknown): BuildError =>
   cause instanceof BuildError
     ? cause
-    : new BuildError({ message: cause instanceof Error ? cause.message : String(cause), cause });
+    : new BuildError({ cause, message: cause instanceof Error ? cause.message : String(cause) });
 
 const hasNodeErrorCode = (error: unknown, code: string): boolean =>
   error instanceof Error && 'code' in error && error.code === code;
@@ -28,7 +29,9 @@ const isNotSymbolicLink = (error: unknown): boolean =>
   'cause' in error.reason &&
   hasNodeErrorCode(error.reason.cause, 'EINVAL');
 
-const rejectSymlinks = Effect.fn(function* (destination: string) {
+const rejectSymlinks = Effect.fn('rejectSymlinks')(function* rejectSymlinksEffect(
+  destination: string,
+) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
   const filesystemRoot = path.parse(destination).root;
@@ -37,33 +40,38 @@ const rejectSymlinks = Effect.fn(function* (destination: string) {
   for (const part of parts) {
     current = path.join(current, part);
     const link = yield* fs.readLink(current).pipe(
-      Effect.catchIf(isNotSymbolicLink, () => Effect.succeed(undefined)),
+      Effect.catchIf(isNotSymbolicLink, () => Effect.succeed(false)),
       Effect.catchIf(
         (error) => error._tag === 'PlatformError' && error.reason._tag === 'NotFound',
         () => Effect.succeed(null),
       ),
       Effect.mapError(toBuildError),
     );
-    if (link === null) break;
-    if (link !== undefined)
+    if (link === null) {
+      break;
+    }
+    if (link !== false) {
       return yield* Effect.fail(
         new BuildError({ message: `Path contains a symbolic link: ${current}` }),
       );
+    }
   }
+  return yield* Effect.void;
 });
 
-const requireInputFile = Effect.fn(function* (filename: string) {
+const requireInputFile = Effect.fn('requireInputFile')(function* requireInputFile(filename: string) {
   yield* rejectSymlinks(filename);
   const fs = yield* FileSystem.FileSystem;
   const info = yield* fs.stat(filename).pipe(Effect.mapError(toBuildError));
-  if (info.type !== 'File')
+  if (info.type !== 'File') {
     return yield* Effect.fail(new BuildError({ message: `Not a regular file: ${filename}` }));
-  return yield* (yield* FileSystem.FileSystem).realPath(filename);
+  }
+  return yield* fs.realPath(filename);
 });
 
 export const buildPack = Effect.fn('buildPack')(
   (authoringPath: string, outputDirectory: string, localNoteRoot?: string) =>
-    Effect.gen(function* () {
+    Effect.gen(function* buildPackProgram() {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const authoringFile = yield* requireInputFile(path.resolve(authoringPath));
@@ -72,7 +80,7 @@ export const buildPack = Effect.fn('buildPack')(
         onExcessProperty: 'error',
       })(content).pipe(
         Effect.mapError(
-          (cause) => new BuildError({ message: `Invalid authoring file: ${cause}`, cause }),
+          (cause) => new BuildError({ cause, message: `Invalid authoring file: ${String(cause)}` }),
         ),
       );
       const sourceRoot = path.dirname(authoringFile);
@@ -87,7 +95,10 @@ export const buildPack = Effect.fn('buildPack')(
         })(yield* fs.readFileString(questionPath)).pipe(
           Effect.mapError(
             (cause) =>
-              new BuildError({ message: `Invalid question file ${reference}: ${cause}`, cause }),
+              new BuildError({
+                cause,
+                message: `Invalid question file ${reference}: ${String(cause)}`,
+              }),
           ),
         );
         questions.push(...drafts);
@@ -113,14 +124,15 @@ export const buildPack = Effect.fn('buildPack')(
           .realPath(path.resolve(localNoteRoot))
           .pipe(
             Effect.mapError(
-              (cause) => new BuildError({ message: 'Invalid local-note root', cause }),
+              (cause) => new BuildError({ cause, message: 'Invalid local-note root' }),
             ),
           );
         const rootInfo = yield* fs.stat(localRoot).pipe(Effect.mapError(toBuildError));
-        if (rootInfo.type !== 'Directory')
+        if (rootInfo.type !== 'Directory') {
           return yield* new BuildError({
             message: `Local-note root is not a directory: ${localRoot}`,
           });
+        }
         for (const notePath of localNotePaths) {
           const noteFile = yield* requireInputFile(path.resolve(localRoot, notePath));
           const relativeNote = path.relative(localRoot, noteFile);
@@ -149,9 +161,9 @@ export const buildPack = Effect.fn('buildPack')(
       const artifacts = yield* Effect.forEach(
         assetPaths,
         (asset) =>
-          Effect.gen(function* () {
+          Effect.gen(function* resolveAsset() {
             const source = yield* requireInputFile(path.resolve(sourceRoot, asset));
-            return { source, destination: path.resolve(assetsRoot, asset) };
+            return { destination: path.resolve(assetsRoot, asset), source };
           }),
         { concurrency: CONCURRENCY_LIMIT },
       );
@@ -165,12 +177,12 @@ export const buildPack = Effect.fn('buildPack')(
         Schema.encodeResult(BuiltExamPackSchema)(pack),
       ).pipe(
         Effect.mapError(
-          (cause) => new BuildError({ message: `Invalid built pack: ${cause}`, cause }),
+          (cause) => new BuildError({ cause, message: `Invalid built pack: ${String(cause)}` }),
         ),
       );
       const packJsonResult = Result.try({
-        try: () => JSON.stringify(encodedPack, null, 2),
         catch: toBuildError,
+        try: () => JSON.stringify(encodedPack, null, 2),
       }).pipe(
         Result.flatMap((json) =>
           json === undefined
@@ -181,7 +193,9 @@ export const buildPack = Effect.fn('buildPack')(
       const packJson = yield* Effect.fromResult(packJsonResult);
       const packPath = path.join(outputRoot, input.outputFile);
       yield* rejectSymlinks(packPath);
-      for (const artifact of artifacts) yield* rejectSymlinks(artifact.destination);
+      for (const artifact of artifacts) {
+        yield* rejectSymlinks(artifact.destination);
+      }
       yield* fs.makeDirectory(outputRoot, { recursive: true });
       yield* fs.writeFileString(packPath, `${packJson}\n`);
       const artifactDirectories = new Set(
@@ -197,5 +211,6 @@ export const buildPack = Effect.fn('buildPack')(
         (artifact) => fs.copyFile(artifact.source, artifact.destination),
         { concurrency: CONCURRENCY_LIMIT },
       );
+      return yield* Effect.void;
     }).pipe(Effect.mapError(toBuildError)),
 );

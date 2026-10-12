@@ -24,69 +24,80 @@ export const load: PageServerLoad = ({ url }) => {
         pack.packId === url.searchParams.get('packId') &&
         pack.packVersion === url.searchParams.get('packVersion'),
     ) ?? packs[0];
-  if (!selected) return { packs, pack: undefined, feedback: [] };
+  if (!selected) {
+    return { feedback: [], pack: undefined, packs };
+  }
   const { pack, feedback } = readPackForReview(
     databasePath,
     selected.examId,
     selected.packId,
     selected.packVersion,
   );
-  return { packs, pack, feedback };
+  return { feedback, pack, packs };
 };
 
-function key(form: FormData) {
-  return {
-    examId: String(form.get('examId') ?? ''),
-    packId: String(form.get('packId') ?? ''),
-    packVersion: String(form.get('packVersion') ?? ''),
-    questionId: String(form.get('questionId') ?? ''),
-  };
-}
+const formString = (form: FormData, key: string) => {
+  const value = form.get(key);
+  return typeof value === 'string' ? value : '';
+};
 
-function selectedUrl(values: ReturnType<typeof key>) {
-  return `${resolve('/review')}?examId=${encodeURIComponent(values.examId)}&packId=${encodeURIComponent(values.packId)}&packVersion=${encodeURIComponent(values.packVersion)}`;
-}
+const key = (form: FormData) => ({
+  examId: formString(form, 'examId'),
+  packId: formString(form, 'packId'),
+  packVersion: formString(form, 'packVersion'),
+  questionId: formString(form, 'questionId'),
+});
+
+const selectedUrl = (values: ReturnType<typeof key>) =>
+  `${resolve('/review')}?examId=${encodeURIComponent(values.examId)}&packId=${encodeURIComponent(values.packId)}&packVersion=${encodeURIComponent(values.packVersion)}`;
 
 export const actions: Actions = {
-  flag: async ({ request }) => {
-    const form = await request.formData();
-    const values = key(form);
-    try {
-      flagQuestion(databasePath, { ...values, reason: String(form.get('reason') ?? '') });
-    } catch (cause) {
-      if (cause instanceof FeedbackValidationError) return fail(400, { message: cause.message });
-      throw cause instanceof Error ? cause : new Error('Could not save question flag.');
-    }
-    redirect(303, selectedUrl(values));
-  },
   correct: async ({ request }) => {
     const form = await request.formData();
     const values = key(form);
     let correction: unknown;
     try {
-      correction = JSON.parse(String(form.get('correction') ?? '{}'));
+      correction = JSON.parse(formString(form, 'correction') || '{}');
     } catch {
       return fail(400, { message: 'Correction must be valid JSON.' });
     }
-    if (!correction || typeof correction !== 'object' || Array.isArray(correction))
+    if (typeof correction !== 'object' || correction === null || Array.isArray(correction)) {
       return fail(400, { message: 'Correction must be a JSON object.' });
+    }
     try {
       createCorrection(databasePath, { ...values, correction });
-    } catch (cause) {
-      if (cause instanceof FeedbackValidationError) return fail(400, { message: cause.message });
-      throw cause instanceof Error ? cause : new Error('Could not save question correction.');
+    } catch (error) {
+      if (error instanceof FeedbackValidationError) {
+        return fail(400, { message: error.message });
+      }
+      throw error instanceof Error ? error : new Error('Could not save question correction.');
     }
-    redirect(303, selectedUrl(values));
+    return redirect(303, selectedUrl(values));
+  },
+  flag: async ({ request }) => {
+    const form = await request.formData();
+    const values = key(form);
+    try {
+      flagQuestion(databasePath, { ...values, reason: formString(form, 'reason') });
+    } catch (error) {
+      if (error instanceof FeedbackValidationError) {
+        return fail(400, { message: error.message });
+      }
+      throw error instanceof Error ? error : new Error('Could not save question flag.');
+    }
+    return redirect(303, selectedUrl(values));
   },
   retire: async ({ request }) => {
     const form = await request.formData();
     const values = key(form);
     try {
       retireQuestion(databasePath, values, form.get('retired') === 'true');
-    } catch (cause) {
-      if (cause instanceof FeedbackValidationError) return fail(400, { message: cause.message });
-      throw cause instanceof Error ? cause : new Error('Could not update question retirement.');
+    } catch (error) {
+      if (error instanceof FeedbackValidationError) {
+        return fail(400, { message: error.message });
+      }
+      throw error instanceof Error ? error : new Error('Could not update question retirement.');
     }
-    redirect(303, selectedUrl(values));
+    return redirect(303, selectedUrl(values));
   },
 };

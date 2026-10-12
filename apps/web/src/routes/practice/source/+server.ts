@@ -15,8 +15,8 @@ export const GET: RequestHandler = async ({ url }) => {
   );
   return new Response(`${source.label}\n\n${source.text}`, {
     headers: {
-      'content-type': 'text/plain; charset=utf-8',
       'cache-control': 'private, max-age=3600',
+      'content-type': 'text/plain; charset=utf-8',
     },
   });
 };

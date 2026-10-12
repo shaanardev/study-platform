@@ -4,10 +4,10 @@ import { createDeadline, isExpired, remainingMilliseconds } from '#lib/server/qu
 
 describe('mock exam timing', () => {
   it('keeps a fixed deadline and never reports negative time after resume', () => {
-    const deadline = createDeadline(1_000, 2);
+    const deadline = createDeadline(1000, 2);
     expect(deadline).toBe(121_000);
     expect(remainingMilliseconds(deadline, 31_000)).toBe(90_000);
-    expect(isExpired(deadline, 121_000)).toBe(true);
+    expect(isExpired(deadline, 121_000)).toBeTruthy();
     expect(remainingMilliseconds(deadline, 130_000)).toBe(0);
   });
 

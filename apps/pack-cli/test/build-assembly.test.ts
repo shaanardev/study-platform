@@ -11,12 +11,12 @@ import { verifyPack } from '../src/verify/verify.js';
 import { mutablePreview, run, writeJson } from './build-helpers.js';
 
 describe('build command', () => {
-  it('returns typed failures from pure authoring and path validation', () =>
-    run(
-      Effect.gen(function* () {
+  it('returns typed failures from pure authoring and path validation', async () => {
+    await run(
+      Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const invalidAuthoring = validateAuthoring({ ...fixture.input, questions: [] });
-        expect(Result.isFailure(invalidAuthoring)).toBe(true);
+        expect(Result.isFailure(invalidAuthoring)).toBeTruthy();
         if (Result.isFailure(invalidAuthoring)) {
           expect(invalidAuthoring.failure).toBeInstanceOf(AuthoringValidationError);
           expect(invalidAuthoring.failure.message).toBe(
@@ -25,84 +25,92 @@ describe('build command', () => {
         }
 
         const invalidPath = safeRelativePath('../outside', 'assetFiles path');
-        expect(Result.isFailure(invalidPath)).toBe(true);
+        expect(Result.isFailure(invalidPath)).toBeTruthy();
         if (Result.isFailure(invalidPath)) {
           expect(invalidPath.failure).toBeInstanceOf(AuthoringValidationError);
           expect(invalidPath.failure.message).toBe('assetFiles path must be a safe relative path');
         }
       }),
-    ));
+    );
+  });
 
-  it('preserves pure validation failures as the BuildError cause', () =>
-    run(
-      Effect.gen(function* () {
+  it('preserves pure validation failures as the BuildError cause', async () => {
+    await run(
+      Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         yield* writeJson(fixture.authoringPath, {
           ...fixture.input,
-          questions: [],
           questionFiles: [],
+          questions: [],
         });
         const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
 
-        expect(Result.isFailure(result)).toBe(true);
+        expect(Result.isFailure(result)).toBeTruthy();
         if (Result.isFailure(result)) {
           expect(result.failure).toBeInstanceOf(BuildError);
           expect(result.failure.message).toBe('Authoring must contain at least one question');
           expect(result.failure.cause).toBeInstanceOf(AuthoringValidationError);
-          expect((result.failure.cause as AuthoringValidationError).message).toBe(
-            'Authoring must contain at least one question',
-          );
+          if (!(result.failure.cause instanceof AuthoringValidationError)) {
+            throw new Error('Expected authoring validation error cause');
+          }
+          expect(result.failure.cause.message).toBe('Authoring must contain at least one question');
         }
       }),
-    ));
+    );
+  });
 
-  it('rejects an empty assembled question bank', () =>
-    run(
-      Effect.gen(function* () {
+  it('rejects an empty assembled question bank', async () => {
+    await run(
+      Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
         for (const input of [
-          { ...fixture.input, questions: [], questionFiles: [] },
+          { ...fixture.input, questionFiles: [], questions: [] },
           { ...fixture.input, questionFiles: ['questions/core.json'] },
         ]) {
           yield* writeJson(fixture.authoringPath, input);
           yield* writeJson(`${fixture.root}/authoring/questions/core.json`, []);
           const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
-          expect(Result.isFailure(result)).toBe(true);
-          if (Result.isFailure(result))
-            expect(result.failure.message).toMatch(/at least one question/i);
-          expect(yield* fs.exists(fixture.output)).toBe(false);
+          expect(Result.isFailure(result)).toBeTruthy();
+          if (Result.isFailure(result)) {
+            expect(result.failure.message).toMatch(/at least one question/iu);
+          }
+          expect(yield* fs.exists(fixture.output)).toBeFalsy();
         }
       }),
-    ));
+    );
+  });
 
-  it('validates IDs and answer references across the assembled bank', () =>
-    run(
-      Effect.gen(function* () {
+  it('validates IDs and answer references across the assembled bank', async () => {
+    await run(
+      Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
         const [first, second] = fixture.questions;
-        if (!first || !second) throw new Error('Missing preview questions');
+        if (!first || !second) {
+          throw new Error('Missing preview questions');
+        }
         const cases = [
           {
+            error: /duplicate question ID/iu,
             input: { ...fixture.input, questions: [first] },
             questions: fixture.questions,
-            error: /duplicate question ID/i,
           },
           {
+            error: /duplicate question ID/iu,
             input: {
               ...fixture.input,
               questionFiles: ['questions/core.json', 'questions/core.json'],
             },
             questions: fixture.questions,
-            error: /duplicate question ID/i,
           },
           {
+            error: /unknown domain/iu,
             input: fixture.input,
             questions: [{ ...first, domainId: 'unknown' }],
-            error: /unknown domain/i,
           },
           {
+            error: /duplicate domain ID/iu,
             input: {
               ...fixture.input,
               metadata: {
@@ -114,7 +122,6 @@ describe('build command', () => {
               },
             },
             questions: fixture.questions,
-            error: /duplicate domain ID/i,
           },
           ...[
             { ...first, correctOptionIds: ['unknown'] },
@@ -130,36 +137,41 @@ describe('build command', () => {
             { ...second, correctOptionIds: ['tests'] },
             { ...second, correctOptionIds: ['tests', 'types', 'guess'] },
           ].map((question) => ({
+            error: /invalid options or correct answer IDs/iu,
             input: fixture.input,
             questions: [question],
-            error: /invalid options or correct answer IDs/i,
           })),
         ];
         for (const scenario of cases) {
           yield* writeJson(fixture.authoringPath, scenario.input);
           yield* writeJson(`${fixture.root}/authoring/questions/core.json`, scenario.questions);
           const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
-          expect(Result.isFailure(result)).toBe(true);
-          if (Result.isFailure(result)) expect(result.failure.message).toMatch(scenario.error);
-          expect(yield* fs.exists(fixture.output)).toBe(false);
+          expect(Result.isFailure(result)).toBeTruthy();
+          if (Result.isFailure(result)) {
+            expect(result.failure.message).toMatch(scenario.error);
+          }
+          expect(yield* fs.exists(fixture.output)).toBeFalsy();
         }
       }),
-    ));
+    );
+  });
 
-  it('assembles inline questions and multiple files reproducibly in declaration order', () =>
-    run(
-      Effect.gen(function* () {
+  it('assembles inline questions and multiple files reproducibly in declaration order', async () => {
+    await run(
+      Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
         const [first, second] = fixture.questions;
-        if (!first || !second) throw new Error('Missing preview questions');
+        if (!first || !second) {
+          throw new Error('Missing preview questions');
+        }
         const inline = { ...first, id: 'inline-q3', prompt: 'Which outcome means a check passed?' };
         yield* writeJson(`${fixture.root}/authoring/questions/core.json`, [first]);
         yield* writeJson(`${fixture.root}/authoring/questions/extra.json`, [second]);
         yield* writeJson(fixture.authoringPath, {
           ...fixture.input,
-          questions: [inline],
           questionFiles: ['questions/core.json', 'questions/extra.json'],
+          questions: [inline],
         });
         yield* buildPack(fixture.authoringPath, fixture.output);
         const modular = yield* fs.readFileString(`${fixture.output}/preview-pack.json`);
@@ -173,29 +185,31 @@ describe('build command', () => {
           modular,
         );
         const { pack } = yield* verifyPack(`${fixture.output}/preview-pack.json`);
-        expect(pack.questions.map(({ id }) => id).sort()).toEqual([
+        expect(pack.questions.map(({ id }) => id).toSorted()).toStrictEqual([
           'core-q1',
           'core-q2',
           'inline-q3',
         ]);
       }),
-    ));
+    );
+  });
 
-  it('reports the modular filename for malformed JSON or invalid question schemas', () =>
-    run(
-      Effect.gen(function* () {
+  it('reports the modular filename for malformed JSON or invalid question schemas', async () => {
+    await run(
+      Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
         for (const content of ['{', '{ "questions": [] }', '[{ "id": "missing-fields" }]']) {
           yield* fs.writeFileString(`${fixture.root}/authoring/questions/core.json`, content);
           const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
-          expect(Result.isFailure(result)).toBe(true);
+          expect(Result.isFailure(result)).toBeTruthy();
           if (Result.isFailure(result)) {
             expect(result.failure.message).toContain('questions/core.json');
-            expect(result.failure.message).toMatch(/invalid question file/i);
+            expect(result.failure.message).toMatch(/invalid question file/iu);
           }
-          expect(yield* fs.exists(fixture.output)).toBe(false);
+          expect(yield* fs.exists(fixture.output)).toBeFalsy();
         }
       }),
-    ));
+    );
+  });
 });

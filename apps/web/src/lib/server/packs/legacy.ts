@@ -1,38 +1,34 @@
-type CitationRecord = Record<string, unknown> & {
-  path?: unknown;
-  label?: unknown;
-};
-type QuestionRecord = Record<string, unknown> & { sources?: unknown };
-type PackRecord = Record<string, unknown> & { questions?: unknown };
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
-export function normalizeLegacyCitations(input: unknown): unknown {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) return input;
-  const record = input as PackRecord;
-  if (!Array.isArray(record.questions)) return input;
-  return {
-    ...record,
-    questions: record.questions.map((question) => {
-      if (!question || typeof question !== 'object' || Array.isArray(question)) return question;
-      const questionRecord = question as QuestionRecord;
-      if (!Array.isArray(questionRecord.sources)) return question;
-      return {
-        ...questionRecord,
-        sources: questionRecord.sources.map((source) => {
-          const citation = source as CitationRecord;
-          if (!source || typeof source !== 'object' || Array.isArray(source)) {
-            return source;
-          }
-          const supportedKeys = ['path', 'label', 'kind', 'section', 'documentationUrls'];
-          if (
-            typeof citation.path !== 'string' ||
-            typeof citation.label !== 'string' ||
-            Object.keys(citation).every((key) => supportedKeys.includes(key))
-          ) {
-            return source;
-          }
-          return { path: citation.path, label: citation.label };
-        }),
-      };
-    }),
-  };
-}
+const normalizeSource = (source: unknown): unknown => {
+  if (!isRecord(source)) {
+    return source;
+  }
+  const supportedKeys = new Set(['path', 'label', 'kind', 'section', 'documentationUrls']);
+  if (
+    typeof source['path'] !== 'string' ||
+    typeof source['label'] !== 'string' ||
+    Object.keys(source).every((key) => supportedKeys.has(key))
+  ) {
+    return source;
+  }
+  return { label: source['label'], path: source['path'] };
+};
+
+const normalizeQuestion = (question: unknown): unknown => {
+  if (!isRecord(question) || !Array.isArray(question['sources'])) {
+    return question;
+  }
+  return { ...question, sources: question['sources'].map(normalizeSource) };
+};
+
+export const normalizeLegacyCitations = (input: unknown): unknown => {
+  if (!isRecord(input)) {
+    return input;
+  }
+  if (!Array.isArray(input['questions'])) {
+    return input;
+  }
+  return { ...input, questions: input['questions'].map(normalizeQuestion) };
+};

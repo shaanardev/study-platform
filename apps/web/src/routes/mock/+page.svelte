@@ -23,13 +23,15 @@
   );
   let remaining = $derived(data.attempt ? Math.max(0, data.attempt.deadline - now) : 0);
   let savedAnswers = $derived(
-    new Map(data.attempt?.answers.map((answer) => [answer.questionId, answer.answerIds]) ?? []),
+    new Map(data.attempt?.answers.map((answer) => [answer.questionId, answer.answerIds])),
   );
 
   onMount(() => {
     const timer = window.setInterval(() => {
       now = Date.now();
-      if (data.attempt?.status === 'in_progress' && remaining <= 0) window.location.reload();
+      if (data.attempt?.status === 'in_progress' && remaining <= 0) {
+        window.location.reload();
+      }
     }, 1000);
     return () => window.clearInterval(timer);
   });
@@ -40,18 +42,18 @@
   <meta name="description" content="Take a timed mock exam from an imported exam pack." />
 </svelte:head>
 
-<main class="min-h-screen bg-app-canvas px-4 pb-20 pt-8 text-app-ink sm:px-6">
+<main class="bg-app-canvas text-app-ink min-h-screen px-4 pt-8 pb-20 sm:px-6">
   <div class="mx-auto w-full max-w-215">
     <a
-      class="inline-block font-semibold text-brand underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
+      class="text-brand focus-visible:outline-focus-gold inline-block font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
       href={resolve('/')}>← Exam pack library</a
     >
     <header class="my-8 max-w-175">
-      <p class="mb-2 text-xs font-bold tracking-eyebrow text-brand-label uppercase">Timed mock</p>
-      <h1 class="mb-3 text-page-title-medium leading-page-title font-bold tracking-page-title">
+      <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">Timed mock</p>
+      <h1 class="text-page-title-medium leading-page-title tracking-page-title mb-3 font-bold">
         Mock exam
       </h1>
-      <p class="m-0 leading-relaxed text-body-muted">
+      <p class="text-body-muted m-0 leading-relaxed">
         Questions follow the imported exam blueprint. Your attempt stays tied to the exact pack
         version you started with.
       </p>
@@ -59,11 +61,11 @@
 
     {#if data.attempt?.status === 'in_progress'}
       <section
-        class="my-5 flex flex-col justify-between gap-4 rounded-2xl border border-card-border bg-panel-tint p-4 sm:flex-row sm:items-center sm:p-6"
+        class="border-card-border bg-panel-tint my-5 flex flex-col justify-between gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:p-6"
         aria-live="polite"
       >
         <div>
-          <p class="mb-2 text-xs font-bold tracking-eyebrow text-brand-label uppercase">
+          <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
             Time remaining
           </p>
           <strong class="text-3xl tabular-nums"
@@ -72,7 +74,7 @@
             ).padStart(2, '0')}</strong
           >
         </div>
-        <p class="m-0 text-mock-muted">
+        <p class="text-mock-muted m-0">
           {data.attempt.answers.length}
           of {data.attempt.questionIds.length} answers saved ·
           {data.attempt.packId}
@@ -83,35 +85,35 @@
 
     {#if data.attempt?.status !== 'in_progress'}
       {#if data.packs.length === 0}
-        <section class="card my-5 rounded-2xl border border-card-border bg-white p-4 sm:p-6">
+        <section class="card border-card-border my-5 rounded-2xl border bg-white p-4 sm:p-6">
           <h2 class="mb-3 text-xl font-semibold">No exam packs are available yet</h2>
           <p>Import a pack from the exam pack library to start a mock exam.</p>
           <a
-            class="font-semibold text-brand underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
+            class="text-brand focus-visible:outline-focus-gold font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
             href={resolve('/')}>Open exam pack library</a
           >
         </section>
       {:else}
         <section
-          class="card my-5 rounded-2xl border border-card-border bg-white p-4 sm:p-6"
+          class="card border-card-border my-5 rounded-2xl border bg-white p-4 sm:p-6"
           aria-labelledby="setup-heading"
         >
           <h2 id="setup-heading" class="mb-5 text-xl font-semibold">Choose a mock exam</h2>
           <form
-            method="GET"
-            action={resolve('/mock')}
             class="grid gap-3 sm:grid-cols-2 sm:items-center"
+            action={resolve('/mock')}
+            method="GET"
           >
             <label class="font-bold" for="pack-preview">Exam pack version</label>
             <select
-              class="select min-h-12 w-full rounded-lg border border-control-border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
               id="pack-preview"
               name="packChoice"
-              value={effectivePackKey}
+              class="select border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
               onchange={(event) => (selectedPackKey = event.currentTarget.value)}
+              value={effectivePackKey}
             >
               {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
-                <option value={`${pack.examId}|${pack.packId}|${pack.packVersion}`}>
+                <option value="{pack.examId}|{pack.packId}|{pack.packVersion}">
                   {pack.examTitle}
                   · {pack.packTitle} · v{pack.packVersion}{pack.synthetic ? ' · synthetic' : ''}
                 </option>
@@ -119,25 +121,25 @@
             </select>
             <label class="font-bold" for="count-preview">Requested question count</label>
             <input
-              class="input min-h-12 w-full rounded-lg border border-control-border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
               id="count-preview"
               name="count"
-              type="number"
-              min="1"
+              class="input border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
               max="100"
-              value={effectiveQuestionCount}
+              min="1"
               onchange={(event) => (selectedQuestionCount = Number(event.currentTarget.value))}
               required
+              type="number"
+              value={effectiveQuestionCount}
             />
             <button
-              class="btn inline-flex min-h-12 items-center justify-center rounded-lg border border-control-muted bg-control-fill px-4 py-3 font-bold text-brand hover:bg-panel-tint focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3 sm:col-span-2"
+              class="btn border-control-muted bg-control-fill text-brand hover:bg-panel-tint focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg border px-4 py-3 font-bold focus-visible:outline-3 focus-visible:outline-offset-3 sm:col-span-2"
               type="submit"
             >
               Check weighted coverage
             </button>
           </form>
           {#if selectedCoverage}
-            <div class="my-5 border-t border-divider pt-4" aria-live="polite">
+            <div class="border-divider my-5 border-t pt-4" aria-live="polite">
               <h3 class="mb-3 text-base font-semibold">
                 Blueprint coverage for {selectedCoverage.questionCount} questions
               </h3>
@@ -162,7 +164,7 @@
                 {/each}
               </ul>
               {#if selectedCoverage.gaps.length}
-                <p class="mt-4 text-error-text">
+                <p class="text-error-text mt-4">
                   This pack cannot cover the requested weighted mock. Import more questions for the
                   domains listed above. Practice quizzes remain available.
                 </p>
@@ -170,10 +172,10 @@
             </div>
           {/if}
           {#if form?.message}
-            <p class="mt-4 text-error-text" role="alert">{form.message}</p>
+            <p class="text-error-text mt-4" role="alert">{form.message}</p>
           {/if}
           {#if form?.gaps?.length}
-            <ul class="mt-4 grid gap-2 pl-5 text-error-text" role="alert">
+            <ul class="text-error-text mt-4 grid gap-2 pl-5" role="alert">
               {#each form.gaps as gap (gap.id)}
                 <li>
                   {gap.title}: needs {gap.required}, has {gap.available} (missing {gap.missing})
@@ -182,29 +184,29 @@
             </ul>
           {/if}
           <form
-            method="POST"
+            class="border-divider mt-5 grid gap-3 border-t pt-4"
             action={resolve('/mock?/start')}
-            class="mt-5 grid gap-3 border-t border-divider pt-4"
+            method="POST"
           >
-            <input type="hidden" name="examId" value={selectedPack?.examId ?? ''} />
-            <input type="hidden" name="packId" value={selectedPack?.packId ?? ''} />
-            <input type="hidden" name="packVersion" value={selectedPack?.packVersion ?? ''} />
-            <input type="hidden" name="questionCount" value={effectiveQuestionCount} />
+            <input name="examId" type="hidden" value={selectedPack?.examId ?? ''} />
+            <input name="packId" type="hidden" value={selectedPack?.packId ?? ''} />
+            <input name="packVersion" type="hidden" value={selectedPack?.packVersion ?? ''} />
+            <input name="questionCount" type="hidden" value={effectiveQuestionCount} />
             <label class="font-bold" for="duration">Time limit in minutes</label>
             <input
-              class="input min-h-12 w-full rounded-lg border border-control-border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
               id="duration"
               name="durationMinutes"
-              type="number"
-              min="1"
+              class="input border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
               max="600"
-              bind:value={durationMinutes}
+              min="1"
               required
+              type="number"
+              bind:value={durationMinutes}
             />
             <button
-              class="btn inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-4 py-3 font-bold text-white hover:bg-brand-hover-deep focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3 disabled:cursor-not-allowed disabled:opacity-50"
-              type="submit"
+              class="btn bg-brand hover:bg-brand-hover-deep focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!selectedPack || (selectedCoverage?.gaps.length ?? 1) > 0}
+              type="submit"
             >
               Start timed mock
             </button>
@@ -215,19 +217,19 @@
 
     {#if data.attempt}
       <section
-        class="card my-5 rounded-2xl border border-card-border bg-white p-4 sm:p-6"
+        class="card border-card-border my-5 rounded-2xl border bg-white p-4 sm:p-6"
         aria-label="Mock exam attempt"
       >
         {#if data.attempt.status === 'in_progress'}
-          <p class="rounded-lg bg-panel-tint p-4">
+          <p class="bg-panel-tint rounded-lg p-4">
             Correct answers and explanations will appear after you submit or the timer expires.
           </p>
         {:else}
           <div
-            class="mb-6 rounded-lg feedback-border-width border-feedback-positive-border bg-feedback-positive-fill p-4"
+            class="feedback-border-width border-feedback-positive-border bg-feedback-positive-fill mb-6 rounded-lg p-4"
             role="status"
           >
-            <p class="mb-2 text-xs font-bold tracking-eyebrow text-brand-label uppercase">
+            <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
               {data.attempt.status === 'expired' ? 'Time expired' : 'Submitted'}
               · {data.attempt.packId} v{data.attempt.packVersion}
             </p>
@@ -254,17 +256,17 @@
           </div>
         {/if}
         {#each data.attempt.questions as question, index (question.id)}
-          <article class="mt-6 border-t border-divider pt-5">
-            <p class="mb-2 text-xs font-bold tracking-eyebrow text-brand-label uppercase">
+          <article class="border-divider mt-6 border-t pt-5">
+            <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
               {index + 1}
               of {data.attempt.questions.length} · {question.domainId}
             </p>
             <h2 class="mb-4 text-xl/relaxed font-semibold">{question.prompt}</h2>
             {#if data.attempt.status === 'in_progress'}
-              <form method="POST" action={resolve('/mock?/answer')} class="grid gap-3">
-                <input type="hidden" name="attemptId" value={data.attempt.id} />
-                <input type="hidden" name="questionId" value={question.id} />
-                <fieldset class="my-2 grid min-w-0 gap-1 rounded-xl border border-card-border p-4">
+              <form class="grid gap-3" action={resolve('/mock?/answer')} method="POST">
+                <input name="attemptId" type="hidden" value={data.attempt.id} />
+                <input name="questionId" type="hidden" value={question.id} />
+                <fieldset class="border-card-border my-2 grid min-w-0 gap-1 rounded-xl border p-4">
                   <legend class="font-bold">
                     {question.type === 'multiple_choice'
                       ? 'Select all that apply'
@@ -272,20 +274,20 @@
                   </legend>
                   {#each question.options as option (option.id)}
                     <label
-                      class="flex items-start gap-3 rounded-md px-1 py-3 font-medium has-checked:bg-panel-tint focus-within:outline-2 focus-within:outline-focus-gold"
+                      class="has-checked:bg-panel-tint focus-within:outline-focus-gold flex items-start gap-3 rounded-md px-1 py-3 font-medium focus-within:outline-2"
                       ><input
-                        type={question.type === 'multiple_choice' ? 'checkbox' : 'radio'}
                         name="answerIds"
-                        value={option.id}
-                        class="mt-0.5 size-answer-control accent-brand focus-visible:outline-2 focus-visible:outline-focus-gold"
+                        class="size-answer-control accent-brand focus-visible:outline-focus-gold mt-0.5 focus-visible:outline-2"
                         checked={savedAnswers.get(question.id)?.includes(option.id) ?? false}
                         required={question.type === 'single_choice'}
+                        type={question.type === 'multiple_choice' ? 'checkbox' : 'radio'}
+                        value={option.id}
                       /><span>{option.text}</span></label
                     >
                   {/each}
                 </fieldset>
                 <button
-                  class="btn inline-flex min-h-12 items-center justify-center rounded-lg border border-control-muted bg-control-fill px-4 py-3 font-bold text-brand hover:bg-panel-tint focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
+                  class="btn border-control-muted bg-control-fill text-brand hover:bg-panel-tint focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg border px-4 py-3 font-bold focus-visible:outline-3 focus-visible:outline-offset-3"
                   type="submit"
                 >
                   Save answer
@@ -323,13 +325,13 @@
         {/each}
         {#if data.attempt.status === 'in_progress'}
           <form
-            method="POST"
+            class="border-divider mt-8 grid gap-3 border-t pt-5"
             action={resolve('/mock?/submit')}
-            class="mt-8 grid gap-3 border-t border-divider pt-5"
+            method="POST"
           >
-            <input type="hidden" name="attemptId" value={data.attempt.id} />
+            <input name="attemptId" type="hidden" value={data.attempt.id} />
             <button
-              class="btn inline-flex min-h-12 items-center justify-center rounded-lg bg-brand px-4 py-3 font-bold text-white hover:bg-brand-hover-deep focus-visible:outline-3 focus-visible:outline-focus-gold focus-visible:outline-offset-3"
+              class="btn bg-brand hover:bg-brand-hover-deep focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
               type="submit"
             >
               Submit mock exam

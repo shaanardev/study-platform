@@ -10,8 +10,8 @@
   "scripts": {
     "packs": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint && oxfmt --config ../../.oxfmtrc.json --check src test package.json tsconfig.json oxlint.config.ts vitest.config.ts",
-    "lint:fix": "oxlint --fix && oxfmt --config ../../.oxfmtrc.json --write src test package.json tsconfig.json oxlint.config.ts vitest.config.ts",
+    "lint": "ultracite check",
+    "lint:fix": "ultracite fix",
     "test": "vitest run",
     "prepare": "effect-tsgo patch --typescript --oxlint",
     "verify": "pnpm lint:fix && pnpm typecheck && pnpm test"
@@ -27,6 +27,7 @@
     "oxlint-tsgolint": "7.0.2003",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
+    "ultracite": "8.0.0",
     "vitest": "^5.0.3"
   },
   "packageManager": "pnpm@12.6.0"

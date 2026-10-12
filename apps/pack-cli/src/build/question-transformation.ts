@@ -6,7 +6,7 @@ import type { AssembledAuthoring } from './authoring-validation.js';
 export const shuffleQuestions: (
   input: AssembledAuthoring,
   localNoteUrls: ReadonlyMap<string, string>,
-) => Effect.Effect<BuiltExamQuestion[]> = Effect.fn('shuffleQuestions')(function* (
+) => Effect.Effect<BuiltExamQuestion[]> = Effect.fn('shuffleQuestions')(function* shuffleQuestions(
   input: AssembledAuthoring,
   localNoteUrls: ReadonlyMap<string, string>,
 ) {
@@ -22,7 +22,7 @@ export const shuffleQuestions: (
     });
     groups.set(key, group);
   }
-  yield* Effect.gen(function* () {
+  yield* Effect.gen(function* shuffleAnswerPositions() {
     for (const group of groups.values()) {
       const shuffledPositions = yield* Random.shuffle(group.map((item) => item.position));
       for (const [item, position] of Arr.zip(group, shuffledPositions)) {
@@ -33,10 +33,10 @@ export const shuffleQuestions: (
   const result = yield* Effect.forEach(
     Arr.zip(input.questions, answerPositions),
     ([question, position]) =>
-      Effect.gen(function* () {
+      Effect.gen(function* transformQuestion() {
         const correct = question.correctOptionIds.flatMap((id) => {
-          const option = question.options.find((option) => option.id === id);
-          return option === undefined ? [] : [option];
+          const matchingOption = question.options.find((option) => option.id === id);
+          return matchingOption === undefined ? [] : [matchingOption];
         });
         const correctIds = new Set(question.correctOptionIds);
         const wrong = question.options.filter((option) => !correctIds.has(option.id));
@@ -44,26 +44,27 @@ export const shuffleQuestions: (
         const options = [...shuffledWrong];
         options.splice(position, 0, ...correct);
         const letters = options.map((option, index) => ({
-          id: String.fromCharCode(97 + index),
+          id: String.fromCodePoint(97 + index),
           text: option.text,
         }));
         return {
-          id: question.id,
-          type: question.type,
-          domainId: question.domainId,
-          prompt: question.prompt,
-          options: letters,
           answerIds: letters.slice(position, position + correct.length).map((option) => option.id),
+          domainId: question.domainId,
           explanation: question.explanation,
+          id: question.id,
+          options: letters,
+          prompt: question.prompt,
           sources: question.sources.map((source) => {
             if ('kind' in source) {
               const localNoteUrl = localNoteUrls.get(source.path);
-              if (localNoteUrl === undefined)
+              if (localNoteUrl === undefined) {
                 throw new Error(`Missing resolved local-note URL: ${source.path}`);
-              return { path: localNoteUrl, label: source.label };
+              }
+              return { label: source.label, path: localNoteUrl };
             }
             return { ...source, path: `${input.assetsDirectory}/${source.path}` };
           }),
+          type: question.type,
         };
       }),
     { concurrency: CONCURRENCY_LIMIT },

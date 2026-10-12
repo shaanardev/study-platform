@@ -2,43 +2,26 @@
 
 ## Implementation Update — 2026-10-12
 
-The migration is implemented in the current `main` checkout. The sections below this update retain
-the original research snapshot; their old paths and proposed next actions describe the pre-migration
-state. Use [README.md](README.md) and [AGENTS.md](AGENTS.md) for current commands and conventions.
+The migration is implemented in the current `main` checkout. The sections below this update retain the original research snapshot; their old paths and proposed next actions describe the pre-migration state. Use [README.md](README.md) and [AGENTS.md](AGENTS.md) for current commands and conventions.
 
 - Web app: `apps/web/`; pack CLI: `apps/pack-cli/`. Root `package.json` orchestrates the workspace.
-- Biome dependency/configuration/commands are removed. Root `.oxlintrc.json` supplies the common
-  baseline; the CLI imports it and retains its scoped Effect preset, patched Oxlint, and TypeScript 7.
-- The web app retains TypeScript 6. ESLint and the official Svelte plugin cover components, rune
-  modules, framework rules, and selected typed safety checks. `svelte-check` remains required.
-- Root `.oxfmtrc.json` owns formatting with Svelte enabled and import sorting. App commands pass
-  that configuration explicitly. Lint fixes use safe defaults rather than Biome's former `--unsafe`.
-- General CSS semantic lint checks remain omitted. Tailwind linting is now restored through the web
-  ESLint configuration using `eslint-plugin-better-tailwindcss`: shorthand and canonical utilities,
-  duplicate/conflicting/unknown/deprecated classes, and restrictions approximating Biome's arbitrary
-  values/properties and raw palette color policies. Exact existing styles use named theme tokens and
-  utilities; Oxfmt retains formatting ownership. Some Biome-only style/type checks and dedicated JSON
-  duplicate-key linting have no replacement; these omissions are documented.
-- Packs remain repository content. The web app resolves packs and `.local/exam-packs.sqlite` from
-  the workspace root independent of its launch directory. Existing user data was not relocated.
-- Fixture paths, nested output ignores, editor settings, pack instructions, and Svelte agent check
-  commands are updated. No worktrees or commits were created.
+- Biome dependency/configuration/commands are removed. Root `oxlint.config.ts` and `oxfmt.config.ts` extend Ultracite's Oxlint and Oxfmt presets and retain the repository's custom rules and formatting settings. The CLI has its own config with the Effect preset and type-aware rules.
+- The web app retains TypeScript 6. ESLint and the official Svelte plugin cover components, rune modules, framework rules, and selected typed safety checks; Prettier handles its formatting. `svelte-check` remains required.
+- Both workspace `lint` scripts use `ultracite check`, and both `lint:fix` scripts use `ultracite fix`. The root scripts aggregate these workspace commands.
+- General CSS semantic lint checks remain omitted. Tailwind linting is enforced through the web ESLint configuration using `eslint-plugin-better-tailwindcss`: shorthand and canonical utilities, duplicate/conflicting/unknown/deprecated classes, and restrictions approximating Biome's arbitrary values/properties and raw palette color policies. Exact existing styles use named theme tokens and utilities. Some Biome-only style/type checks and dedicated JSON duplicate-key linting have no replacement; these omissions are documented.
+- Packs remain repository content. The web app resolves packs and `.local/exam-packs.sqlite` from the workspace root independent of its launch directory. Existing user data was not relocated.
+- Fixture paths, nested output ignores, editor settings, pack instructions, and Svelte agent check commands are updated. No worktrees or commits were created.
 - Pack-contract consolidation is still a separate required follow-up; no contract package was added.
 
-Verification evidence: `pnpm verify:all` passed (48 web tests, 34 CLI tests), `pnpm build` passed,
-and all six Svelte components passed MCP autofixer. Root CLI wrappers built and verified a temporary
-pack. The root web launcher served `exam-pack.schema.json` byte-for-byte from root pack content.
-Lint probes confirmed rune module support and rejection of raw HTML and floating promises.
-The CLI still reports Effect unstable API warnings, which remain warnings.
+Verification evidence: `pnpm verify:all` passed (48 web tests, 34 CLI tests). Root and CLI Ultracite doctors report no warnings or failures; the web doctor reports only the two optional Stylelint notices because the project relies on Tailwind-specific ESLint checks and has no Stylelint setup. Both app TypeScript checks and standalone TypeScript checks for the root Oxlint and Oxfmt configs pass. The CLI still reports Effect unstable API warnings, which remain warnings.
 
 ## Handoff State
 
 - Snapshot date: 2026-10-12
 - Repository: `/home/sarora/projects/learning-platform`
 - Git branch at inspection: `main`
-- Migration status: researched and discussed; implementation has not started.
-- This handoff file is the only intended workspace change in this turn.
-- Do not infer that project structure or lint configuration has already been migrated.
+- Migration status: implemented; see the current implementation update at the top of this file.
+- The following sections retain research from before the app relocation and migration. Treat their paths and proposed next actions as historical context, not current instructions.
 
 ## Objective
 

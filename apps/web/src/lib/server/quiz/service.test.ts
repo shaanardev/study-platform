@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -22,58 +22,75 @@ import {
 } from '#lib/server/quiz/service.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
-const directories: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(
-    directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
-  );
-});
-
-async function setup() {
-  const directory = await mkdtemp(join(tmpdir(), 'practice-quiz-'));
-  directories.push(directory);
-  const databasePath = join(directory, 'practice.sqlite');
-  const pack = validateExamPack(
-    JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf8')),
-  );
-  if (!pack.valid) throw new Error(pack.errors.join(' '));
-  saveImportedPack(databasePath, pack.pack);
-  return { databasePath, pack: pack.pack };
-}
-
 describe('practice sessions', () => {
+  const directories: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(
+      directories.splice(0).map(async (directory) => {
+        await rm(directory, { force: true, recursive: true });
+      }),
+    );
+  });
+
+  const setup = async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), 'practice-quiz-'));
+    directories.push(directory);
+    const databasePath = path.join(directory, 'practice.sqlite');
+    const pack = validateExamPack(
+      JSON.parse(
+        await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
+      ),
+    );
+    if (!pack.valid) {
+      throw new Error(pack.errors.join(' '));
+    }
+    saveImportedPack(databasePath, pack.pack);
+    return { databasePath, pack: pack.pack };
+  };
+
   it('grades multiple choice by exact answer set and persists the answer for resume', async () => {
     const { databasePath, pack } = await setup();
     const session = createPracticeSession({
       databasePath,
+      domainIds: ['pipelines'],
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionCount: 1,
-      domainIds: ['pipelines'],
       random: () => 0,
     });
-    expect(session.questions[0]).not.toHaveProperty('answerIds');
     const result = answerQuestion(databasePath, session.id, 'pipeline-validation-basics', ['a']);
+    const saved = getPracticeSession(databasePath, session.id);
 
-    expect(result.correct).toBe(false);
-    expect(result.answerIds).toEqual(['a']);
-    expect(result.answerIdsCorrect).toEqual(['a', 'b']);
-    expect(result.explanation).toContain('Quality checks');
-    expect(getPracticeSession(databasePath, session.id)?.answers).toHaveLength(1);
-    expect(getPracticeSession(databasePath, session.id)?.answers[0]?.answerIds).toEqual(['a']);
+    expect({
+      correct: result.correct,
+      correctAnswerIds: result.answerIdsCorrect,
+      explanationContainsExpectedText: result.explanation.includes('Quality checks'),
+      hiddenAnswerIds: Object.hasOwn(session.questions[0] ?? {}, 'answerIds'),
+      persistedAnswerCount: saved?.answers.length,
+      persistedAnswerIds: saved?.answers[0]?.answerIds,
+      submittedAnswerIds: result.answerIds,
+    }).toStrictEqual({
+      correct: false,
+      correctAnswerIds: ['a', 'b'],
+      explanationContainsExpectedText: true,
+      hiddenAnswerIds: false,
+      persistedAnswerCount: 1,
+      persistedAnswerIds: ['a'],
+      submittedAnswerIds: ['a'],
+    });
   });
 
   it('favours unseen questions first and offers missed questions again within the chosen domain', async () => {
     const { databasePath, pack } = await setup();
     const first = createPracticeSession({
       databasePath,
+      domainIds: ['pipelines'],
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionCount: 1,
-      domainIds: ['pipelines'],
       random: () => 0,
     });
     answerQuestion(databasePath, first.id, 'pipeline-validation-basics', ['c']);
@@ -88,16 +105,16 @@ describe('practice sessions', () => {
     });
     const retry = createPracticeSession({
       databasePath,
+      domainIds: ['pipelines'],
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionCount: 1,
-      domainIds: ['pipelines'],
       random: () => 0,
     });
 
-    expect(broad.questionIds).toEqual(['delta-transaction-basics']);
-    expect(retry.questionIds).toEqual(['pipeline-validation-basics']);
+    expect(broad.questionIds).toStrictEqual(['delta-transaction-basics']);
+    expect(retry.questionIds).toStrictEqual(['pipeline-validation-basics']);
   });
 
   it('starts a practice session with the exact missed questions selected from progress', async () => {
@@ -111,21 +128,25 @@ describe('practice sessions', () => {
       questionIds: ['pipeline-validation-basics'],
     });
 
-    expect(selected.questionIds).toEqual(['pipeline-validation-basics']);
+    expect(selected.questionIds).toStrictEqual(['pipeline-validation-basics']);
   });
 
   it('keeps a citation excerpt available from the imported snapshot', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'practice-quiz-source-'));
+    const directory = await mkdtemp(path.join(tmpdir(), 'practice-quiz-source-'));
     directories.push(directory);
-    const incoming = join(directory, 'incoming');
-    const databasePath = join(directory, 'practice.sqlite');
+    const incoming = path.join(directory, 'incoming');
+    const databasePath = path.join(directory, 'practice.sqlite');
     await createSamplePackFolder(incoming);
     const pack = validateExamPack(
-      JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf8')),
+      JSON.parse(
+        await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
+      ),
     );
-    if (!pack.valid) throw new Error(pack.errors.join(' '));
-    const result = await importPacksFromFolder({ folder: incoming, databasePath });
-    await rm(incoming, { recursive: true, force: true });
+    if (!pack.valid) {
+      throw new Error(pack.errors.join(' '));
+    }
+    const result = await importPacksFromFolder({ databasePath, folder: incoming });
+    await rm(incoming, { force: true, recursive: true });
 
     const source = await readQuestionSource(
       databasePath,
@@ -136,38 +157,40 @@ describe('practice sessions', () => {
       'assets/synthetic-notes.md',
     );
 
-    expect(result.errors).toEqual([]);
+    expect(result.errors).toStrictEqual([]);
     expect(source.label).toBe('Synthetic study notes, section 1');
     expect(source.text).toContain('transaction log');
   });
 
   it('opens an absolute file citation selected from the imported pack', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'practice-file-source-'));
+    const directory = await mkdtemp(path.join(tmpdir(), 'practice-file-source-'));
     directories.push(directory);
-    const incoming = join(directory, 'incoming');
-    const notePath = join(directory, 'outside.md');
-    const databasePath = join(directory, 'practice.sqlite');
+    const incoming = path.join(directory, 'incoming');
+    const notePath = path.join(directory, 'outside.md');
+    const databasePath = path.join(directory, 'practice.sqlite');
     await createSamplePackFolder(incoming);
     await writeFile(notePath, 'Local citation content.\n');
-    const packPath = join(incoming, 'sample-learning-pack.json');
-    const authored = JSON.parse(await readFile(packPath, 'utf8')) as {
-      exam: { id: string };
-      questions: { id: string; sources: { path: string; label: string }[] }[];
-    };
-    const firstQuestion = authored.questions[0];
+    const packPath = path.join(incoming, 'sample-learning-pack.json');
+    const parsed = validateExamPack(JSON.parse(await readFile(packPath, 'utf-8')));
+    if (!parsed.valid) {
+      throw new Error(parsed.errors.join(' '));
+    }
+    const authored = parsed.pack;
+    const [firstQuestion] = authored.questions;
     const bundledCitation = firstQuestion?.sources[0];
-    if (!firstQuestion || !bundledCitation)
+    if (!firstQuestion || !bundledCitation) {
       throw new Error('Missing representative question source.');
-    const noteCitation = { path: pathToFileURL(notePath).href, label: 'Local notes' };
+    }
+    const noteCitation = { label: 'Local notes', path: pathToFileURL(notePath).href };
     firstQuestion.sources.push(noteCitation);
     await writeFile(packPath, JSON.stringify(authored));
 
     const imported = await importPacksFromFolder({
-      folder: incoming,
-      databasePath,
       approvedSourceRoot: directory,
+      databasePath,
+      folder: incoming,
     });
-    await rm(incoming, { recursive: true, force: true });
+    await rm(incoming, { force: true, recursive: true });
     const bundled = await readQuestionSource(
       databasePath,
       authored.exam.id,
@@ -185,9 +208,24 @@ describe('practice sessions', () => {
       noteCitation.path,
     );
 
-    expect(imported.errors).toEqual([]);
-    expect(bundled.text).toContain('transaction log');
-    expect(note).toEqual({ label: 'Local notes', text: 'Local citation content.\n' });
+    expect({
+      bundledContainsExpectedCitation: bundled.text.includes('transaction log'),
+      importedErrors: imported.errors,
+      localNote: note,
+      savedAsset: getImportedSourceAsset(
+        databasePath,
+        authored.exam.id,
+        'synthetic-foundations',
+        '1.0.0',
+        firstQuestion.id,
+        noteCitation.path,
+      ),
+    }).toStrictEqual({
+      bundledContainsExpectedCitation: true,
+      importedErrors: [],
+      localNote: { label: 'Local notes', text: 'Local citation content.\n' },
+      savedAsset: { excerpt: 'Local citation content.\n', label: 'Local notes' },
+    });
     const legacyDatabase = openPackDatabase(databasePath);
     try {
       legacyDatabase
@@ -208,10 +246,10 @@ describe('practice sessions', () => {
         noteCitation.path,
       ),
     ).rejects.toMatchObject({
-      status: 404,
       body: {
         message: 'Local citation is unavailable because no approved source root was recorded.',
       },
+      status: 404,
     });
     await expect(
       readQuestionSource(
@@ -220,7 +258,7 @@ describe('practice sessions', () => {
         'synthetic-foundations',
         '1.0.0',
         firstQuestion.id,
-        pathToFileURL(join(directory, 'not-cited.md')).href,
+        pathToFileURL(path.join(directory, 'not-cited.md')).href,
       ),
     ).rejects.toMatchObject({ status: 404 });
     await expect(
@@ -233,44 +271,38 @@ describe('practice sessions', () => {
         'https://example.com/not-a-local-citation.md',
       ),
     ).rejects.toMatchObject({
-      status: 400,
       body: { message: 'Citation URL scheme is unsupported.' },
+      status: 400,
     });
-    expect(
-      getImportedSourceAsset(
-        databasePath,
-        authored.exam.id,
-        'synthetic-foundations',
-        '1.0.0',
-        firstQuestion.id,
-        noteCitation.path,
-      ),
-    ).toEqual({ label: 'Local notes', excerpt: 'Local citation content.\n' });
   });
 
   it('reauthorizes unchanged legacy citations without replacing the pack or progress', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'practice-file-reauthorize-'));
+    const directory = await mkdtemp(path.join(tmpdir(), 'practice-file-reauthorize-'));
     directories.push(directory);
-    const incoming = join(directory, 'incoming');
-    const notes = join(directory, 'notes');
-    const notePath = join(notes, 'reference.md');
-    const databasePath = join(directory, 'practice.sqlite');
+    const incoming = path.join(directory, 'incoming');
+    const notes = path.join(directory, 'notes');
+    const notePath = path.join(notes, 'reference.md');
+    const databasePath = path.join(directory, 'practice.sqlite');
     await createSamplePackFolder(incoming);
     await mkdir(notes, { recursive: true });
     await writeFile(notePath, 'Reapproved local notes.\n');
-    const packPath = join(incoming, 'sample-learning-pack.json');
-    const authored = JSON.parse(await readFile(packPath, 'utf8')) as {
-      exam: { id: string };
-      pack: { id: string; version: string; title: string };
-      questions: { id: string; sources: { path: string; label: string }[] }[];
-    };
-    const question = authored.questions[0];
+    const packPath = path.join(incoming, 'sample-learning-pack.json');
+    const parsed = validateExamPack(JSON.parse(await readFile(packPath, 'utf-8')));
+    if (!parsed.valid) {
+      throw new Error(parsed.errors.join(' '));
+    }
+    const authored = parsed.pack;
+    const [question] = authored.questions;
     const citation = question?.sources[0];
-    if (!question || !citation) throw new Error('Missing representative question citation.');
+    if (!question || !citation) {
+      throw new Error('Missing representative question citation.');
+    }
     citation.path = pathToFileURL(notePath).href;
     await writeFile(packPath, JSON.stringify(authored));
     const validated = validateExamPack(authored);
-    if (!validated.valid) throw new Error(validated.errors.join(' '));
+    if (!validated.valid) {
+      throw new Error(validated.errors.join(' '));
+    }
     saveImportedPack(databasePath, validated.pack);
     const session = createPracticeSession({
       databasePath,
@@ -284,30 +316,44 @@ describe('practice sessions', () => {
     const changedPack = { ...authored, pack: { ...authored.pack, title: 'Changed title' } };
     await writeFile(packPath, JSON.stringify(changedPack));
     const changedImport = await importPacksFromFolder({
-      folder: incoming,
-      databasePath,
       approvedSourceRoot: notes,
+      databasePath,
+      folder: incoming,
     });
     await writeFile(packPath, JSON.stringify(authored));
     const reauthorized = await importPacksFromFolder({
-      folder: incoming,
-      databasePath,
       approvedSourceRoot: notes,
+      databasePath,
+      folder: incoming,
     });
 
-    expect(changedImport.imported).toEqual([]);
-    expect(changedImport.refreshed).toEqual([]);
-    expect(changedImport.errors[0]).toContain('already imported');
-    expect(
-      getImportedPack(authored.exam.id, authored.pack.id, authored.pack.version, databasePath)?.pack
-        .title,
-    ).toBe(authored.pack.title);
-    expect(reauthorized).toEqual({
-      imported: [],
-      refreshed: [`${authored.exam.id}/${authored.pack.id}@${authored.pack.version}`],
-      errors: [],
+    expect({
+      changeErrorsMentionConflict: changedImport.errors[0]?.includes('already imported'),
+      changedImported: changedImport.imported,
+      changedRefreshed: changedImport.refreshed,
+      retainedPackTitle: getImportedPack(
+        authored.exam.id,
+        authored.pack.id,
+        authored.pack.version,
+        databasePath,
+      )?.pack.title,
+    }).toStrictEqual({
+      changeErrorsMentionConflict: true,
+      changedImported: [],
+      changedRefreshed: [],
+      retainedPackTitle: authored.pack.title,
     });
-    expect(getPracticeSession(databasePath, session.id)?.questionIds).toEqual([question.id]);
+    expect({
+      reauthorized,
+      retainedQuestionIds: getPracticeSession(databasePath, session.id)?.questionIds,
+    }).toStrictEqual({
+      reauthorized: {
+        errors: [],
+        imported: [],
+        refreshed: [`${authored.exam.id}/${authored.pack.id}@${authored.pack.version}`],
+      },
+      retainedQuestionIds: [question.id],
+    });
     await expect(
       readQuestionSource(
         databasePath,
@@ -317,6 +363,6 @@ describe('practice sessions', () => {
         question.id,
         citation.path,
       ),
-    ).resolves.toEqual({ label: citation.label, text: 'Reapproved local notes.\n' });
+    ).resolves.toStrictEqual({ label: citation.label, text: 'Reapproved local notes.\n' });
   });
 });

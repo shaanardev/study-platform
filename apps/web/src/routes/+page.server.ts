@@ -12,13 +12,17 @@ export const actions: Actions = {
     const approvedSourceRoot =
       approved && typeof rootValue === 'string' ? rootValue.trim() : undefined;
     const result =
-      approved && !approvedSourceRoot
+      approved && approvedSourceRoot !== undefined && approvedSourceRoot.length === 0
         ? {
+            errors: ['Enter the local source root you approve before importing.'],
             imported: [],
             refreshed: [],
-            errors: ['Enter the local source root you approve before importing.'],
           }
-        : await importPacksFromFolder(approvedSourceRoot ? { approvedSourceRoot } : {});
+        : await importPacksFromFolder(
+            approvedSourceRoot !== undefined && approvedSourceRoot.length > 0
+              ? { approvedSourceRoot }
+              : {},
+          );
     return { importResult: result };
   },
 };

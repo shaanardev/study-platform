@@ -1,7 +1,7 @@
 import { Schema } from 'effect';
 
-const Id = Schema.String.pipe(Schema.check(Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/)));
-const Text = Schema.String.pipe(Schema.check(Schema.isPattern(/\S/)));
+const Id = Schema.String.pipe(Schema.check(Schema.isPattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/u)));
+const Text = Schema.String.pipe(Schema.check(Schema.isPattern(/\S/u)));
 const Seed = Schema.Union([
   Schema.String,
   Schema.Number.pipe(
@@ -12,7 +12,7 @@ const Seed = Schema.Union([
 ]);
 
 const Exam = Schema.Struct({ id: Id, title: Text, version: Text });
-const Pack = Schema.Struct({ id: Id, title: Text, version: Text, synthetic: Schema.Boolean });
+const Pack = Schema.Struct({ id: Id, synthetic: Schema.Boolean, title: Text, version: Text });
 const Domain = Schema.Struct({
   id: Id,
   title: Text,
@@ -22,48 +22,48 @@ const Domain = Schema.Struct({
   ),
 });
 const Metadata = Schema.Struct({
-  schemaVersion: Schema.Literal(1),
+  domains: Schema.Array(Domain).pipe(Schema.check(Schema.isMinLength(1))),
   exam: Exam,
   pack: Pack,
-  domains: Schema.Array(Domain).pipe(Schema.check(Schema.isMinLength(1))),
   passingThreshold: Schema.optional(
-    Schema.Number.pipe(Schema.check(Schema.isBetween({ minimum: 0, maximum: 100 }))),
+    Schema.Number.pipe(Schema.check(Schema.isBetween({ maximum: 100, minimum: 0 }))),
   ),
+  schemaVersion: Schema.Literal(1),
 });
 const Option = Schema.Struct({ id: Id, text: Text });
-const BundledSource = Schema.Struct({ path: Text, label: Text });
+const BundledSource = Schema.Struct({ label: Text, path: Text });
 const LocalNoteSource = Schema.Struct({
   kind: Schema.Literal('local_note'),
-  path: Text,
   label: Text,
+  path: Text,
 });
 const Source = Schema.Union([BundledSource, LocalNoteSource]);
 const Question = Schema.Struct({
-  id: Id,
-  type: Schema.Literals(['single_choice', 'multiple_choice']),
+  correctOptionIds: Schema.Array(Id).pipe(Schema.check(Schema.isMinLength(1))),
   domainId: Id,
-  prompt: Text,
+  explanation: Text,
+  id: Id,
   options: Schema.Array(Option).pipe(
     Schema.check(Schema.isMinLength(2)),
     Schema.check(Schema.isMaxLength(26)),
   ),
-  correctOptionIds: Schema.Array(Id).pipe(Schema.check(Schema.isMinLength(1))),
-  explanation: Text,
+  prompt: Text,
   sources: Schema.Array(Source).pipe(Schema.check(Schema.isMinLength(1))),
+  type: Schema.Literals(['single_choice', 'multiple_choice']),
 });
 
 /** A modular question file is a JSON array using the same draft schema as inline questions. */
 export const QuestionFile = Schema.Array(Question);
 
 export const AuthoringFile = Schema.Struct({
+  assetFiles: Schema.optional(Schema.Array(Text)),
+  assetsDirectory: Text,
   metadata: Metadata,
   outputFile: Text,
-  assetsDirectory: Text,
-  shuffle: Schema.Struct({ answerSeed: Seed, orderSeed: Seed }),
-  questions: Schema.optional(QuestionFile),
   // Paths are resolved under the main authoring file's directory and checked before use.
   questionFiles: Schema.optional(Schema.Array(Text)),
-  assetFiles: Schema.optional(Schema.Array(Text)),
+  questions: Schema.optional(QuestionFile),
+  shuffle: Schema.Struct({ answerSeed: Seed, orderSeed: Seed }),
 });
 
-export type AuthoringFile = Schema.Schema.Type<typeof AuthoringFile>;
+export type AuthoringFileInput = Schema.Schema.Type<typeof AuthoringFile>;

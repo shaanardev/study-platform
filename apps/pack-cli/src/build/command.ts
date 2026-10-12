@@ -1,6 +1,8 @@
-import { Console, Effect, type FileSystem, Option, type Path } from 'effect';
+import { Console, Effect, Option } from 'effect';
+import type { FileSystem, Path } from 'effect';
 import { Argument, Command, Flag } from 'effect/cli';
-import { type BuildError, buildPack } from './build.js';
+import { buildPack } from './build.js';
+import type { BuildError } from './build.js';
 
 export const buildCommand = Command.make(
   'build',
@@ -8,14 +10,14 @@ export const buildCommand = Command.make(
     authoringFile: Argument.String('authoring-file').pipe(
       Argument.withDescription('Validated JSON pack authoring file'),
     ),
-    outputDirectory: Argument.String('output-directory').pipe(
-      Argument.withDescription('Directory for the pack JSON and copied source assets'),
-    ),
     localNoteRoot: Flag.optional(Flag.String('local-note-root')).pipe(
       Flag.withDescription('Root directory for authored local-note citations'),
     ),
+    outputDirectory: Argument.String('output-directory').pipe(
+      Argument.withDescription('Directory for the pack JSON and copied source assets'),
+    ),
   },
-  Effect.fn('buildCommand')(function* ({
+  Effect.fn('buildCommand')(function* buildCommand({
     authoringFile,
     outputDirectory,
     localNoteRoot,

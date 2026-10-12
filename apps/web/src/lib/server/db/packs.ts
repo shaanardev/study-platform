@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { DatabaseSync, type SQLOutputValue } from 'node:sqlite';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import type { SQLOutputValue } from 'node:sqlite';
 
 import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
@@ -9,33 +10,37 @@ import type { ExamPack } from '#lib/types/exam-pack.js';
 
 type DatabaseRow = Record<string, SQLOutputValue>;
 
-function readTextColumn(row: DatabaseRow, column: string): string {
+const readTextColumn = (row: DatabaseRow, column: string): string => {
   const value = row[column];
-  if (typeof value !== 'string') throw new Error(`Database column "${column}" is not text.`);
-  return value;
-}
-
-function readOptionalTextColumn(row: DatabaseRow, column: string): string | undefined {
-  const value = row[column];
-  return typeof value === 'string' ? value : undefined;
-}
-
-function readNumberColumn(row: DatabaseRow, column: string): number {
-  const value = row[column];
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`Database column "${column}" is not a finite number.`);
+  if (typeof value !== 'string') {
+    throw new TypeError(`Database column "${column}" is not text.`);
   }
   return value;
-}
+};
 
-function parseStoredPack(content: string): ExamPack {
+const readOptionalTextColumn = (row: DatabaseRow, column: string): string | undefined => {
+  const value = row[column];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const readNumberColumn = (row: DatabaseRow, column: string): number => {
+  const value = row[column];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new TypeError(`Database column "${column}" is not a finite number.`);
+  }
+  return value;
+};
+
+const parseStoredPack = (content: string): ExamPack => {
   const parsed: unknown = normalizeLegacyCitations(JSON.parse(content));
   const result = validateExamPack(parsed);
-  if (!result.valid) throw new Error('Stored exam pack is invalid.');
+  if (!result.valid) {
+    throw new Error('Stored exam pack is invalid.');
+  }
   return result.pack;
-}
+};
 
-export type PackIndexItem = {
+export interface PackIndexItem {
   examId: string;
   examTitle: string;
   examVersion: string;
@@ -47,18 +52,18 @@ export type PackIndexItem = {
   domainCount: number;
   domains: { id: string; title: string; weight: number; questionCount: number }[];
   importedAt: string;
-};
+}
 
-export type ImportedSourceAsset = {
+export interface ImportedSourceAsset {
   questionId: string;
   source: { path: string; label: string };
   excerpt: string;
-};
+}
 
-export function openPackDatabase(databasePath = workspacePath('.local/exam-packs.sqlite')) {
-  const path = resolve(databasePath);
-  mkdirSync(dirname(path), { recursive: true });
-  const database = new DatabaseSync(path);
+export const openPackDatabase = (databasePath = workspacePath('.local/exam-packs.sqlite')) => {
+  const resolvedPath = path.resolve(databasePath);
+  mkdirSync(path.dirname(resolvedPath), { recursive: true });
+  const database = new DatabaseSync(resolvedPath);
   database.exec(`
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS app_state (
@@ -161,27 +166,31 @@ export function openPackDatabase(databasePath = workspacePath('.local/exam-packs
       .prepare(`PRAGMA table_info(${table})`)
       .all()
       .map((row) => readTextColumn(row, 'name'));
-    if (!columns.includes(column)) database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} TEXT`);
+    if (!columns.includes(column)) {
+      database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} TEXT`);
+    }
   }
   return database;
-}
+};
 
-export function saveImportedPack(
+export const saveImportedPack = (
   databasePath: string,
   pack: ExamPack,
   sourceAssets: ImportedSourceAsset[] = [],
   approvedSourceRoot?: string,
-): void {
+): void => {
   const database = openPackDatabase(databasePath);
   try {
     database.exec('BEGIN');
     database
-      .prepare(`
+      .prepare(
+        `
       INSERT INTO imported_packs (
         exam_id, exam_title, exam_version, pack_id, pack_title, pack_version,
         synthetic, question_count, domain_count, content_json, approved_source_root
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
+    `,
+      )
       .run(
         pack.exam.id,
         pack.exam.title,
@@ -196,12 +205,14 @@ export function saveImportedPack(
         approvedSourceRoot ?? null,
       );
     database
-      .prepare(`
+      .prepare(
+        `
       INSERT INTO app_state (state_key, state_json, updated_at)
       VALUES ('last_pack_import', ?, CURRENT_TIMESTAMP)
       ON CONFLICT(state_key) DO UPDATE SET state_json = excluded.state_json,
         updated_at = CURRENT_TIMESTAMP
-    `)
+    `,
+      )
       .run(
         JSON.stringify({
           examId: pack.exam.id,
@@ -236,25 +247,29 @@ export function saveImportedPack(
   } finally {
     database.close();
   }
-}
+};
 
-export function refreshApprovedLocalSources(
+export const refreshApprovedLocalSources = (
   databasePath: string,
   pack: ExamPack,
   sourceAssets: ImportedSourceAsset[],
   approvedSourceRoot: string,
-): boolean {
+): boolean => {
   const localSourceAssets = sourceAssets.filter(({ source }) => source.path.startsWith('file:'));
-  if (localSourceAssets.length === 0) return false;
+  if (localSourceAssets.length === 0) {
+    return false;
+  }
 
   const database = openPackDatabase(databasePath);
   try {
     database.exec('BEGIN IMMEDIATE');
     const existing = database
-      .prepare(`
+      .prepare(
+        `
       SELECT content_json AS contentJson FROM imported_packs
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
-    `)
+    `,
+      )
       .get(pack.exam.id, pack.pack.id, pack.pack.version);
     if (!existing || readTextColumn(existing, 'contentJson') !== JSON.stringify(pack)) {
       database.exec('ROLLBACK');
@@ -262,17 +277,21 @@ export function refreshApprovedLocalSources(
     }
 
     database
-      .prepare(`
+      .prepare(
+        `
       UPDATE imported_packs SET approved_source_root = ?
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
-    `)
+    `,
+      )
       .run(approvedSourceRoot, pack.exam.id, pack.pack.id, pack.pack.version);
     database
-      .prepare(`
+      .prepare(
+        `
       DELETE FROM saved_source_assets
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
         AND substr(source_path, 1, 5) = 'file:'
-    `)
+    `,
+      )
       .run(pack.exam.id, pack.pack.id, pack.pack.version);
     const insertSourceAsset = database.prepare(`
       INSERT INTO saved_source_assets (
@@ -302,113 +321,123 @@ export function refreshApprovedLocalSources(
   } finally {
     database.close();
   }
-}
+};
 
-export function getApprovedSourceRoot(
+export const getApprovedSourceRoot = (
   databasePath: string,
   examId: string,
   packId: string,
   packVersion: string,
-): string | undefined {
+): string | undefined => {
   const database = openPackDatabase(databasePath);
   try {
     const row = database
-      .prepare(`
+      .prepare(
+        `
       SELECT approved_source_root AS approvedSourceRoot FROM imported_packs
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
-    `)
+    `,
+      )
       .get(examId, packId, packVersion);
-    if (!row) return undefined;
+    if (!row) {
+      return undefined;
+    }
     return readOptionalTextColumn(row, 'approvedSourceRoot');
   } finally {
     database.close();
   }
-}
+};
 
-export function listImportedPacks(
+export const listImportedPacks = (
   databasePath = workspacePath('.local/exam-packs.sqlite'),
-): PackIndexItem[] {
-  const path = resolve(databasePath);
-  const database = openPackDatabase(path);
+): PackIndexItem[] => {
+  const resolvedPath = path.resolve(databasePath);
+  const database = openPackDatabase(resolvedPath);
   try {
     return database
-      .prepare(`
+      .prepare(
+        `
       SELECT exam_id AS examId, exam_title AS examTitle, exam_version AS examVersion,
         pack_id AS packId, pack_title AS packTitle, pack_version AS packVersion,
         synthetic, question_count AS questionCount, domain_count AS domainCount,
         content_json AS contentJson, imported_at AS importedAt
       FROM imported_packs
       ORDER BY exam_title, pack_title, pack_version DESC
-      `)
+      `,
+      )
       .all()
       .map((row) => {
         const pack = parseStoredPack(readTextColumn(row, 'contentJson'));
         return {
-          examId: readTextColumn(row, 'examId'),
-          examTitle: readTextColumn(row, 'examTitle'),
-          examVersion: readTextColumn(row, 'examVersion'),
-          packId: readTextColumn(row, 'packId'),
-          packTitle: readTextColumn(row, 'packTitle'),
-          packVersion: readTextColumn(row, 'packVersion'),
-          synthetic: readNumberColumn(row, 'synthetic') === 1,
-          questionCount: readNumberColumn(row, 'questionCount'),
           domainCount: readNumberColumn(row, 'domainCount'),
           domains: pack.domains.map((domain) => ({
             ...domain,
             questionCount: pack.questions.filter((question) => question.domainId === domain.id)
               .length,
           })),
+          examId: readTextColumn(row, 'examId'),
+          examTitle: readTextColumn(row, 'examTitle'),
+          examVersion: readTextColumn(row, 'examVersion'),
           importedAt: readTextColumn(row, 'importedAt'),
+          packId: readTextColumn(row, 'packId'),
+          packTitle: readTextColumn(row, 'packTitle'),
+          packVersion: readTextColumn(row, 'packVersion'),
+          questionCount: readNumberColumn(row, 'questionCount'),
+          synthetic: readNumberColumn(row, 'synthetic') === 1,
         };
       });
   } finally {
     database.close();
   }
-}
+};
 
-export function getImportedPack(
+export const getImportedPack = (
   examId: string,
   packId: string,
   packVersion: string,
   databasePath = workspacePath('.local/exam-packs.sqlite'),
-): ExamPack | undefined {
+): ExamPack | undefined => {
   const database = openPackDatabase(databasePath);
   try {
     const row = database
-      .prepare(`
+      .prepare(
+        `
       SELECT content_json AS contentJson FROM imported_packs
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ?
-    `)
+    `,
+      )
       .get(examId, packId, packVersion);
     return row ? parseStoredPack(readTextColumn(row, 'contentJson')) : undefined;
   } finally {
     database.close();
   }
-}
+};
 
-export function getImportedSourceAsset(
+export const getImportedSourceAsset = (
   databasePath: string,
   examId: string,
   packId: string,
   packVersion: string,
   questionId: string,
   sourcePath: string,
-): { label: string; excerpt: string } | undefined {
+): { label: string; excerpt: string } | undefined => {
   const database = openPackDatabase(databasePath);
   try {
     const row = database
-      .prepare(`
+      .prepare(
+        `
       SELECT label, excerpt FROM saved_source_assets
       WHERE exam_id = ? AND pack_id = ? AND pack_version = ? AND question_id = ? AND source_path = ?
-    `)
+    `,
+      )
       .get(examId, packId, packVersion, questionId, sourcePath);
     return row
       ? {
-          label: readTextColumn(row, 'label'),
           excerpt: readTextColumn(row, 'excerpt'),
+          label: readTextColumn(row, 'label'),
         }
       : undefined;
   } finally {
     database.close();
   }
-}
+};

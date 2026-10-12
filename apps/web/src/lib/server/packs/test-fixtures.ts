@@ -1,16 +1,16 @@
 import { cp, mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import path from 'node:path';
 
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
 const samplePack = workspacePath('packs/incoming/sample-learning-pack.json');
 
-export async function createSamplePackFolder(folder: string) {
-  const assets = join(folder, 'assets');
+export const createSamplePackFolder = async (folder: string) => {
+  const assets = path.join(folder, 'assets');
   await mkdir(assets, { recursive: true });
-  await cp(samplePack, join(folder, 'sample-learning-pack.json'));
+  await cp(samplePack, path.join(folder, 'sample-learning-pack.json'));
   await writeFile(
-    join(assets, 'synthetic-notes.md'),
+    path.join(assets, 'synthetic-notes.md'),
     [
       '# Synthetic sample study notes',
       '',
@@ -25,6 +25,6 @@ export async function createSamplePackFolder(folder: string) {
       'Data quality expectations and visible execution status help operators observe and diagnose pipelines.',
       '',
     ].join('\n'),
-    'utf8',
+    'utf-8',
   );
-}
+};

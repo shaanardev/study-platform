@@ -1,8 +1,8 @@
 import { Schema } from 'effect';
 
-const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
+const idPattern = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/u;
 const sourcePathPattern =
-  /^(?:file:\/\/\/[\s\S]+|(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))(?!.*\\)[\s\S]+)$/;
+  /^(?:file:\/\/\/[\s\S]+|(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))(?!.*\\)[\s\S]+)$/u;
 
 const Id = Schema.String.check(Schema.isPattern(idPattern));
 const Text = Schema.String.check(Schema.isMinLength(1));
@@ -22,9 +22,9 @@ const Exam = Schema.Struct({
 
 const Pack = Schema.Struct({
   id: Id,
+  synthetic: Schema.Boolean,
   title: Text,
   version: Text,
-  synthetic: Schema.Boolean,
 });
 
 const Domain = Schema.Struct({
@@ -39,32 +39,32 @@ const Option = Schema.Struct({
 });
 
 const Source = Schema.Struct({
-  path: SourcePath,
-  label: Text,
-  kind: Schema.optionalKey(Text),
-  section: Schema.optionalKey(Text),
   documentationUrls: Schema.optionalKey(Schema.Array(Text)),
+  kind: Schema.optionalKey(Text),
+  label: Text,
+  path: SourcePath,
+  section: Schema.optionalKey(Text),
 });
 export const BuiltExamQuestionSchema = Schema.Struct({
-  id: Id,
-  type: Schema.Literals(['single_choice', 'multiple_choice']),
-  domainId: Id,
-  prompt: Text,
-  options: Schema.Array(Option).check(Schema.isMinLength(2)),
   answerIds: Schema.Array(Id).check(Schema.isMinLength(1)),
+  domainId: Id,
   explanation: Text,
+  id: Id,
+  options: Schema.Array(Option).check(Schema.isMinLength(2)),
+  prompt: Text,
   sources: Schema.Array(Source).check(Schema.isMinLength(1)),
+  type: Schema.Literals(['single_choice', 'multiple_choice']),
 });
 
 export const BuiltExamPackSchema = Schema.Struct({
-  schemaVersion: Schema.Literal(1),
+  domains: Schema.Array(Domain).check(Schema.isMinLength(1)),
   exam: Exam,
   pack: Pack,
-  domains: Schema.Array(Domain).check(Schema.isMinLength(1)),
   passingThreshold: Schema.optionalKey(
     Schema.Finite.check(Schema.isGreaterThanOrEqualTo(0), Schema.isLessThanOrEqualTo(100)),
   ),
   questions: Schema.Array(BuiltExamQuestionSchema).check(Schema.isMinLength(1)),
+  schemaVersion: Schema.Literal(1),
 });
 
 export type PackForVerification = typeof BuiltExamPackSchema.Type;

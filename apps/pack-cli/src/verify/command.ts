@@ -1,15 +1,9 @@
-import {
-  type Config,
-  Console,
-  type Crypto,
-  Effect,
-  type FileSystem,
-  Option,
-  type Path,
-} from 'effect';
+import { Console, Effect, Option } from 'effect';
+import type { Config, Crypto, FileSystem, Path } from 'effect';
 import { Argument, Command, Flag } from 'effect/cli';
 
-import { type VerifyError, verifyPack } from './verify.js';
+import { verifyPack } from './verify.js';
+import type { VerifyError } from './verify.js';
 
 export const verifyCommand = Command.make(
   'verify',
@@ -21,7 +15,7 @@ export const verifyCommand = Command.make(
       Flag.withDescription('Optional path to a JSON verification profile'),
     ),
   },
-  Effect.fn('verifyCommand')(function* ({
+  Effect.fn('verifyCommand')(function* verifyCommand({
     packPath,
     profilePath,
   }): Effect.fn.Return<
@@ -36,6 +30,8 @@ export const verifyCommand = Command.make(
     yield* Console.log(
       `PASS: ${pack.questions.length} ${pack.questions.length === 1 ? 'question' : 'questions'}; structural checks and citation checks passed${Option.isSome(profilePath) ? '; profile checks passed' : ''}.`,
     );
-    if (profileReportPath) yield* Console.log(`Verification report: ${profileReportPath}`);
+    if (profileReportPath !== undefined) {
+      yield* Console.log(`Verification report: ${profileReportPath}`);
+    }
   }),
 ).pipe(Command.withDescription('Validate an exam pack and check its source files'));

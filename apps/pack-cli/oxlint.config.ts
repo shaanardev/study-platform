@@ -1,31 +1,34 @@
 import { recommended } from '@effect/tsgo/oxlint-presets';
-import { defineConfig, type OxlintConfig } from 'oxlint';
+import { defineConfig } from 'oxlint';
+import type { OxlintConfig } from 'oxlint';
+import vitest from 'ultracite/oxlint/vitest';
 
-import rootConfig from '../../.oxlintrc.json' with { type: 'json' };
+import rootConfig from '../../oxlint.config.ts';
 
-export default defineConfig({
-  extends: [rootConfig as unknown as OxlintConfig, recommended],
-  options: { typeAware: true },
-  plugins: ['effecttsgo', 'import', 'vitest'],
-  rules: {
-    'array-callback-return': 'error',
-    'import/no-cycle': 'error',
-    'import/no-self-import': 'error',
-    'typescript/no-non-null-assertion': 'error',
-    'typescript/no-explicit-any': 'error',
-    'typescript/no-unsafe-assignment': 'error',
-    'typescript/no-unsafe-argument': 'error',
-    'typescript/no-unsafe-call': 'error',
-    'typescript/no-unsafe-member-access': 'error',
-    'typescript/no-unsafe-return': 'error',
-    'typescript/only-throw-error': 'error',
-    'vitest/expect-expect': 'off',
-    'vitest/no-conditional-expect': 'off',
-    'vitest/no-conditional-tests': 'error',
-    'vitest/no-standalone-expect': 'off',
-    'vitest/valid-expect': ['error', { maxArgs: 2 }],
-    'vitest/valid-title': 'off',
-  },
+const vitestForEffectTests = {
+  ...vitest,
+  ...(vitest.overrides === undefined
+    ? {}
+    : {
+        overrides: vitest.overrides.map((override) => ({
+          ...override,
+          rules: {
+            ...override.rules,
+            // Effect schema checks narrow Result values before asserting on the
+            // payload. Vitest reports these branches as conditional expectations;
+            // some checks also pass an assertion message.
+            'vitest/expect-expect': 'off',
+            'vitest/no-conditional-expect': 'off',
+            'vitest/no-conditional-tests': 'error',
+            'vitest/no-standalone-expect': 'off',
+            'vitest/valid-expect': ['error', { maxArgs: 2 }],
+          } satisfies typeof override.rules,
+        })),
+      }),
+};
+
+const config: OxlintConfig = defineConfig({
+  extends: [rootConfig, vitestForEffectTests, recommended],
   ignorePatterns: [
     '**/dist',
     '**/build',
@@ -40,3 +43,5 @@ export default defineConfig({
     '!.codex/**/*',
   ],
 });
+
+export default config;

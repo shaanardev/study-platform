@@ -2,15 +2,15 @@ import { Effect, FileSystem, Schema } from 'effect';
 import { afterEach } from 'vitest';
 
 import { AuthoringFile, QuestionFile } from '../src/build/authoring-schema.js';
-import { makeTemporaryDirectoryTracker, run, writeJson } from './test-helpers.js';
+import { makeTemporaryDirectoryTracker, run } from './test-helpers.js';
 
-export { run, writeJson };
+export { run, writeJson } from './test-helpers.js';
 
 const outputDirectories = makeTemporaryDirectoryTracker();
 
 export const outputDirectory = outputDirectories.make('pack-build-');
 
-export const mutablePreview = Effect.gen(function* () {
+export const mutablePreview = Effect.gen(function* mutablePreview() {
   const root = yield* outputDirectory;
   const fs = yield* FileSystem.FileSystem;
   yield* fs.copy('test/fixtures/modular-preview', `${root}/authoring`);
@@ -21,7 +21,9 @@ export const mutablePreview = Effect.gen(function* () {
   const questions = yield* Schema.decodeEffect(Schema.fromJsonString(QuestionFile))(
     yield* fs.readFileString(`${root}/authoring/questions/core.json`),
   );
-  return { root, authoringPath, input, questions, output: `${root}/built` };
+  return { authoringPath, input, output: `${root}/built`, questions, root };
 });
 
-afterEach(() => run(outputDirectories.cleanup()));
+afterEach(async () => {
+  await run(outputDirectories.cleanup());
+});

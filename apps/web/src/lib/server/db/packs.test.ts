@@ -1,6 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -9,39 +9,39 @@ import type { ExamPack } from '#lib/types/exam-pack.js';
 
 const temporaryDirectories: string[] = [];
 
-afterEach(async () => {
-  await Promise.all(
-    temporaryDirectories
-      .splice(0)
-      .map((directory) => rm(directory, { recursive: true, force: true })),
-  );
-});
-
 describe('pack persistence', () => {
+  afterEach(async () => {
+    await Promise.all(
+      temporaryDirectories.splice(0).map(async (directory) => {
+        await rm(directory, { force: true, recursive: true });
+      }),
+    );
+  });
+
   it('rejects stored content that is not a valid exam pack', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'exam-pack-db-'));
+    const directory = await mkdtemp(path.join(tmpdir(), 'exam-pack-db-'));
     temporaryDirectories.push(directory);
-    const databasePath = join(directory, 'packs.sqlite');
+    const databasePath = path.join(directory, 'packs.sqlite');
     const pack: ExamPack = {
-      schemaVersion: 1,
-      exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
-      pack: { id: 'demo-pack', title: 'Demo pack', version: '1.0.0', synthetic: true },
       domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
+      exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
+      pack: { id: 'demo-pack', synthetic: true, title: 'Demo pack', version: '1.0.0' },
       questions: [
         {
-          id: 'question-1',
-          type: 'single_choice',
+          answerIds: ['b'],
           domainId: 'fundamentals',
-          prompt: 'Which option is correct?',
+          explanation: 'The second option is correct.',
+          id: 'question-1',
           options: [
             { id: 'a', text: 'First option' },
             { id: 'b', text: 'Second option' },
           ],
-          answerIds: ['b'],
-          explanation: 'The second option is correct.',
+          prompt: 'Which option is correct?',
           sources: [],
+          type: 'single_choice',
         },
       ],
+      schemaVersion: 1,
     };
     saveImportedPack(databasePath, pack);
 
@@ -60,29 +60,29 @@ describe('pack persistence', () => {
   });
 
   it('keeps a legacy citation readable as a generic stored citation', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'exam-pack-db-'));
+    const directory = await mkdtemp(path.join(tmpdir(), 'exam-pack-db-'));
     temporaryDirectories.push(directory);
-    const databasePath = join(directory, 'packs.sqlite');
+    const databasePath = path.join(directory, 'packs.sqlite');
     const pack: ExamPack = {
-      schemaVersion: 1,
-      exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
-      pack: { id: 'demo-pack', title: 'Demo pack', version: '1.0.0', synthetic: true },
       domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
+      exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
+      pack: { id: 'demo-pack', synthetic: true, title: 'Demo pack', version: '1.0.0' },
       questions: [
         {
-          id: 'question-1',
-          type: 'single_choice',
+          answerIds: ['b'],
           domainId: 'fundamentals',
-          prompt: 'Which option is correct?',
+          explanation: 'The second option is correct.',
+          id: 'question-1',
           options: [
             { id: 'a', text: 'First option' },
             { id: 'b', text: 'Second option' },
           ],
-          answerIds: ['b'],
-          explanation: 'The second option is correct.',
-          sources: [{ path: 'notes.md', label: 'Legacy notes' }],
+          prompt: 'Which option is correct?',
+          sources: [{ label: 'Legacy notes', path: 'notes.md' }],
+          type: 'single_choice',
         },
       ],
+      schemaVersion: 1,
     };
     saveImportedPack(databasePath, pack);
     const database = openPackDatabase(databasePath);
@@ -96,11 +96,11 @@ describe('pack persistence', () => {
               ...question,
               sources: [
                 {
-                  kind: 'legacy_reference',
-                  path: 'notes.md',
-                  label: 'Legacy notes',
-                  section: 'Old section',
                   documentationUrls: ['https://example.com/docs'],
+                  kind: 'legacy_reference',
+                  label: 'Legacy notes',
+                  path: 'notes.md',
+                  section: 'Old section',
                 },
               ],
             })),
@@ -115,13 +115,13 @@ describe('pack persistence', () => {
     expect(
       getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, databasePath)?.questions[0]
         ?.sources,
-    ).toEqual([
+    ).toStrictEqual([
       {
-        path: 'notes.md',
-        label: 'Legacy notes',
-        kind: 'legacy_reference',
-        section: 'Old section',
         documentationUrls: ['https://example.com/docs'],
+        kind: 'legacy_reference',
+        label: 'Legacy notes',
+        path: 'notes.md',
+        section: 'Old section',
       },
     ]);
   });

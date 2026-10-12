@@ -5,33 +5,37 @@ import { ProfileError } from '../src/verify/profile.js';
 import { VerifyError, verifyPack } from '../src/verify/verify.js';
 import { makePack, run, validPack, writeJson } from './verify-helpers.js';
 
-describe('verifyPack', () => {
-  it('preserves the profile and filesystem causes when the profile is missing', () =>
-    run(
-      Effect.gen(function* () {
+describe(verifyPack, () => {
+  it('preserves the profile and filesystem causes when the profile is missing', async () => {
+    await run(
+      Effect.gen(function* testEffect() {
         const { directory, packPath } = yield* makePack;
         const path = yield* Path.Path;
         const profilePath = path.join(directory, 'profile.json');
 
         const exit = yield* Effect.exit(verifyPack(packPath, profilePath));
-        expect(Exit.isFailure(exit)).toBe(true);
+        expect(Exit.isFailure(exit)).toBeTruthy();
         if (Exit.isFailure(exit)) {
           const failure = Cause.findError(exit.cause);
-          expect(Result.isSuccess(failure)).toBe(true);
+          expect(Result.isSuccess(failure)).toBeTruthy();
           if (Result.isSuccess(failure)) {
             expect(failure.success).toBeInstanceOf(VerifyError);
-            expect(failure.success.cause).toBeInstanceOf(ProfileError);
-            const profileError = failure.success.cause as ProfileError;
+            const profileError = failure.success.cause;
+            expect(profileError instanceof ProfileError).toBeTruthy();
+            if (!(profileError instanceof ProfileError)) {
+              throw new Error('Expected a profile error');
+            }
             expect(profileError.cause).toBeDefined();
             expect(String(profileError.cause)).toContain(profilePath);
           }
         }
       }),
-    ));
+    );
+  });
 
-  it('writes an optional profile report and rejects a domain count mismatch', () =>
-    run(
-      Effect.gen(function* () {
+  it('writes an optional profile report and rejects a domain count mismatch', async () => {
+    await run(
+      Effect.gen(function* testEffect() {
         const { directory, packPath } = yield* makePack;
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
@@ -42,22 +46,26 @@ describe('verifyPack', () => {
         const verified = yield* verifyPack(packPath, profilePath);
         const reportPath = verified.profileReportPath;
         expect(reportPath).toBe(path.join(directory, 'assets', 'verification-report.json'));
-        if (!reportPath) throw new Error('Expected a verification report path');
+        if (reportPath === undefined || reportPath.length === 0) {
+          throw new Error('Expected a verification report path');
+        }
         expect(yield* fs.readFileString(reportPath)).toContain('"status": "passed"');
 
         yield* writeJson(profilePath, {
           domains: { core: { count: 3, weight: 60 }, operations: { count: 1, weight: 40 } },
         });
         const mismatch = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(mismatch)).toBe(true);
-        if (Result.isFailure(mismatch))
+        expect(Result.isFailure(mismatch)).toBeTruthy();
+        if (Result.isFailure(mismatch)) {
           expect(mismatch.failure.message).toContain('expected 3 questions, got 1');
+        }
       }),
-    ));
+    );
+  });
 
-  it('rejects profile report and objective mapping symlinks that escape the pack folder', () =>
-    run(
-      Effect.gen(function* () {
+  it('rejects profile report and objective mapping symlinks that escape the pack folder', async () => {
+    await run(
+      Effect.gen(function* testEffect() {
         const { directory, packPath } = yield* makePack;
         const outside = yield* makePack;
         const fs = yield* FileSystem.FileSystem;
@@ -70,36 +78,39 @@ describe('verifyPack', () => {
         yield* writeJson(profilePath, {});
 
         const reportResult = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(reportResult)).toBe(true);
-        if (Result.isFailure(reportResult))
+        expect(Result.isFailure(reportResult)).toBeTruthy();
+        if (Result.isFailure(reportResult)) {
           expect(reportResult.failure.message).toContain('Verification report escapes pack folder');
+        }
         expect(yield* fs.readFileString(externalReportPath)).toBe('leave this file unchanged');
 
         const externalCoveragePath = path.join(outside.directory, 'coverage.json');
         const coveragePath = path.join(directory, 'assets', 'objective-coverage.json');
         yield* writeJson(externalCoveragePath, {
-          questionObjectives: { 'core-q1': ['C1'], 'operations-q1': ['O1'] },
           objectives: { C1: { title: 'Core' }, O1: { title: 'Operations' } },
+          questionObjectives: { 'core-q1': ['C1'], 'operations-q1': ['O1'] },
         });
         yield* fs.remove(reportPath);
         yield* fs.symlink(externalCoveragePath, coveragePath);
         yield* writeJson(profilePath, {
           objectives: {
-            path: 'assets/objective-coverage.json',
             byDomain: { core: ['C1'], operations: ['O1'] },
+            path: 'assets/objective-coverage.json',
           },
         });
 
         const readResult = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(readResult)).toBe(true);
-        if (Result.isFailure(readResult))
+        expect(Result.isFailure(readResult)).toBeTruthy();
+        if (Result.isFailure(readResult)) {
           expect(readResult.failure.message).toContain('Objective mapping escapes pack folder');
+        }
       }),
-    ));
+    );
+  });
 
-  it('allows report paths through symlinked directories that remain inside the pack folder', () =>
-    run(
-      Effect.gen(function* () {
+  it('allows report paths through symlinked directories that remain inside the pack folder', async () => {
+    await run(
+      Effect.gen(function* testEffect() {
         const { directory, packPath } = yield* makePack;
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
@@ -116,23 +127,25 @@ describe('verifyPack', () => {
         expect(verified.profileReportPath).toBe(
           path.join(reportsDirectory, 'verification-report.json'),
         );
-        expect(yield* fs.exists(path.join(reportsDirectory, 'verification-report.json'))).toBe(
-          true,
-        );
+        expect(
+          yield* fs.exists(path.join(reportsDirectory, 'verification-report.json')),
+        ).toBeTruthy();
       }),
-    ));
+    );
+  });
 
-  it('rejects malformed profile data and validates compact baseline metadata', () =>
-    run(
-      Effect.gen(function* () {
+  it('rejects malformed profile data and validates compact baseline metadata', async () => {
+    await run(
+      Effect.gen(function* testEffect() {
         const { directory, packPath } = yield* makePack;
         const path = yield* Path.Path;
         const profilePath = path.join(directory, 'profile.json');
         yield* writeJson(profilePath, { domains: { core: { count: 'one', weight: 60 } } });
         const malformed = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(malformed)).toBe(true);
-        if (Result.isFailure(malformed))
+        expect(Result.isFailure(malformed)).toBeTruthy();
+        if (Result.isFailure(malformed)) {
           expect(malformed.failure.message).toContain('Profile schema validation failed');
+        }
 
         const baselinePack = {
           ...validPack,
@@ -140,41 +153,41 @@ describe('verifyPack', () => {
           questions: [
             {
               ...validPack.questions[0],
+              answerIds: ['pipeline'],
               options: [
                 { id: 'pipeline', text: 'Lakeflow Spark Declarative Pipelines' },
                 { id: 'other', text: 'Other' },
               ],
-              answerIds: ['pipeline'],
             },
           ],
         };
         const baselinePackPath = path.join(directory, 'baseline.json');
         yield* writeJson(baselinePackPath, baselinePack);
         yield* writeJson(path.join(directory, 'assets', 'objective-coverage.json'), {
-          questionObjectives: { 'core-q1': ['C1'] },
           objectives: { C1: { title: 'Core objective' } },
+          questionObjectives: { 'core-q1': ['C1'] },
         });
         yield* writeJson(profilePath, {
-          objectives: {
-            path: 'assets/objective-coverage.json',
-            byDomain: { core: ['C1'] },
-          },
           baselineAudit: {
-            path: 'assets/baseline.json',
-            total: 1,
-            included: 1,
             excluded: 0,
             idPrefix: 'core-',
+            included: 1,
+            path: 'assets/baseline.json',
+            total: 1,
+          },
+          objectives: {
+            byDomain: { core: ['C1'] },
+            path: 'assets/objective-coverage.json',
           },
         });
         yield* writeJson(path.join(directory, 'assets', 'baseline.json'), [
           {
             baselineId: 'baseline-q-001',
-            number: 1,
-            status: 'rewritten',
-            packQuestionId: 'core-q1',
             domainId: 'core',
+            number: 1,
             objective: 'C1',
+            packQuestionId: 'core-q1',
+            status: 'rewritten',
           },
         ]);
         const baseline = yield* verifyPack(baselinePackPath, profilePath);
@@ -182,19 +195,19 @@ describe('verifyPack', () => {
 
         const compactEntry = {
           baselineId: 'baseline-q-001',
-          number: 1,
-          status: 'rewritten',
-          packQuestionId: 'core-q1',
           domainId: 'core',
+          number: 1,
           objective: 'C1',
+          packQuestionId: 'core-q1',
+          status: 'rewritten',
         };
-        const malformedAudits: Array<{
+        const malformedAudits: {
           audit: unknown;
           message: string;
           total?: number;
           included?: number;
           excluded?: number;
-        }> = [
+        }[] = [
           {
             audit: [{ ...compactEntry, domainId: 'operations' }],
             message: 'baseline domain mismatch',
@@ -229,35 +242,37 @@ describe('verifyPack', () => {
               {
                 baselineId: 'baseline-q-001',
                 number: 1,
-                status: 'excluded',
                 reason: '   ',
+                status: 'excluded',
               },
             ],
-            message: 'Baseline exclusion without rationale',
-            included: 0,
             excluded: 1,
+            included: 0,
+            message: 'Baseline exclusion without rationale',
           },
         ];
         for (const scenario of malformedAudits) {
           yield* writeJson(path.join(directory, 'assets', 'baseline.json'), scenario.audit);
           yield* writeJson(profilePath, {
-            objectives: {
-              path: 'assets/objective-coverage.json',
-              byDomain: { core: ['C1'] },
-            },
             baselineAudit: {
-              path: 'assets/baseline.json',
-              total: scenario.total ?? 1,
-              included: scenario.included ?? scenario.total ?? 1,
               excluded: scenario.excluded ?? 0,
               idPrefix: 'core-',
+              included: scenario.included ?? scenario.total ?? 1,
+              path: 'assets/baseline.json',
+              total: scenario.total ?? 1,
+            },
+            objectives: {
+              byDomain: { core: ['C1'] },
+              path: 'assets/objective-coverage.json',
             },
           });
           const invalidAudit = yield* Effect.result(verifyPack(baselinePackPath, profilePath));
-          expect(Result.isFailure(invalidAudit)).toBe(true);
-          if (Result.isFailure(invalidAudit))
+          expect(Result.isFailure(invalidAudit)).toBeTruthy();
+          if (Result.isFailure(invalidAudit)) {
             expect(invalidAudit.failure.message).toContain(scenario.message);
+          }
         }
       }),
-    ));
+    );
+  });
 });

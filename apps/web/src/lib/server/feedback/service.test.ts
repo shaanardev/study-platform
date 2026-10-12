@@ -1,6 +1,6 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -28,37 +28,45 @@ import { workspacePath } from '#lib/server/workspace-paths.js';
 
 const directories: string[] = [];
 
-afterEach(async () => {
-  await Promise.all(
-    directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })),
-  );
-});
-
-async function setup() {
-  const directory = await mkdtemp(join(tmpdir(), 'exam-feedback-'));
+const setup = async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'exam-feedback-'));
   directories.push(directory);
-  const databasePath = join(directory, 'feedback.sqlite');
+  const databasePath = path.join(directory, 'feedback.sqlite');
   const validation = validateExamPack(
-    JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf8')),
+    JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
   );
-  if (!validation.valid) throw new Error(validation.errors.join(' '));
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(' '));
+  }
   saveImportedPack(databasePath, validation.pack);
   return { databasePath, pack: validation.pack };
-}
+};
 
-function questionAt(pack: Awaited<ReturnType<typeof setup>>['pack'], index: number) {
+const questionAt = (pack: Awaited<ReturnType<typeof setup>>['pack'], index: number) => {
   const question = pack.questions[index];
-  if (!question) throw new Error(`Test pack is missing question ${index}.`);
+  if (!question) {
+    throw new Error(`Test pack is missing question ${index}.`);
+  }
   return question;
-}
+};
 
-function findQuestion(pack: Awaited<ReturnType<typeof setup>>['pack'], id: string) {
+const findQuestion = (pack: Awaited<ReturnType<typeof setup>>['pack'], id: string) => {
   const question = pack.questions.find((item) => item.id === id);
-  if (!question) throw new Error(`Test pack is missing question "${id}".`);
+  if (!question) {
+    throw new Error(`Test pack is missing question "${id}".`);
+  }
   return question;
-}
+};
 
 describe('question feedback', () => {
+  afterEach(async () => {
+    await Promise.all(
+      directories.splice(0).map(async (directory) => {
+        await rm(directory, { force: true, recursive: true });
+      }),
+    );
+  });
+
   it('exports flags and schema-validated corrections in a stable JSON format', async () => {
     const { databasePath, pack } = await setup();
     const question = questionAt(pack, 0);
@@ -70,37 +78,37 @@ describe('question feedback', () => {
       reason: 'The source does not support this answer.',
     });
     createCorrection(databasePath, {
+      correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionId: question.id,
-      correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
     });
 
     const first = exportFeedback(databasePath);
     createCorrection(databasePath, {
+      correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionId: question.id,
-      correction: { prompt: `${question.prompt} Revised`, explanation: question.explanation },
     });
     const second = exportFeedback(databasePath);
     expect(first).toBe(second);
-    expect(JSON.parse(first)).toEqual({
+    expect(JSON.parse(first)).toStrictEqual({
       format: 'question-feedback',
-      version: 1,
       items: [
         {
+          correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
           examId: pack.exam.id,
+          flags: [{ reason: 'The source does not support this answer.' }],
           packId: pack.pack.id,
           packVersion: pack.pack.version,
           questionId: question.id,
-          flags: [{ reason: 'The source does not support this answer.' }],
-          correction: { prompt: `${question.prompt} Revised`, explanation: question.explanation },
           retired: false,
         },
       ],
+      version: 1,
     });
   });
 
@@ -126,7 +134,7 @@ describe('question feedback', () => {
     expect(() =>
       createCorrection(databasePath, {
         ...key,
-        correction: { sources: [{ path: 'missing.md', label: 'Unknown notes' }] },
+        correction: { sources: [{ label: 'Unknown notes', path: 'missing.md' }] },
       }),
     ).toThrow('Correction sources must refer to citation files in this imported pack version.');
     expect(() => createCorrection(databasePath, { ...key, correction: { prompt: '' } })).toThrow(
@@ -150,8 +158,6 @@ describe('question feedback', () => {
       questionIds: [original.id],
     });
     const priorAnswer = answerQuestion(databasePath, priorSession.id, original.id, ['a']);
-    expect(priorAnswer.correct).toBe(true);
-
     createCorrection(databasePath, {
       ...key,
       correction: { answerIds: ['b'], explanation: 'Locally corrected answer.' },
@@ -162,27 +168,44 @@ describe('question feedback', () => {
       questionCount: 1,
       questionIds: [original.id],
     });
-    expect(getPracticeSession(databasePath, nextSession.id)?.questions[0]?.prompt).toBe(
-      original.prompt,
-    );
-    expect(answerQuestion(databasePath, nextSession.id, original.id, ['b']).correct).toBe(true);
-    expect(getPracticeSession(databasePath, priorSession.id)?.answers[0]?.correct).toBe(true);
-    expect(getPracticeSession(databasePath, priorSession.id)?.answers[0]?.explanation).toBe(
-      original.explanation,
-    );
-    expect(
-      getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, databasePath)?.questions[0],
-    ).toEqual(original);
-
-    expect(listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version)).toHaveLength(
-      1,
-    );
+    expect({
+      nextAnswerCorrect: answerQuestion(databasePath, nextSession.id, original.id, ['b']).correct,
+      nextPrompt: getPracticeSession(databasePath, nextSession.id)?.questions[0]?.prompt,
+      priorAnswerCorrect: priorAnswer.correct,
+      priorAnswerStillCorrect: getPracticeSession(databasePath, priorSession.id)?.answers[0]
+        ?.correct,
+      priorExplanation: getPracticeSession(databasePath, priorSession.id)?.answers[0]?.explanation,
+    }).toStrictEqual({
+      nextAnswerCorrect: true,
+      nextPrompt: original.prompt,
+      priorAnswerCorrect: true,
+      priorAnswerStillCorrect: true,
+      priorExplanation: original.explanation,
+    });
+    expect({
+      feedbackCount: listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version)
+        .length,
+      importedQuestion: getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, databasePath)
+        ?.questions[0],
+    }).toStrictEqual({ feedbackCount: 1, importedQuestion: original });
     saveImportedPack(databasePath, { ...pack, pack: { ...pack.pack, version: '2.0.0' } });
-    expect(
-      listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version)[0]?.correction
-        ?.answerIds,
-    ).toEqual(['b']);
-    expect(JSON.parse(exportFeedback(databasePath)).items).toHaveLength(1);
+    const exportedFeedback: unknown = JSON.parse(exportFeedback(databasePath));
+    const exportedItems =
+      typeof exportedFeedback === 'object' &&
+      exportedFeedback !== null &&
+      'items' in exportedFeedback &&
+      Array.isArray(exportedFeedback.items)
+        ? exportedFeedback.items
+        : [];
+    expect({
+      correctionAnswerIds: listFeedback(
+        databasePath,
+        pack.exam.id,
+        pack.pack.id,
+        pack.pack.version,
+      )[0]?.correction?.answerIds,
+      exportedItemCount: exportedItems.length,
+    }).toStrictEqual({ correctionAnswerIds: ['b'], exportedItemCount: 1 });
   });
 
   it('omits retired questions from new sessions while retaining their imported version', async () => {
@@ -207,10 +230,10 @@ describe('question feedback', () => {
       questionCount: 1,
       questionIds: [questionAt(pack, 1).id],
     });
-    expect(session.questionIds).toEqual([questionAt(pack, 1).id]);
+    expect(session.questionIds).toStrictEqual([questionAt(pack, 1).id]);
     expect(
       listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version)[0]?.retired,
-    ).toBe(true);
+    ).toBeTruthy();
   });
 
   it('snapshots corrections into new timed attempts', async () => {
@@ -228,13 +251,13 @@ describe('question feedback', () => {
     });
     const attempt = createMockAttempt({
       databasePath,
+      durationMinutes: 2,
       examId: pack.exam.id,
+      now: 1000,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
       questionCount: 2,
-      durationMinutes: 2,
       random: () => 0,
-      now: 1000,
     });
     expect(attempt.questions.find((item) => item.id === question.id)?.prompt).toBe(
       'Corrected transaction question',
@@ -246,6 +269,6 @@ describe('question feedback', () => {
       submitMockAttempt(databasePath, attempt.id, 3000).answers.find(
         (answer) => answer.questionId === question.id,
       )?.correct,
-    ).toBe(true);
+    ).toBeTruthy();
   });
 });

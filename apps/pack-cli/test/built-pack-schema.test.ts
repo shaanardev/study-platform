@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { validPack } from './verify-helpers.js';
 
-describe('BuiltExamPackSchema', () => {
+describe(BuiltExamPackSchema, () => {
   it('preserves absolute file URL sources when encoding', () => {
     const localNoteSource = {
-      path: 'file:///notes/streaming.md',
       label: 'Streaming local note',
+      path: 'file:///notes/streaming.md',
     };
     const pack = {
       ...validPack,
@@ -22,19 +22,19 @@ describe('BuiltExamPackSchema', () => {
 
     const encoded = Schema.encodeResult(BuiltExamPackSchema)(pack);
 
-    expect(Result.isSuccess(encoded)).toBe(true);
-    if (Result.isSuccess(encoded)) {
-      expect(encoded.success.questions[0]?.sources[0]).toEqual(localNoteSource);
-    }
+    expect(Result.isSuccess(encoded)).toBeTruthy();
+    expect(encoded).toMatchObject({
+      success: { questions: [{ sources: [localNoteSource] }] },
+    });
   });
 
   it('accepts and preserves migrated citation metadata when encoding', () => {
     const citation = {
-      kind: 'academy_note',
-      path: 'file:///notes/streaming.md',
-      label: 'Streaming local note',
-      section: 'Checkpointing',
       documentationUrls: ['https://example.com/streaming'],
+      kind: 'academy_note',
+      label: 'Streaming local note',
+      path: 'file:///notes/streaming.md',
+      section: 'Checkpointing',
     };
     const pack = {
       ...validPack,
@@ -43,9 +43,7 @@ describe('BuiltExamPackSchema', () => {
 
     const encoded = Schema.encodeResult(BuiltExamPackSchema)(pack);
 
-    expect(Result.isSuccess(encoded)).toBe(true);
-    if (Result.isSuccess(encoded)) {
-      expect(encoded.success.questions[0]?.sources[0]).toEqual(citation);
-    }
+    expect(Result.isSuccess(encoded)).toBeTruthy();
+    expect(encoded).toMatchObject({ success: { questions: [{ sources: [citation] }] } });
   });
 });

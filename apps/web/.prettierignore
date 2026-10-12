@@ -1,0 +1,3 @@
+# Oxfmt owns formatting, including Svelte via its Prettier-backed implementation.
+# Keep Ultracite's ESLint-provider Prettier pass from formatting these files again.
+**/*

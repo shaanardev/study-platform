@@ -9,21 +9,28 @@ import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = workspacePath('.local/exam-packs.sqlite');
 
+const formString = (form: FormData, key: string) => {
+  const value = form.get(key);
+  return typeof value === 'string' ? value : '';
+};
+
 export const load: PageServerLoad = () => getProgress(databasePath);
 
 export const actions: Actions = {
   practiceMissed: async ({ request }) => {
     const form = await request.formData();
     const questionIds = form.getAll('questionIds').map(String);
-    if (questionIds.length === 0) return { error: 'Select at least one missed question.' };
+    if (questionIds.length === 0) {
+      return { error: 'Select at least one missed question.' };
+    }
     const session = createPracticeSession({
       databasePath,
-      examId: String(form.get('examId') ?? ''),
-      packId: String(form.get('packId') ?? ''),
-      packVersion: String(form.get('packVersion') ?? ''),
-      questionIds,
+      examId: formString(form, 'examId'),
+      packId: formString(form, 'packId'),
+      packVersion: formString(form, 'packVersion'),
       questionCount: questionIds.length,
+      questionIds,
     });
-    redirect(303, `${resolve('/practice')}?session=${encodeURIComponent(session.id)}`);
+    return redirect(303, `${resolve('/practice')}?session=${encodeURIComponent(session.id)}`);
   },
 };

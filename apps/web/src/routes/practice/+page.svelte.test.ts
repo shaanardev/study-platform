@@ -3,57 +3,61 @@ import { readFileSync } from 'node:fs';
 import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 
+import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
-import type { ExamPack } from '#lib/types/exam-pack.js';
 
 import PracticePage from './+page.svelte';
 
-const currentPack = JSON.parse(
-  readFileSync(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf8'),
-) as ExamPack;
+const packValidation = validateExamPack(
+  JSON.parse(readFileSync(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
+);
+if (!packValidation.valid) {
+  throw new Error(packValidation.errors.join('\n'));
+}
+const currentPack = packValidation.pack;
 
 describe('practice page', () => {
   it('updates the available domain choices when a learner switches exam pack versions', async () => {
     render(PracticePage, {
-      params: {},
       data: {
         packs: [
           {
+            domainCount: 1,
+            domains: [{ id: 'storage', questionCount: 2, title: 'Storage', weight: 100 }],
             examId: 'exam-a',
             examTitle: 'Exam A',
             examVersion: '1',
+            importedAt: 'now',
             packId: 'pack-a',
             packTitle: 'Foundations',
             packVersion: '1.0',
-            synthetic: true,
             questionCount: 3,
-            domainCount: 1,
-            domains: [{ id: 'storage', title: 'Storage', weight: 100, questionCount: 2 }],
-            importedAt: 'now',
+            synthetic: true,
           },
           {
+            domainCount: 1,
+            domains: [{ id: 'jobs', questionCount: 5, title: 'Jobs', weight: 100 }],
             examId: 'exam-b',
             examTitle: 'Exam B',
             examVersion: '2',
+            importedAt: 'now',
             packId: 'pack-b',
             packTitle: 'Pipelines',
             packVersion: '2.0',
-            synthetic: false,
             questionCount: 5,
-            domainCount: 1,
-            domains: [{ id: 'jobs', title: 'Jobs', weight: 100, questionCount: 5 }],
-            importedAt: 'now',
+            synthetic: false,
           },
         ],
         session: undefined,
       },
       form: null,
+      params: {},
     });
 
     expect(
-      within(screen.getByRole('group', { name: /Domains/ })).getByText('Storage'),
+      within(screen.getByRole('group', { name: /Domains/u })).getByText('Storage'),
     ).toBeTruthy();
-    await fireEvent.click(screen.getByRole('checkbox', { name: /Storage/ }));
+    await fireEvent.click(screen.getByRole('checkbox', { name: /Storage/u }));
     expect(screen.getByLabelText('Number of questions').getAttribute('max')).toBe('2');
     await fireEvent.change(screen.getByLabelText('Exam pack version'), {
       target: { value: 'exam-b|pack-b|2.0' },
@@ -63,39 +67,39 @@ describe('practice page', () => {
     expect(screen.getByLabelText('Number of questions').getAttribute('max')).toBe('5');
   });
 
-  it('offers a saved session again after the practice page is loaded', async () => {
+  it('offers a saved session again after the practice page is loaded', () => {
     render(PracticePage, {
-      params: {},
       data: {
         packs: [],
         session: {
-          id: 'saved-session',
+          answers: [],
+          createdAt: '2026-09-27 10:00:00',
+          domainIds: [],
           examId: 'exam-a',
+          id: 'saved-session',
           packId: 'pack-a',
           packVersion: '1.0',
-          domainIds: [],
           questionIds: ['question-a'],
-          status: 'in_progress',
-          createdAt: '2026-09-27 10:00:00',
-          updatedAt: '2026-09-27 10:00:00',
-          answers: [],
           questions: [
             {
-              id: 'question-a',
-              type: 'single_choice',
               domainId: 'storage',
-              prompt: 'What does a transaction log record?',
+              explanation: 'It records changes.',
+              id: 'question-a',
               options: [
                 { id: 'a', text: 'Table changes' },
                 { id: 'b', text: 'User passwords' },
               ],
-              explanation: 'It records changes.',
-              sources: [{ path: 'notes.md', label: 'Study notes' }],
+              prompt: 'What does a transaction log record?',
+              sources: [{ label: 'Study notes', path: 'notes.md' }],
+              type: 'single_choice',
             },
           ],
+          status: 'in_progress',
+          updatedAt: '2026-09-27 10:00:00',
         },
       },
       form: null,
+      params: {},
     });
 
     expect(screen.getByRole('link', { name: 'Resume quiz' }).getAttribute('href')).toBe(
@@ -108,119 +112,121 @@ describe('practice page', () => {
 
   it('shows each citation label after an answer', () => {
     const { container } = render(PracticePage, {
-      params: {},
       data: {
         packs: [],
         session: {
-          id: 'completed-session',
-          examId: 'exam-a',
-          packId: 'pack-a',
-          packVersion: '1.0',
-          domainIds: [],
-          questionIds: ['question-a', 'question-b'],
-          status: 'in_progress',
-          createdAt: 'now',
-          updatedAt: 'now',
           answers: [
             {
-              questionId: 'question-a',
               answerIds: ['a'],
-              correct: true,
               answerIdsCorrect: ['a'],
-              explanation: 'Correct.',
               answeredAt: 'now',
+              correct: true,
+              explanation: 'Correct.',
+              questionId: 'question-a',
               sources: [
-                { path: 'assets/notes.md', label: 'Bundled notes' },
+                { label: 'Bundled notes', path: 'assets/notes.md' },
                 {
-                  path: 'file:///tmp/streaming-checkpoints.md',
                   label: 'Streaming reference',
+                  path: 'file:///tmp/streaming-checkpoints.md',
                 },
               ],
             },
           ],
+          createdAt: 'now',
+          domainIds: [],
+          examId: 'exam-a',
+          id: 'completed-session',
+          packId: 'pack-a',
+          packVersion: '1.0',
+          questionIds: ['question-a', 'question-b'],
           questions: [
             {
-              id: 'question-a',
-              type: 'single_choice',
               domainId: 'storage',
-              prompt: 'What does a transaction log record?',
+              explanation: 'Correct.',
+              id: 'question-a',
               options: [
                 { id: 'a', text: 'Table changes' },
                 { id: 'b', text: 'Passwords' },
               ],
-              explanation: 'Correct.',
+              prompt: 'What does a transaction log record?',
               sources: [],
+              type: 'single_choice',
             },
             {
-              id: 'question-b',
-              type: 'single_choice',
               domainId: 'storage',
-              prompt: 'What is a table?',
+              explanation: 'A table holds data.',
+              id: 'question-b',
               options: [
                 { id: 'a', text: 'Data' },
                 { id: 'b', text: 'Code' },
               ],
-              explanation: 'A table holds data.',
+              prompt: 'What is a table?',
               sources: [],
+              type: 'single_choice',
             },
           ],
+          status: 'in_progress',
+          updatedAt: 'now',
         },
       },
       form: null,
+      params: {},
     });
     const links = [...container.querySelectorAll('a')];
     const noteLink = links.find((link) => link.textContent?.includes('Streaming reference'));
     expect(noteLink?.getAttribute('href')).toContain(
       encodeURIComponent('file:///tmp/streaming-checkpoints.md'),
     );
-    expect(links.some((link) => link.textContent?.includes('Streaming reference'))).toBe(true);
-    expect(links.some((link) => link.textContent?.includes('Bundled notes'))).toBe(true);
+    expect(links.some((link) => link.textContent?.includes('Streaming reference'))).toBeTruthy();
+    expect(links.some((link) => link.textContent?.includes('Bundled notes'))).toBeTruthy();
   });
 
   it('renders a current pack note and documentation link after a practice answer', () => {
     const question = currentPack.questions.find((item) => item.sources.length > 0);
     const citation = question?.sources[0];
-    if (!question || !citation) throw new Error('The current pack has no citation');
+    if (question === undefined || citation === undefined) {
+      throw new Error('The current pack has no citation');
+    }
 
     const { container } = render(PracticePage, {
-      params: {},
       data: {
         packs: [],
         session: {
-          id: 'dea26-session',
-          examId: currentPack.exam.id,
-          packId: currentPack.pack.id,
-          packVersion: currentPack.pack.version,
-          domainIds: [],
-          questionIds: [question.id],
-          status: 'completed',
-          createdAt: 'now',
-          updatedAt: 'now',
           answers: [
             {
-              questionId: question.id,
               answerIds: question.answerIds,
-              correct: true,
               answerIdsCorrect: question.answerIds,
-              explanation: question.explanation,
               answeredAt: 'now',
+              correct: true,
+              explanation: question.explanation,
+              questionId: question.id,
               sources: question.sources,
             },
           ],
+          createdAt: 'now',
+          domainIds: [],
+          examId: currentPack.exam.id,
+          id: 'dea26-session',
+          packId: currentPack.pack.id,
+          packVersion: currentPack.pack.version,
+          questionIds: [question.id],
           questions: [
             {
-              id: question.id,
-              type: question.type,
               domainId: question.domainId,
-              prompt: question.prompt,
-              options: question.options,
               explanation: question.explanation,
+              id: question.id,
+              options: question.options,
+              prompt: question.prompt,
               sources: question.sources,
+              type: question.type,
             },
           ],
+          status: 'completed',
+          updatedAt: 'now',
         },
       },
       form: null,
+      params: {},
     });
 
     const links = [...container.querySelectorAll('a')];
@@ -228,11 +234,11 @@ describe('practice page', () => {
       links.some(
         (link) =>
           link.textContent?.includes(citation.label) &&
-          link.getAttribute('href')?.includes(encodeURIComponent(citation.path)),
+          link.getAttribute('href')?.includes(encodeURIComponent(citation.path)) === true,
       ),
-    ).toBe(true);
-    expect(links.some((link) => link.getAttribute('href')?.includes('/practice/source?'))).toBe(
-      true,
-    );
+    ).toBeTruthy();
+    expect(
+      links.some((link) => link.getAttribute('href')?.includes('/practice/source?') === true),
+    ).toBeTruthy();
   });
 });

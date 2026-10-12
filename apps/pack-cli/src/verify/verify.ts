@@ -1,6 +1,7 @@
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
-import { BuiltExamPackSchema, type PackForVerification } from '../core/built-pack-schema.js';
+import { BuiltExamPackSchema } from '../core/built-pack-schema.js';
+import type { PackForVerification } from '../core/built-pack-schema.js';
 import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { verifyProfile } from './profile.js';
 
@@ -9,28 +10,29 @@ export class VerifyError extends Data.TaggedError('VerifyError')<{
   readonly cause?: unknown;
 }> {}
 
-export type VerifyResult = {
+export interface VerifyResult {
   pack: PackForVerification;
   profileReportPath?: string;
-};
+}
 
 const toVerifyError =
   (stage: string) =>
   (cause: unknown): VerifyError =>
     new VerifyError({
-      message: `${stage}: ${cause instanceof Error ? cause.message : String(cause)}`,
       cause,
+      message: `${stage}: ${cause instanceof Error ? cause.message : String(cause)}`,
     });
 
 const normalized = (value: string): string =>
   value
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}_]+/gu, ' ')
+    .replaceAll(/[^\p{L}\p{N}_]+/gu, ' ')
     .trim();
 
-const normalizedOption = (value: string): string => value.toLowerCase().replace(/\s+/g, ' ').trim();
+const normalizedOption = (value: string): string =>
+  value.toLowerCase().replaceAll(/\s+/gu, ' ').trim();
 
-const readPackFile = Effect.fn(function* (packPath: string) {
+const readPackFile = Effect.fn(function* readPackFile(packPath: string) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
   const absolutePath = path.resolve(packPath);
@@ -45,61 +47,74 @@ const parsePackJson = (contents: string) =>
     Effect.mapError(toVerifyError('Unable to parse exam pack JSON')),
   );
 
+const toBuiltPackVerifyError = (error: unknown): VerifyError =>
+  new VerifyError({
+    cause: error,
+    message: `Exam pack schema validation failed: ${String(error)}`,
+  });
+
 const validateBuiltPack = (input: unknown) =>
   Schema.decodeUnknownEffect(BuiltExamPackSchema, { onExcessProperty: 'error' })(input).pipe(
-    Effect.mapError(
-      (error) =>
-        new VerifyError({
-          message: `Exam pack schema validation failed: ${String(error)}`,
-          cause: error,
-        }),
-    ),
+    Effect.mapError(toBuiltPackVerifyError),
   );
 
-const verifyGenericStructure = Effect.fn(function* (pack: PackForVerification) {
+const verifyGenericStructure = Effect.fn(function* verifyGenericStructure(
+  pack: PackForVerification,
+) {
   const domainIds = new Set(pack.domains.map(({ id }) => id));
-  if (domainIds.size !== pack.domains.length)
+  if (domainIds.size !== pack.domains.length) {
     return yield* new VerifyError({ message: 'Domain IDs must be unique' });
-  if (Math.abs(pack.domains.reduce((sum, domain) => sum + domain.weight, 0) - 100) > 0.01)
+  }
+  if (Math.abs(pack.domains.reduce((sum, domain) => sum + domain.weight, 0) - 100) > 0.01) {
     return yield* new VerifyError({ message: 'Domain weights must total 100' });
+  }
 
   const questionIds = new Set<string>();
   const prompts = new Set<string>();
   for (const question of pack.questions) {
-    if (questionIds.has(question.id))
+    if (questionIds.has(question.id)) {
       return yield* new VerifyError({ message: `Duplicate question ID: ${question.id}` });
+    }
     questionIds.add(question.id);
     const prompt = normalized(question.prompt);
-    if (!prompt.length)
+    if (!prompt.length) {
       return yield* new VerifyError({ message: `${question.id}: prompt is empty` });
-    if (prompts.has(prompt))
+    }
+    if (prompts.has(prompt)) {
       return yield* new VerifyError({ message: `${question.id}: duplicate prompt` });
+    }
     prompts.add(prompt);
-    if (!domainIds.has(question.domainId))
+    if (!domainIds.has(question.domainId)) {
       return yield* new VerifyError({
         message: `${question.id}: unknown domain ${question.domainId}`,
       });
-    if (question.options.length < 2)
+    }
+    if (question.options.length < 2) {
       return yield* new VerifyError({ message: `${question.id}: fewer than two options` });
-    if (new Set(question.options.map(({ id }) => id)).size !== question.options.length)
+    }
+    if (new Set(question.options.map(({ id }) => id)).size !== question.options.length) {
       return yield* new VerifyError({ message: `${question.id}: duplicate option IDs` });
+    }
     if (
       new Set(question.options.map(({ text }) => normalizedOption(text))).size !==
       question.options.length
-    )
+    ) {
       return yield* new VerifyError({ message: `${question.id}: duplicate option text` });
+    }
     const optionIds = new Set(question.options.map(({ id }) => id));
     if (
       new Set(question.answerIds).size !== question.answerIds.length ||
       !question.answerIds.every((id) => optionIds.has(id))
-    )
+    ) {
       return yield* new VerifyError({
         message: `${question.id}: answer IDs must refer to unique options`,
       });
+    }
   }
+  return yield* Effect.void;
 });
 
-const sourceFileExists = Effect.fn('sourceFileExists')(function* (
+const sourceFileExists = Effect.fn('sourceFileExists')(function* sourceFileExists(
   packPath: string,
   questionId: string,
   sourcePath: string,
@@ -111,22 +126,23 @@ const sourceFileExists = Effect.fn('sourceFileExists')(function* (
     Effect.mapError(
       (cause) =>
         new VerifyError({
-          message: `${questionId}: missing source ${sourcePath}`,
           cause,
+          message: `${questionId}: missing source ${sourcePath}`,
         }),
     ),
   );
   const info = yield* fs
     .stat(actual)
     .pipe(Effect.mapError(toVerifyError(`Unable to inspect source ${sourcePath}`)));
-  if (info.type !== 'File')
+  if (info.type !== 'File') {
     return yield* new VerifyError({
       message: `${questionId}: source is not a file (${sourcePath})`,
     });
+  }
   return actual;
 });
 
-const sourceIsContained = Effect.fn(function* (
+const sourceIsContained = Effect.fn(function* sourceIsContained(
   packDirectory: string,
   actualSource: string,
   questionId: string,
@@ -134,23 +150,30 @@ const sourceIsContained = Effect.fn(function* (
 ) {
   const path = yield* Path.Path;
   const fromPack = path.relative(packDirectory, actualSource);
-  if (fromPack === '..' || fromPack.startsWith(`..${path.sep}`) || path.isAbsolute(fromPack))
+  if (fromPack === '..' || fromPack.startsWith(`..${path.sep}`) || path.isAbsolute(fromPack)) {
     return yield* new VerifyError({
       message: `${questionId}: source escapes pack folder (${sourcePath})`,
     });
+  }
+  return yield* Effect.void;
 });
 
-const verifyFileUrlSource = Effect.fn('verifyFileUrlSource')(function* (
+const verifyFileUrlSource = Effect.fn('verifyFileUrlSource')(function* verifyFileUrlSource(
   questionId: string,
   sourceUrl: string,
 ) {
   const path = yield* Path.Path;
   const fs = yield* FileSystem.FileSystem;
-  const parsed = URL.parse(sourceUrl);
-  if (parsed?.protocol !== 'file:' || parsed.hostname || parsed.username || parsed.password)
+  const parsed =
+    URL.parse(sourceUrl) ??
+    (yield* new VerifyError({
+      message: `${questionId}: invalid local file URL (${sourceUrl})`,
+    }));
+  if (parsed.protocol !== 'file:' || parsed.hostname || parsed.username || parsed.password) {
     return yield* new VerifyError({
       message: `${questionId}: invalid local file URL (${sourceUrl})`,
     });
+  }
   const localPath = yield* path
     .fromFileUrl(parsed)
     .pipe(
@@ -158,29 +181,32 @@ const verifyFileUrlSource = Effect.fn('verifyFileUrlSource')(function* (
         () => new VerifyError({ message: `${questionId}: invalid local file URL (${sourceUrl})` }),
       ),
     );
-  if (!path.isAbsolute(localPath))
+  if (!path.isAbsolute(localPath)) {
     return yield* new VerifyError({
       message: `${questionId}: local file URL must reference an absolute path (${sourceUrl})`,
     });
+  }
   const actual = yield* fs.realPath(localPath).pipe(
     Effect.mapError(
       (cause) =>
         new VerifyError({
-          message: `${questionId}: missing local file ${sourceUrl}`,
           cause,
+          message: `${questionId}: missing local file ${sourceUrl}`,
         }),
     ),
   );
   const info = yield* fs
     .stat(actual)
     .pipe(Effect.mapError(toVerifyError(`Unable to inspect local file ${sourceUrl}`)));
-  if (info.type !== 'File')
+  if (info.type !== 'File') {
     return yield* new VerifyError({
       message: `${questionId}: local source is not a file (${sourceUrl})`,
     });
+  }
+  return yield* Effect.void;
 });
 
-const verifySourceFiles = Effect.fn('verifySourceFiles')(function* (
+const verifySourceFiles = Effect.fn('verifySourceFiles')(function* verifySourceFiles(
   packPath: string,
   pack: PackForVerification,
 ) {
@@ -197,8 +223,10 @@ const verifySourceFiles = Effect.fn('verifySourceFiles')(function* (
   yield* Effect.forEach(
     citations,
     ({ questionId, source }) => {
-      if (source.path.startsWith('file:')) return verifyFileUrlSource(questionId, source.path);
-      return Effect.gen(function* () {
+      if (source.path.startsWith('file:')) {
+        return verifyFileUrlSource(questionId, source.path);
+      }
+      return Effect.gen(function* verifySourceFileCitation() {
         const actual = yield* sourceFileExists(packPath, questionId, source.path);
         yield* sourceIsContained(packDirectory, actual, questionId, source.path);
       });
@@ -208,26 +236,29 @@ const verifySourceFiles = Effect.fn('verifySourceFiles')(function* (
 });
 
 export const verifyPack = Effect.fn('verifyPack')((packPath: string, profilePath?: string) =>
-  Effect.gen(function* () {
+  Effect.gen(function* verifyPackProgram() {
     const { absolutePath, contents } = yield* readPackFile(packPath);
     const input = yield* parsePackJson(contents);
     const pack = yield* validateBuiltPack(input);
     yield* verifyGenericStructure(pack);
     yield* verifySourceFiles(absolutePath, pack);
     let profileReportPath: string | undefined;
-    if (profilePath) {
+    if (profilePath !== undefined) {
       const path = yield* Path.Path;
       const result = yield* verifyProfile(absolutePath, pack, path.resolve(profilePath)).pipe(
         Effect.mapError(
           (error) =>
             new VerifyError({
-              message: `Profile verification failed: ${error.message}`,
               cause: error,
+              message: `Profile verification failed: ${error.message}`,
             }),
         ),
       );
       profileReportPath = result.reportPath;
     }
-    return profileReportPath ? { pack, profileReportPath } : { pack };
+    if (profileReportPath === undefined) {
+      return { pack };
+    }
+    return { pack, profileReportPath };
   }),
 );
