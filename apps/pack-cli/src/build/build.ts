@@ -185,9 +185,7 @@ export const buildPack = Effect.fn('buildPack')(
         try: () => JSON.stringify(encodedPack, null, 2),
       }).pipe(
         Result.flatMap((json) =>
-          json === undefined
-            ? Result.fail(new BuildError({ message: 'Could not serialize built pack' }))
-            : Result.succeed(json),
+          Result.fromNullishOr(json, () => new BuildError({ message: 'Could not serialize built pack' })),
         ),
       );
       const packJson = yield* Effect.fromResult(packJsonResult);

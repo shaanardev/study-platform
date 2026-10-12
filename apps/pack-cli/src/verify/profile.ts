@@ -1,4 +1,4 @@
-import { Crypto, Data, Effect, FileSystem, Path, Result, Schema } from 'effect';
+import { Crypto, Data, Effect, FileSystem, Option, Path, Result, Schema } from 'effect';
 import { Hex } from 'effect/encoding';
 
 import type { PackForVerification } from '../core/built-pack-schema.js';
@@ -46,18 +46,18 @@ const resolveWithin = Effect.fn(function* resolveWithin(
     ),
   );
   const realActual = yield* fs.realPath(actual).pipe(Effect.result);
-  let resolved: string | undefined;
+  let resolved = Option.none<string>();
   if (Result.isSuccess(realActual)) {
-    resolved = realActual.success;
+    resolved = Option.some(realActual.success);
   } else {
     // A report file may not exist yet. Resolve its nearest existing ancestor so
     // symlinked directories are still checked before the write is attempted.
     let ancestor = actual;
     const suffix: string[] = [];
-    while (resolved === undefined) {
+    while (Option.isNone(resolved)) {
       const realAncestor = yield* fs.realPath(ancestor).pipe(Effect.result);
       if (Result.isSuccess(realAncestor)) {
-        resolved = path.resolve(realAncestor.success, ...suffix.toReversed());
+        resolved = Option.some(path.resolve(realAncestor.success, ...suffix.toReversed()));
         break;
       }
       const link = yield* fs.readLink(ancestor).pipe(Effect.result);
@@ -77,7 +77,16 @@ const resolveWithin = Effect.fn(function* resolveWithin(
     }
   }
 
-  const realRelative = path.relative(realDirectory, resolved);
+  const resolvedPath = yield* Effect.fromResult(
+    Result.fromOption(
+      resolved,
+      () =>
+        new ProfileError({
+          message: `${label} cannot be resolved within pack folder (${filename})`,
+        }),
+    ),
+  );
+  const realRelative = path.relative(realDirectory, resolvedPath);
   if (
     realRelative === '..' ||
     realRelative.startsWith(`..${path.sep}`) ||
@@ -85,7 +94,7 @@ const resolveWithin = Effect.fn(function* resolveWithin(
   ) {
     return yield* new ProfileError({ message: `${label} escapes pack folder (${filename})` });
   }
-  return resolved;
+  return resolvedPath;
 });
 
 const readText = Effect.fn(function* readText(filename: string, label: string) {
