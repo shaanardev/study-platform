@@ -1,0 +1,20 @@
+{
+  "name": "local-repo",
+  "interface": {
+    "displayName": "Learning Platform Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "worktrunk",
+      "source": {
+        "source": "local",
+        "path": "./plugins/worktrunk"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
