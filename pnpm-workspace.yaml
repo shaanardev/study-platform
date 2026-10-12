@@ -4,4 +4,7 @@ packages:
 allowBuilds:
   esbuild: true
 
+overrides:
+  '@effect/platform-node-shared': 4.0.2
+
 virtualStoreType: global
