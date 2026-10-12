@@ -67,7 +67,9 @@
             Time remaining
           </p>
           <strong class="text-3xl [font-variant-numeric:tabular-nums]"
-            >{Math.floor(remaining / 60_000)}:{String(Math.floor((remaining % 60_000) / 1000)).padStart(2, '0')}</strong
+            >{Math.floor(remaining / 60_000)}:{String(
+              Math.floor((remaining % 60_000) / 1000),
+            ).padStart(2, '0')}</strong
           >
         </div>
         <p class="m-0 text-[#536153]">
@@ -146,15 +148,16 @@
                     <span>{domain.title} · {domain.weight}%</span
                     ><span
                       class={[
-    'text-left text-[#536153] sm:text-right',
-    selectedCoverage.gaps.some((item) => item.id === domain.id) && 'text-[#9d3028]',
-  ]}
+                        'text-left text-[#536153] sm:text-right',
+                        selectedCoverage.gaps.some((item) => item.id === domain.id) &&
+                          'text-[#9d3028]',
+                      ]}
                       >{domain.questionCount}
                       available /
                       {selectedCoverage.allocations[domain.id] ?? 0}
                       needed{selectedCoverage.gaps.find((item) => item.id === domain.id)
-    ? ` · short by ${selectedCoverage.gaps.find((item) => item.id === domain.id)?.missing}`
-    : ''}</span
+                        ? ` · short by ${selectedCoverage.gaps.find((item) => item.id === domain.id)?.missing}`
+                        : ''}</span
                     >
                   </li>
                 {/each}
@@ -264,7 +267,9 @@
                 <input type="hidden" name="questionId" value={question.id}>
                 <fieldset class="my-2 grid min-w-0 gap-1 rounded-xl border border-[#dce1d9] p-4">
                   <legend class="font-bold">
-                    {question.type === 'multiple_choice' ? 'Select all that apply' : 'Select one answer'}
+                    {question.type === 'multiple_choice'
+                      ? 'Select all that apply'
+                      : 'Select one answer'}
                   </legend>
                   {#each question.options as option (option.id)}
                     <label
@@ -292,22 +297,22 @@
                 {#each question.options as option (option.id)}
                   <li
                     class={[
-    'rounded-md p-2',
-    question.answerIds?.includes(option.id) && 'bg-[#edf7ef]',
-    data.attempt.answers
-      .find((item) => item.questionId === question.id)
-      ?.answerIds.includes(option.id) &&
-      !question.answerIds?.includes(option.id) &&
-      'text-[#9d3028]',
-  ]}
+                      'rounded-md p-2',
+                      question.answerIds?.includes(option.id) && 'bg-[#edf7ef]',
+                      data.attempt.answers
+                        .find((item) => item.questionId === question.id)
+                        ?.answerIds.includes(option.id) &&
+                        !question.answerIds?.includes(option.id) &&
+                        'text-[#9d3028]',
+                    ]}
                   >
                     {option.text}
                     {#if question.answerIds?.includes(option.id)}
                       <strong>Correct answer</strong>
                     {/if}
                     {#if data.attempt.answers
-    .find((item) => item.questionId === question.id)
-    ?.answerIds.includes(option.id)}
+                      .find((item) => item.questionId === question.id)
+                      ?.answerIds.includes(option.id)}
                       <span>(your answer)</span>
                     {/if}
                   </li>

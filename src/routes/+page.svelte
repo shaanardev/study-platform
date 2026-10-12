@@ -122,8 +122,8 @@
           <p class="my-1 text-error-700-300">{message}</p>
         {/each}
         {#if form.importResult.imported.length === 0 &&
-    form.importResult.refreshed.length === 0 &&
-    form.importResult.errors.length === 0}
+          form.importResult.refreshed.length === 0 &&
+          form.importResult.errors.length === 0}
           <p class="my-1">No new pack versions were imported.</p>
         {/if}
       </div>

@@ -89,16 +89,19 @@
         <select
           class="select w-full focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-warning-500"
           id="pack-version"
-          value={selectedPack ? `${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}` : ''}
+          value={selectedPack
+            ? `${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`
+            : ''}
           onchange={(event) => {
-    const pack = data.packs.find(
-      (item) => `${item.examId}|${item.packId}|${item.packVersion}` === event.currentTarget.value,
-    );
-    if (pack)
-      window.location.href = resolve(
-        `/review?examId=${encodeURIComponent(pack.examId)}&packId=${encodeURIComponent(pack.packId)}&packVersion=${encodeURIComponent(pack.packVersion)}`,
-      );
-  }}
+            const pack = data.packs.find(
+              (item) =>
+                `${item.examId}|${item.packId}|${item.packVersion}` === event.currentTarget.value,
+            );
+            if (pack)
+              window.location.href = resolve(
+                `/review?examId=${encodeURIComponent(pack.examId)}&packId=${encodeURIComponent(pack.packId)}&packVersion=${encodeURIComponent(pack.packVersion)}`,
+              );
+          }}
         >
           {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
             <option value={`${pack.examId}|${pack.packId}|${pack.packVersion}`}>
@@ -166,8 +169,8 @@
                 {#each question.sources as source (source.path)}
                   <a
                     href={resolve(
-    `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}`,
-  )}
+                      `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}`,
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     class="grid gap-1 font-semibold text-primary-700-300 underline-offset-4 hover:underline"
@@ -250,7 +253,9 @@
                     class="btn preset-outlined-primary-700-300 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-warning-500"
                     type="submit"
                   >
-                    {feedbackByQuestion.get(question.id)?.retired ? 'Restore question' : 'Retire from new sessions'}
+                    {feedbackByQuestion.get(question.id)?.retired
+                      ? 'Restore question'
+                      : 'Retire from new sessions'}
                   </button>
                 </form>
               </div>

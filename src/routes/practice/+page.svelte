@@ -74,11 +74,11 @@
           </p>
           <h2 class="mb-2 text-xl font-semibold">
             {data.packs.find(
-    (pack) =>
-      pack.examId === data.session?.examId &&
-      pack.packId === data.session?.packId &&
-      pack.packVersion === data.session?.packVersion,
-  )?.packTitle ?? 'Practice quiz'}
+              (pack) =>
+                pack.examId === data.session?.examId &&
+                pack.packId === data.session?.packId &&
+                pack.packVersion === data.session?.packVersion,
+            )?.packTitle ?? 'Practice quiz'}
           </h2>
           <p class="mb-0.5 leading-relaxed text-[#5e665e]">
             {data.session.answers.length}
@@ -205,17 +205,17 @@
             <p class="mb-3">
               <strong>Correct answer:</strong>
               {latestQuestion.options
-    .filter((option) => latestAnswer.answerIdsCorrect.includes(option.id))
-    .map((option) => option.text)
-    .join('; ')}
+                .filter((option) => latestAnswer.answerIdsCorrect.includes(option.id))
+                .map((option) => option.text)
+                .join('; ')}
             </p>
             <p class="mb-4">{latestAnswer.explanation}</p>
             <div class="flex flex-wrap gap-x-5 gap-y-3">
               {#each latestAnswer.sources as source (source.path)}
                 <a
                   href={resolve(
-    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`,
-  )}
+                    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`,
+                  )}
                   target="_blank"
                   rel="noopener"
                   class="font-semibold text-[#28553a] underline-offset-4 hover:underline"
@@ -231,7 +231,8 @@
             <p class="mb-2 text-xs font-bold tracking-[0.09em] text-[#536c57] uppercase">
               {data.session.answers.length + 1}
               of {data.session.questionIds.length} ·
-              {data.session.questions.find((question) => question.id === activeQuestion.id)?.domainId}
+              {data.session.questions.find((question) => question.id === activeQuestion.id)
+                ?.domainId}
             </p>
             <h2 id="quiz-heading" class="mb-5 text-xl leading-relaxed font-semibold">
               {activeQuestion.prompt}
@@ -241,7 +242,9 @@
               <input type="hidden" name="questionId" value={activeQuestion.id}>
               <fieldset class="grid gap-1">
                 <legend class="mb-2 font-bold">
-                  {activeQuestion.type === 'multiple_choice' ? 'Select all that apply' : 'Select one answer'}
+                  {activeQuestion.type === 'multiple_choice'
+                    ? 'Select all that apply'
+                    : 'Select one answer'}
                 </legend>
                 {#each activeQuestion.options as option (option.id)}
                   <label
