@@ -7,12 +7,12 @@ import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
 import { validateExamPack } from '#lib/server/packs/validate.js';
 import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
 
-export type FeedbackKey = {
+export interface FeedbackKey {
   examId: string;
   packId: string;
   packVersion: string;
   questionId: string;
-};
+}
 export type QuestionCorrection = Partial<
   Pick<
     PackQuestion,
@@ -47,24 +47,24 @@ type JsonRecord = Record<string, unknown> & {
   questions?: unknown;
 };
 
-function readText(row: Record<string, SQLOutputValue>, field: string): string {
+const readText = (row: Record<string, SQLOutputValue>, field: string): string => {
   const value = row[field];
-  if (typeof value !== 'string') throw new Error(`Stored feedback field "${field}" is not text.`);
+  if (typeof value !== 'string') {
+    throw new TypeError(`Stored feedback field "${field}" is not text.`);
+  }
   return value;
-}
+};
 
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+const isRecord = (value: unknown): value is JsonRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
-function citationKey(value: JsonRecord): string {
-  return JSON.stringify(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)));
-}
+const citationKey = (value: object): string =>
+  JSON.stringify(Object.entries(value).toSorted(([left], [right]) => left.localeCompare(right)));
 
-function parseFlags(value: string): FeedbackItem['flags'] {
+const parseFlags = (value: string): FeedbackItem['flags'] => {
   const parsed: unknown = JSON.parse(value);
   if (!Array.isArray(parsed)) {
-    throw new Error('Stored question feedback flags are invalid.');
+    throw new TypeError('Stored question feedback flags are invalid.');
   }
   const flags: FeedbackItem['flags'] = [];
   for (const flag of parsed) {
@@ -74,19 +74,35 @@ function parseFlags(value: string): FeedbackItem['flags'] {
     flags.push({ reason: flag.reason });
   }
   return flags;
-}
+};
 
-function isQuestionCorrection(value: unknown): value is QuestionCorrection {
-  if (!isRecord(value)) return false;
-  const allowed = ['type', 'domainId', 'prompt', 'options', 'answerIds', 'explanation', 'sources'];
-  if (Object.keys(value).some((field) => !allowed.includes(field))) return false;
+const isQuestionCorrection = (value: unknown): value is QuestionCorrection => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  const allowed = new Set([
+    'type',
+    'domainId',
+    'prompt',
+    'options',
+    'answerIds',
+    'explanation',
+    'sources',
+  ]);
+  if (Object.keys(value).some((field) => !allowed.has(field))) {
+    return false;
+  }
   return Object.entries(value).every(([field, fieldValue]) => {
-    if (field === 'type') return fieldValue === 'single_choice' || fieldValue === 'multiple_choice';
-    if (field === 'domainId' || field === 'prompt' || field === 'explanation')
+    if (field === 'type') {
+      return fieldValue === 'single_choice' || fieldValue === 'multiple_choice';
+    }
+    if (field === 'domainId' || field === 'prompt' || field === 'explanation') {
       return typeof fieldValue === 'string';
-    if (field === 'answerIds')
+    }
+    if (field === 'answerIds') {
       return Array.isArray(fieldValue) && fieldValue.every((id) => typeof id === 'string');
-    if (field === 'options')
+    }
+    if (field === 'options') {
       return (
         Array.isArray(fieldValue) &&
         fieldValue.every(
@@ -94,7 +110,8 @@ function isQuestionCorrection(value: unknown): value is QuestionCorrection {
             isRecord(option) && typeof option.id === 'string' && typeof option.text === 'string',
         )
       );
-    if (field === 'sources')
+    }
+    if (field === 'sources') {
       return (
         Array.isArray(fieldValue) &&
         fieldValue.every((source) => {
@@ -102,22 +119,24 @@ function isQuestionCorrection(value: unknown): value is QuestionCorrection {
             !isRecord(source) ||
             typeof source.path !== 'string' ||
             typeof source.label !== 'string'
-          )
+          ) {
             return false;
+          }
           return Object.keys(source).every((key) => key === 'path' || key === 'label');
         })
       );
+    }
     return false;
   });
-}
+};
 
-function parseCorrection(value: string): QuestionCorrection {
+const parseCorrection = (value: string): QuestionCorrection => {
   const parsed: unknown = JSON.parse(value);
   const normalized = normalizeLegacyCitations({
     questions: [{ sources: isRecord(parsed) ? parsed.sources : undefined }],
-  }) as JsonRecord;
-  const questions = normalized.questions;
-  const sources = Array.isArray(questions) ? questions[0] : undefined;
+  });
+  const questions = isRecord(normalized) ? normalized.questions : undefined;
+  const sources: unknown = Array.isArray(questions) ? questions[0] : undefined;
   const correction = isRecord(parsed)
     ? {
         ...parsed,
@@ -126,61 +145,51 @@ function parseCorrection(value: string): QuestionCorrection {
           : {}),
       }
     : parsed;
-  if (!isQuestionCorrection(correction)) throw new Error('Stored question correction is invalid.');
+  if (!isQuestionCorrection(correction)) {
+    throw new Error('Stored question correction is invalid.');
+  }
   return correction;
-}
+};
 
-function feedbackRow(row: FeedbackRow) {
-  const flagsJson = row.flagsJson;
-  const correctionJson = row.correctionJson;
-  const retired = row.retired;
+const feedbackRow = (row: FeedbackRow) => {
+  const { flagsJson } = row;
+  const { correctionJson } = row;
+  const { retired } = row;
   if (
     typeof flagsJson !== 'string' ||
     (correctionJson !== null && typeof correctionJson !== 'string')
   ) {
     throw new Error('Stored question feedback is invalid.');
   }
-  return { flagsJson, correctionJson, retired: typeof retired === 'number' && retired !== 0 };
-}
+  return { correctionJson, flagsJson, retired: typeof retired === 'number' && retired !== 0 };
+};
 
 export class FeedbackValidationError extends Error {
-  constructor(public readonly issues: string[]) {
+  readonly issues: string[];
+
+  constructor(issues: string[]) {
     super(issues.join(' '));
+    this.issues = issues;
     this.name = 'FeedbackValidationError';
   }
 }
 
-function currentFeedback(databasePath: string, key: FeedbackKey) {
+const currentFeedback = (databasePath: string, key: FeedbackKey) => {
   const database = openPackDatabase(databasePath);
   try {
     const row = database
-      .prepare(`SELECT flags_json AS flagsJson, correction_json AS correctionJson, retired
-      FROM question_feedback WHERE exam_id = ? AND pack_id = ? AND pack_version = ? AND question_id = ?`)
+      .prepare(
+        `SELECT flags_json AS flagsJson, correction_json AS correctionJson, retired
+      FROM question_feedback WHERE exam_id = ? AND pack_id = ? AND pack_version = ? AND question_id = ?`,
+      )
       .get(key.examId, key.packId, key.packVersion, key.questionId);
     return row ? feedbackRow(row) : undefined;
   } finally {
     database.close();
   }
-}
+};
 
-function validateCorrection(
-  pack: ExamPack,
-  questionId: string,
-  input: unknown,
-): QuestionCorrection {
-  const original = pack.questions.find((question) => question.id === questionId);
-  if (!original)
-    throw new FeedbackValidationError(['Question is not in this imported pack version.']);
-  if (!isRecord(input)) throw new FeedbackValidationError(['Correction must be a JSON object.']);
-  const correction = input;
-  const allowed = ['type', 'domainId', 'prompt', 'options', 'answerIds', 'explanation', 'sources'];
-  const issues = Object.keys(correction)
-    .filter((field) => !allowed.includes(field))
-    .map((field) => `Correction contains unsupported field "${field}".`);
-  if (Object.keys(correction).length === 0)
-    issues.push('Correction must change at least one question field.');
-  const updated: JsonRecord = { ...original, ...correction };
-  const sources = updated.sources;
+const addCitationIssues = (original: PackQuestion, sources: unknown, issues: string[]) => {
   if (
     !Array.isArray(sources) ||
     sources.length === 0 ||
@@ -206,9 +215,12 @@ function validateCorrection(
   ) {
     issues.push('Correction sources must refer to citation files in this imported pack version.');
   }
+};
+
+const addAnswerIssues = (updated: JsonRecord, issues: string[]) => {
   const rawOptions = updated.options;
   const options = Array.isArray(rawOptions) ? rawOptions : [];
-  const answerIds = updated.answerIds;
+  const { answerIds } = updated;
   if (
     !Array.isArray(answerIds) ||
     answerIds.length === 0 ||
@@ -221,56 +233,119 @@ function validateCorrection(
   ) {
     issues.push('Correct answers must refer to available options and match the question type.');
   }
+};
+
+const normalizeCorrection = (
+  correction: JsonRecord,
+  validatedQuestion: PackQuestion,
+): QuestionCorrection => {
+  const allowed = ['type', 'domainId', 'prompt', 'options', 'answerIds', 'explanation', 'sources'];
+  const normalized: QuestionCorrection = {};
+  for (const field of allowed) {
+    if (!Object.hasOwn(correction, field)) {
+      continue;
+    }
+    if (field === 'options') {
+      normalized.options = validatedQuestion.options;
+    } else if (field === 'sources') {
+      normalized.sources = validatedQuestion.sources;
+    } else if (field === 'answerIds') {
+      normalized.answerIds = [...validatedQuestion.answerIds].toSorted();
+    } else if (field === 'type') {
+      normalized.type = validatedQuestion.type;
+    } else if (field === 'domainId') {
+      normalized.domainId = validatedQuestion.domainId;
+    } else if (field === 'prompt') {
+      normalized.prompt = validatedQuestion.prompt;
+    } else if (field === 'explanation') {
+      normalized.explanation = validatedQuestion.explanation;
+    }
+  }
+  return normalized;
+};
+
+const validateCorrection = (
+  pack: ExamPack,
+  questionId: string,
+  input: unknown,
+): QuestionCorrection => {
+  const original = pack.questions.find((question) => question.id === questionId);
+  if (!original) {
+    throw new FeedbackValidationError(['Question is not in this imported pack version.']);
+  }
+  if (!isRecord(input)) {
+    throw new FeedbackValidationError(['Correction must be a JSON object.']);
+  }
+  const correction = input;
+  const allowed = new Set([
+    'type',
+    'domainId',
+    'prompt',
+    'options',
+    'answerIds',
+    'explanation',
+    'sources',
+  ]);
+  const issues = Object.keys(correction)
+    .filter((field) => !allowed.has(field))
+    .map((field) => `Correction contains unsupported field "${field}".`);
+  if (Object.keys(correction).length === 0) {
+    issues.push('Correction must change at least one question field.');
+  }
+  const updated: JsonRecord = { ...original, ...correction };
+  addCitationIssues(original, updated.sources, issues);
+  addAnswerIssues(updated, issues);
   const candidate: unknown = {
     ...pack,
     questions: pack.questions.map((question) => (question.id === questionId ? updated : question)),
   };
   const validation = validateExamPack(candidate);
-  if (!validation.valid)
+  if (!validation.valid) {
     issues.push(...validation.errors.map((issue) => `Correction is invalid: ${issue}`));
-  if (issues.length) throw new FeedbackValidationError([...new Set(issues)]);
+  }
+  if (issues.length) {
+    throw new FeedbackValidationError([...new Set(issues)]);
+  }
   const validatedQuestion = validation.valid
     ? validation.pack.questions.find((question) => question.id === questionId)
     : undefined;
-  if (!validatedQuestion) throw new Error('Validated question correction was not returned.');
-  const normalized: QuestionCorrection = {};
-  for (const field of allowed) {
-    if (!Object.hasOwn(correction, field)) continue;
-    if (field === 'options') normalized.options = validatedQuestion.options;
-    else if (field === 'sources') normalized.sources = validatedQuestion.sources;
-    else if (field === 'answerIds') normalized.answerIds = [...validatedQuestion.answerIds].sort();
-    else if (field === 'type') normalized.type = validatedQuestion.type;
-    else if (field === 'domainId') normalized.domainId = validatedQuestion.domainId;
-    else if (field === 'prompt') normalized.prompt = validatedQuestion.prompt;
-    else if (field === 'explanation') normalized.explanation = validatedQuestion.explanation;
+  if (!validatedQuestion) {
+    throw new Error('Validated question correction was not returned.');
   }
-  return normalized;
-}
+  return normalizeCorrection(correction, validatedQuestion);
+};
 
-export function flagQuestion(
+export const flagQuestion = (
   databasePath: string,
   input: FeedbackKey & { reason: string },
-): FeedbackItem {
+): FeedbackItem => {
   const reason = input.reason.trim();
-  if (!reason) throw new FeedbackValidationError(['A flag reason is required.']);
+  if (!reason) {
+    throw new FeedbackValidationError(['A flag reason is required.']);
+  }
   const pack = getImportedPack(input.examId, input.packId, input.packVersion, databasePath);
-  if (!pack?.questions.some((question) => question.id === input.questionId))
+  if (pack?.questions.some((question) => question.id === input.questionId) !== true) {
     throw new FeedbackValidationError(['Question is not in this imported pack version.']);
+  }
   const previous = currentFeedback(databasePath, input);
   const flags = previous ? parseFlags(previous.flagsJson) : [];
-  if (!flags.some((flag) => flag.reason === reason)) flags.push({ reason });
-  flags.sort((left, right) => left.reason.localeCompare(right.reason));
+  if (!flags.some((flag) => flag.reason === reason)) {
+    flags.push({ reason });
+  }
+  const sortedFlags = flags.toSorted((left, right) => left.reason.localeCompare(right.reason));
   const database = openPackDatabase(databasePath);
   try {
     database
-      .prepare(`INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
-      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET flags_json = excluded.flags_json, updated_at = CURRENT_TIMESTAMP`)
+      .prepare(
+        `INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET flags_json = excluded.flags_json, updated_at = CURRENT_TIMESTAMP`,
+      )
       .run(
         input.examId,
         input.packId,
         input.packVersion,
         input.questionId,
-        JSON.stringify(flags),
+        JSON.stringify(sortedFlags),
         previous?.correctionJson ?? null,
         Number(previous?.retired ?? false),
       );
@@ -278,29 +353,37 @@ export function flagQuestion(
     database.close();
   }
   return {
+    ...(previous?.correctionJson !== null &&
+    previous?.correctionJson !== undefined &&
+    previous.correctionJson.length > 0
+      ? { correction: parseCorrection(previous.correctionJson) }
+      : {}),
     examId: input.examId,
+    flags: sortedFlags,
     packId: input.packId,
     packVersion: input.packVersion,
     questionId: input.questionId,
-    flags,
-    ...(previous?.correctionJson ? { correction: parseCorrection(previous.correctionJson) } : {}),
     retired: previous?.retired ?? false,
   };
-}
+};
 
-export function createCorrection(
+export const createCorrection = (
   databasePath: string,
   input: FeedbackKey & { correction: unknown },
-): FeedbackItem {
+): FeedbackItem => {
   const pack = getImportedPack(input.examId, input.packId, input.packVersion, databasePath);
-  if (!pack) throw new FeedbackValidationError(['Imported pack version is unavailable.']);
+  if (!pack) {
+    throw new FeedbackValidationError(['Imported pack version is unavailable.']);
+  }
   const correction = validateCorrection(pack, input.questionId, input.correction);
   const previous = currentFeedback(databasePath, input);
   const database = openPackDatabase(databasePath);
   try {
     database
-      .prepare(`INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
-      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET correction_json = excluded.correction_json, updated_at = CURRENT_TIMESTAMP`)
+      .prepare(
+        `INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET correction_json = excluded.correction_json, updated_at = CURRENT_TIMESTAMP`,
+      )
       .run(
         input.examId,
         input.packId,
@@ -314,30 +397,33 @@ export function createCorrection(
     database.close();
   }
   return {
+    correction,
     examId: input.examId,
+    flags: previous ? parseFlags(previous.flagsJson) : [],
     packId: input.packId,
     packVersion: input.packVersion,
     questionId: input.questionId,
-    flags: previous ? parseFlags(previous.flagsJson) : [],
-    correction,
     retired: previous?.retired ?? false,
   };
-}
+};
 
-export function retireQuestion(
+export const retireQuestion = (
   databasePath: string,
   key: FeedbackKey,
   retired: boolean,
-): FeedbackItem {
+): FeedbackItem => {
   const pack = getImportedPack(key.examId, key.packId, key.packVersion, databasePath);
-  if (!pack?.questions.some((question) => question.id === key.questionId))
+  if (pack?.questions.some((question) => question.id === key.questionId) !== true) {
     throw new FeedbackValidationError(['Question is not in this imported pack version.']);
+  }
   const previous = currentFeedback(databasePath, key);
   const database = openPackDatabase(databasePath);
   try {
     database
-      .prepare(`INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
-      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET retired = excluded.retired, updated_at = CURRENT_TIMESTAMP`)
+      .prepare(
+        `INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
+      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET retired = excluded.retired, updated_at = CURRENT_TIMESTAMP`,
+      )
       .run(
         key.examId,
         key.packId,
@@ -353,84 +439,104 @@ export function retireQuestion(
   return {
     ...key,
     flags: previous ? parseFlags(previous.flagsJson) : [],
-    ...(previous?.correctionJson ? { correction: parseCorrection(previous.correctionJson) } : {}),
+    ...(previous?.correctionJson !== null &&
+    previous?.correctionJson !== undefined &&
+    previous.correctionJson.length > 0
+      ? { correction: parseCorrection(previous.correctionJson) }
+      : {}),
     retired,
   };
-}
+};
 
-export function listFeedback(
+export const listFeedback = (
   databasePath: string,
   examId: string,
   packId: string,
   packVersion: string,
-): FeedbackItem[] {
+): FeedbackItem[] => {
   const database = openPackDatabase(databasePath);
   try {
     return database
-      .prepare(`SELECT question_id AS questionId, flags_json AS flagsJson, correction_json AS correctionJson, retired
-      FROM question_feedback WHERE exam_id = ? AND pack_id = ? AND pack_version = ? ORDER BY question_id`)
+      .prepare(
+        `SELECT question_id AS questionId, flags_json AS flagsJson, correction_json AS correctionJson, retired
+      FROM question_feedback WHERE exam_id = ? AND pack_id = ? AND pack_version = ? ORDER BY question_id`,
+      )
       .all(examId, packId, packVersion)
       .map((row) => {
         const saved = feedbackRow(row);
         return {
+          ...(saved.correctionJson !== null &&
+          saved.correctionJson !== undefined &&
+          saved.correctionJson.length > 0
+            ? { correction: parseCorrection(saved.correctionJson) }
+            : {}),
           examId,
+          flags: parseFlags(saved.flagsJson),
           packId,
           packVersion,
           questionId: readText(row, 'questionId'),
-          flags: parseFlags(saved.flagsJson),
-          ...(saved.correctionJson ? { correction: parseCorrection(saved.correctionJson) } : {}),
           retired: saved.retired,
         };
       });
   } finally {
     database.close();
   }
-}
+};
 
-export function exportFeedback(databasePath: string): string {
+export const exportFeedback = (databasePath: string): string => {
   const database = openPackDatabase(databasePath);
   try {
     const rows = database
-      .prepare(`SELECT exam_id AS examId, pack_id AS packId, pack_version AS packVersion,
+      .prepare(
+        `SELECT exam_id AS examId, pack_id AS packId, pack_version AS packVersion,
       question_id AS questionId, flags_json AS flagsJson, correction_json AS correctionJson, retired
-      FROM question_feedback ORDER BY exam_id, pack_id, pack_version, question_id`)
+      FROM question_feedback ORDER BY exam_id, pack_id, pack_version, question_id`,
+      )
       .all();
     const items = rows.map((row) => {
       const saved = feedbackRow(row);
       return {
+        ...(saved.correctionJson !== null &&
+        saved.correctionJson !== undefined &&
+        saved.correctionJson.length > 0
+          ? { correction: parseCorrection(saved.correctionJson) }
+          : {}),
         examId: readText(row, 'examId'),
+        flags: parseFlags(saved.flagsJson),
         packId: readText(row, 'packId'),
         packVersion: readText(row, 'packVersion'),
         questionId: readText(row, 'questionId'),
-        flags: parseFlags(saved.flagsJson),
-        ...(saved.correctionJson ? { correction: parseCorrection(saved.correctionJson) } : {}),
         retired: saved.retired,
       };
     });
-    return JSON.stringify({ format: 'question-feedback', version: 1, items });
+    return JSON.stringify({ format: 'question-feedback', items, version: 1 });
   } finally {
     database.close();
   }
-}
+};
 
-export function getEffectivePack(databasePath: string, pack: ExamPack) {
+export const getEffectivePack = (databasePath: string, pack: ExamPack) => {
   const feedback = listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version);
   const byId = new Map(feedback.map((item) => [item.questionId, item]));
   const questions = pack.questions.flatMap((question) => {
     const item = byId.get(question.id);
-    if (item?.retired) return [];
+    if (item?.retired === true) {
+      return [];
+    }
     return [{ ...question, ...item?.correction }];
   });
   return { ...pack, questions };
-}
+};
 
-export function readPackForReview(
+export const readPackForReview = (
   databasePath: string,
   examId: string,
   packId: string,
   packVersion: string,
-) {
+): { feedback: FeedbackItem[]; pack: ExamPack } => {
   const pack = getImportedPack(examId, packId, packVersion, databasePath);
-  if (!pack) error(404, 'That imported exam pack version is not available.');
-  return { pack, feedback: listFeedback(databasePath, examId, packId, packVersion) };
-}
+  if (!pack) {
+    error(404, 'That imported exam pack version is not available.');
+  }
+  return { feedback: listFeedback(databasePath, examId, packId, packVersion), pack };
+};

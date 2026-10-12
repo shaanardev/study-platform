@@ -1,7 +1,8 @@
-import { Data, Result, type Schema } from 'effect';
-import type { AuthoringFile, QuestionFile } from './authoring-schema.js';
+import { Data, Result } from 'effect';
+import type { Schema } from 'effect';
+import type { AuthoringFileInput, QuestionFile } from './authoring-schema.js';
 
-export type AssembledAuthoring = AuthoringFile & {
+export type AssembledAuthoring = AuthoringFileInput & {
   readonly questions: Schema.Schema.Type<typeof QuestionFile>;
 };
 
@@ -9,15 +10,15 @@ export class AuthoringValidationError extends Data.TaggedError('AuthoringValidat
   readonly message: string;
 }> {}
 
-export function safeRelativePath(
+export const safeRelativePath = (
   path: string,
   label: string,
-): Result.Result<string, AuthoringValidationError> {
+): Result.Result<string, AuthoringValidationError> => {
   const message = `${label} must be a safe relative path`;
   if (
     !path ||
     path.startsWith('/') ||
-    /^[a-zA-Z]:/.test(path) ||
+    /^[a-zA-Z]:/u.test(path) ||
     path.includes('\\') ||
     path.includes('\0')
   ) {
@@ -28,12 +29,58 @@ export function safeRelativePath(
     return Result.fail(new AuthoringValidationError({ message }));
   }
   return Result.succeed(path);
-}
+};
 
-export function validateAuthoring(
+const hasValidAnswers = (question: AssembledAuthoring['questions'][number]): boolean => {
+  const optionIds = question.options.map((option) => option.id);
+  const correctIds = question.correctOptionIds;
+  return (
+    new Set(optionIds).size === optionIds.length &&
+    new Set(correctIds).size === correctIds.length &&
+    correctIds.every((id) => optionIds.includes(id)) &&
+    (question.type === 'single_choice' ? correctIds.length === 1 : correctIds.length >= 2) &&
+    correctIds.length < optionIds.length
+  );
+};
+
+const validateQuestions = (
+  questions: AssembledAuthoring['questions'],
+  domainIds: ReadonlySet<string>,
+): Result.Result<void, AuthoringValidationError> =>
+  Result.gen(function* validateQuestionsProgram() {
+    const questionIds = new Set<string>();
+    for (const question of questions) {
+      if (questionIds.has(question.id)) {
+        return yield* Result.fail(
+          new AuthoringValidationError({ message: `Duplicate question ID: ${question.id}` }),
+        );
+      }
+      questionIds.add(question.id);
+      if (!domainIds.has(question.domainId)) {
+        return yield* Result.fail(
+          new AuthoringValidationError({
+            message: `Question ${question.id} references unknown domain ${question.domainId}`,
+          }),
+        );
+      }
+      if (!hasValidAnswers(question)) {
+        return yield* Result.fail(
+          new AuthoringValidationError({
+            message: `Question ${question.id} has invalid options or correct answer IDs`,
+          }),
+        );
+      }
+      for (const source of question.sources) {
+        yield* safeRelativePath(source.path, `Question ${question.id} source path`);
+      }
+    }
+    return yield* Result.void;
+  });
+
+export const validateAuthoring = (
   input: AssembledAuthoring,
-): Result.Result<void, AuthoringValidationError> {
-  return Result.gen(function* () {
+): Result.Result<void, AuthoringValidationError> =>
+  Result.gen(function* validateAuthoringProgram() {
     if (input.questions.length === 0) {
       return yield* Result.fail(
         new AuthoringValidationError({ message: 'Authoring must contain at least one question' }),
@@ -66,47 +113,10 @@ export function validateAuthoring(
         new AuthoringValidationError({ message: 'outputFile must be a filename, not a path' }),
       );
     }
-
     yield* safeRelativePath(input.assetsDirectory, 'assetsDirectory');
     for (const asset of input.assetFiles ?? []) {
       yield* safeRelativePath(asset, 'assetFiles path');
     }
-
-    const questionIds = new Set<string>();
-    for (const question of input.questions) {
-      if (questionIds.has(question.id)) {
-        return yield* Result.fail(
-          new AuthoringValidationError({ message: `Duplicate question ID: ${question.id}` }),
-        );
-      }
-      questionIds.add(question.id);
-      if (!domainIds.has(question.domainId)) {
-        return yield* Result.fail(
-          new AuthoringValidationError({
-            message: `Question ${question.id} references unknown domain ${question.domainId}`,
-          }),
-        );
-      }
-      const optionIds = question.options.map((option) => option.id);
-      const correctIds = question.correctOptionIds;
-      if (
-        new Set(optionIds).size !== optionIds.length ||
-        new Set(correctIds).size !== correctIds.length ||
-        !correctIds.every((id) => optionIds.includes(id)) ||
-        (question.type === 'single_choice' ? correctIds.length !== 1 : correctIds.length < 2) ||
-        correctIds.length >= optionIds.length
-      ) {
-        return yield* Result.fail(
-          new AuthoringValidationError({
-            message: `Question ${question.id} has invalid options or correct answer IDs`,
-          }),
-        );
-      }
-      for (const source of question.sources) {
-        yield* safeRelativePath(source.path, `Question ${question.id} source path`);
-      }
-    }
-
-    return undefined;
+    yield* validateQuestions(input.questions, domainIds);
+    return yield* Result.void;
   });
-}
