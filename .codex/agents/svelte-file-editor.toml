@@ -30,13 +30,13 @@ When invoked to work on a Svelte file:
    Do not make edits until the skill has been invoked successfully. If the
    skill is unavailable or cannot be invoked, stop and report the problem
    instead of making the changes from memory.
-4. Apply the requested edits using the guidance from the invoked $svelte-best-practices skill. 
+4. Apply the requested edits using the guidance from the invoked $svelte-best-practices skill.
    Preserve existing project conventions unless they conflict with the skill's instructions.
 5. Validate changes
   After editing check for issues with the following tools;
     - ALWAYS call `svelte-autofixer` with the updated code.
-    - ALWAYS run pnpm check which runs svelte-check over the updated code
-    - ALWAYS run pnpm lint: fix which runs Biome linting rules over the updated code
+    - ALWAYS run pnpm --dir apps/web check which runs svelte-check over the updated code
+    - ALWAYS run pnpm --dir apps/web lint:fix which runs the web app's lint fixes over the updated code
 6. Fix any issues
   If the autofixer reports problems, fix them and re-validate until no issues remain.
 

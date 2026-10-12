@@ -1,51 +1,35 @@
 {
-  "name": "frontend",
-  "private": true,
+  "name": "learning-platform",
   "version": "0.0.1",
+  "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "serve": "pnpm --dir apps/web serve",
+    "build": "pnpm --dir apps/web build",
+    "preview": "pnpm --dir apps/web preview",
+    "typecheck": "pnpm --dir apps/web typecheck",
+    "check:watch": "pnpm --dir apps/web check:watch",
+    "test": "pnpm --dir apps/web test",
+    "test:unit": "pnpm --dir apps/web test:unit",
+    "check": "pnpm --dir apps/web check",
+    "verify": "pnpm --dir apps/web verify",
+    "lint": "pnpm --dir apps/web lint && pnpm --dir apps/pack-cli lint",
+    "lint:fix": "pnpm --dir apps/web lint:fix && pnpm --dir apps/pack-cli lint:fix",
+    "validate": "pnpm lint && pnpm fmt:check",
+    "fmt": "oxfmt --write",
+    "fmt:check": "oxfmt --check",
+    "verify:all": "pnpm fmt && pnpm verify && pnpm --dir apps/pack-cli verify && pnpm fmt:check",
+    "pack:build": "tsx apps/pack-cli/src/index.ts build",
+    "pack:verify": "tsx apps/pack-cli/src/index.ts verify"
+  },
+  "devDependencies": {
+    "oxfmt": "0.72.0",
+    "oxlint": "1.87.0",
+    "tsx": "^4.23.15"
+  },
   "engines": {
     "node": "24.21.0"
   },
-  "packageManager": "pnpm@12.6.0",
-  "scripts": {
-    "dev": "vite dev --host 127.0.0.1",
-    "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1",
-    "serve": "vite dev --host 127.0.0.1",
-    "prepare": "svelte-kit sync || echo ''",
-    "check": "pnpm typecheck && pnpm validate && pnpm test",
-    "verify": "pnpm lint:fix && pnpm check",
-    "verify:all": "pnpm verify && pnpm --dir cli verify",
-    "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "validate": "biome check ./src --error-on-warnings",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint:fix": "biome check --error-on-warnings --write ./src --unsafe",
-    "test:unit": "vitest run",
-    "test": "vitest run",
-    "pack:build": "tsx cli/src/index.ts build",
-    "pack:verify": "tsx cli/src/index.ts verify"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.5.15",
-    "@skeletonlabs/skeleton": "^5.0.1",
-    "@skeletonlabs/skeleton-svelte": "^5.0.1",
-    "@sveltejs/adapter-auto": "^8.0.0",
-    "@sveltejs/kit": "^3.0.1",
-    "@sveltejs/vite-plugin-svelte": "^7.3.1",
-    "@tailwindcss/vite": "^4.3.3",
-    "@testing-library/svelte": "^5.4.2",
-    "@types/node": "^26.6.5",
-    "jsdom": "^30.1.2",
-    "svelte": "^5.57.2",
-    "svelte-check": "^4.7.6",
-    "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.3"
-  },
-  "imports": {
-    "#lib": "./src/lib/index.js",
-    "#lib/*": "./src/lib/*"
-  }
+  "packageManager": "pnpm@12.6.0"
 }

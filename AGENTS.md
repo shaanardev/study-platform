@@ -4,7 +4,9 @@
 - **Package Manager**: pnpm
 
 ## Domain design & rules
+
 See `requirements.md`
+
 ## Subagent Delegation
 
 - Use `gpt-6-luna` at high reasoning as the model for all subagents
@@ -14,8 +16,8 @@ See `requirements.md`
 
 ## Code Verification
 
-- For changes to the frontend app (`src/` and its root configuration), run `pnpm verify` from the repository root before completing the task.
-- For changes confined to `cli/`, run `pnpm --dir cli verify` before completing the task.
+- For changes to the web app (`apps/web/`) or its configuration, run `pnpm verify` from the repository root before completing the task.
+- For changes confined to the pack CLI (`apps/pack-cli/`), run `pnpm --dir apps/pack-cli verify` before completing the task.
 - For changes affecting both apps or shared tooling, run `pnpm verify:all` from the repository root.
 - Each verify command may rewrite files through `lint:fix`. Review the resulting diff and include only changes that belong to the task. Report any failed or blocked verification in the task handoff.
 

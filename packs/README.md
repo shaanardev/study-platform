@@ -30,11 +30,11 @@ instead of overwriting it.
 
 ## Build and verify
 
-The Effect CLI builds packs from a JSON authoring file. Its format includes `metadata`, an
+The Effect CLI in `apps/pack-cli` builds packs from a JSON authoring file. Its format includes `metadata`, an
 `outputFile`, an `assetsDirectory`, deterministic `shuffle` seeds, and `questions` with option IDs,
 correct option IDs, bundled source paths, or local-note citations. See
-[`cli/test/fixtures/multi-domain/authoring.json`](../cli/test/fixtures/multi-domain/authoring.json)
-and the [single-domain example](../cli/test/fixtures/single-domain/authoring.json).
+[`apps/pack-cli/test/fixtures/multi-domain/authoring.json`](../apps/pack-cli/test/fixtures/multi-domain/authoring.json)
+and the [single-domain example](../apps/pack-cli/test/fixtures/single-domain/authoring.json).
 Bundled source paths in the authoring file are relative to that file. The builder copies those
 under the output directory's asset folder. Pass `--local-note-root` when authoring local notes; the
 builder requires each note to be a regular file inside that root and writes an absolute `file://`
@@ -42,12 +42,12 @@ URL into the pack. It copies only explicitly listed bundled files and metadata a
 repository root:
 
 ```bash
-pnpm pack:build cli/test/fixtures/multi-domain/authoring.json /tmp/example-pack --local-note-root /path/to/local-notes
+pnpm pack:build apps/pack-cli/test/fixtures/multi-domain/authoring.json /tmp/example-pack --local-note-root /path/to/local-notes
 pnpm pack:verify /tmp/example-pack/sample-pack.json
 ```
 
-Pack verification checks structure, citation paths, and any supplied data-driven profile. The root
-application suite separately covers importing packs, approving and snapshotting local citations,
+Pack verification checks structure, citation paths, and any supplied data-driven profile. The web
+app suite separately covers importing packs, approving and snapshotting local citations,
 and rendering practice and review citations. A failed check exits nonzero. The generated JSON follows
 [the pack schema](./exam-pack.schema.json).
 

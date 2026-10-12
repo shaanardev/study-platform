@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "semi": true,
+  "trailingComma": "all",
+  "arrowParens": "always",
+  "svelte": true,
+  "sortImports": {
+    "internalPattern": ["#lib/**"]
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/.svelte-kit/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/coverage/**",
+    ".local/**",
+    ".ordewell/**",
+    ".pnpm-store/**",
+    ".worktrees/**",
+    ".aws/**",
+    "packs/**",
+    "plugins/**",
+    ".codex/**",
+    ".agents/**",
+    "pnpm-lock.yaml"
+  ]
+}
