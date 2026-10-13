@@ -42,6 +42,10 @@ const config: OxlintConfig = defineConfig({
     '!.vscode/**/*',
     '!.codex/**/*',
   ],
+  rules: {
+    // hitl: turning off unstable api usage warnings to reduce noise in stdout from pnpm verify:all
+    'effecttsgo/unstable-api-usage': 'off',
+  },
 });
 
 export default config;
