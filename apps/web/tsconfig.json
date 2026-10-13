@@ -1,30 +1,10 @@
 {
-  "extends": "$app/tsconfig",
+  "extends": ["$app/tsconfig", "../../tsconfig.base.json"],
   "compilerOptions": {
     "types": ["$app/types", "node"],
 
     "rewriteRelativeImportExtensions": true,
-    "sourceMap": true,
-    /* Type safety */
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
-
-    /* Code quality */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-
-    "noUncheckedSideEffectImports": true,
-    "useDefineForClassFields": true
+    "sourceMap": true
   },
   "exclude": ["node_modules", "pnpm-store", ".svelte-kit", "build", "dist", "coverage", "static"],
   "include": ["src", "eslint.config.ts", "prettier.config.ts", "vite.config.ts"]

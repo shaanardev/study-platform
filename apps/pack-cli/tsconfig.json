@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.base.json",
   "$schema": "./node_modules/@effect/tsgo/schema.json",
   "compilerOptions": {
     /* Project layout */
@@ -19,37 +20,7 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "removeComments": false,
-
-    /* Type safety */
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
-
-    /* Code quality */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-
-    /* Modern TypeScript behavior */
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "useDefineForClassFields": true,
-
-    /* Common Node project features */
-    "resolveJsonModule": true,
-
-    /* Faster and cleaner dependency checking */
-    "skipLibCheck": true
+    "removeComments": false
   },
   "include": [
     "src/**/*.ts",

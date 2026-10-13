@@ -22,10 +22,12 @@
     "pack:verify": "tsx apps/pack-cli/src/index.ts verify"
   },
   "devDependencies": {
+    "@types/node": "^26.6.5",
     "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
     "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
     "ultracite": "8.0.0"
   },
   "engines": {
