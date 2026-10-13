@@ -1,6 +1,6 @@
 import type { SQLOutputValue } from 'node:sqlite';
 
-import { error } from '@sveltejs/kit';
+import { error as httpError } from '@sveltejs/kit';
 
 import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
 import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
@@ -536,7 +536,7 @@ export const readPackForReview = (
 ): { feedback: FeedbackItem[]; pack: ExamPack } => {
   const pack = getImportedPack(examId, packId, packVersion, databasePath);
   if (!pack) {
-    error(404, 'That imported exam pack version is not available.');
+    httpError(404, 'That imported exam pack version is not available.');
   }
   return { feedback: listFeedback(databasePath, examId, packId, packVersion), pack };
 };

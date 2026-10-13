@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
 
-import { error as kitError } from '@sveltejs/kit';
+import { error as httpError } from '@sveltejs/kit';
 
 import {
   getApprovedSourceRoot,
@@ -191,26 +191,26 @@ export const createPracticeSession = (options: StartPracticeOptions): PracticeSe
     databasePath,
   );
   if (!importedPack) {
-    kitError(404, 'That imported exam pack version is not available.');
+    httpError(404, 'That imported exam pack version is not available.');
   }
   const pack = getEffectivePack(databasePath, importedPack);
   const domainIds = [...new Set(options.domainIds)];
   if (domainIds.some((id) => !pack.domains.some((domain) => domain.id === id))) {
-    kitError(400, 'Choose domains from this exam pack.');
+    httpError(400, 'Choose domains from this exam pack.');
   }
   if (
     !Number.isInteger(options.questionCount) ||
     options.questionCount < 1 ||
     options.questionCount > 100
   ) {
-    kitError(400, 'Question count must be between 1 and 100.');
+    httpError(400, 'Question count must be between 1 and 100.');
   }
   const selectedQuestionIds = options.questionIds ? [...new Set(options.questionIds)] : undefined;
   if (
     selectedQuestionIds?.some((id) => !pack.questions.some((question) => question.id === id)) ===
     true
   ) {
-    kitError(400, 'Choose questions from this exam pack version.');
+    httpError(400, 'Choose questions from this exam pack version.');
   }
   const candidates = pack.questions.filter((question) =>
     selectedQuestionIds
@@ -221,7 +221,7 @@ export const createPracticeSession = (options: StartPracticeOptions): PracticeSe
     options.questionCount > candidates.length ||
     (selectedQuestionIds !== undefined && options.questionCount !== selectedQuestionIds.length)
   ) {
-    kitError(400, 'There are not that many questions in the selected domains.');
+    httpError(400, 'There are not that many questions in the selected domains.');
   }
 
   const database = openPackDatabase(databasePath);
@@ -323,11 +323,11 @@ export const answerQuestion = (
 ): QuizAnswer => {
   const session = getPracticeSession(databasePath, sessionId);
   if (session?.status !== 'in_progress') {
-    kitError(404, 'This practice session is no longer in progress.');
+    httpError(404, 'This practice session is no longer in progress.');
   }
   const question = session.questions.find((item) => item.id === questionId);
   if (!question || session.answers.some((answer) => answer.questionId === questionId)) {
-    kitError(400, 'That question cannot be answered in this session.');
+    httpError(400, 'That question cannot be answered in this session.');
   }
   const importedPack = getImportedPack(
     session.examId,
@@ -352,11 +352,11 @@ export const answerQuestion = (
     questionSnapshot.find((item) => item.id === questionId) ??
     importedPack?.questions.find((item) => item.id === questionId);
   if (!correctQuestion) {
-    kitError(404, 'Question not found in the imported pack version.');
+    httpError(404, 'Question not found in the imported pack version.');
   }
   const submitted = [...new Set(answerIds)];
   if (submitted.length === 0 || containsInvalidAnswer(submitted, question.options)) {
-    kitError(400, 'Select a valid answer before continuing.');
+    httpError(400, 'Select a valid answer before continuing.');
   }
   const correct = matchesAnswerSet(submitted, correctQuestion.answerIds);
   const answerDatabase = openPackDatabase(dbPath(databasePath));
@@ -412,15 +412,15 @@ export const readQuestionSource = async (
     ?.sources.find((item) => item.path === sourcePath);
   if (!source) {
     if (/^[a-zA-Z][a-zA-Z\d+.-]*:/u.test(sourcePath) && !sourcePath.startsWith('file:///')) {
-      kitError(400, 'Citation URL scheme is unsupported.');
+      httpError(400, 'Citation URL scheme is unsupported.');
     }
-    kitError(404, 'Source excerpt not found.');
+    httpError(404, 'Source excerpt not found.');
   }
   if (
     source.path.startsWith('file:') &&
     getApprovedSourceRoot(dbPath(databasePath), examId, packId, packVersion) === undefined
   ) {
-    kitError(404, 'Local citation is unavailable because no approved source root was recorded.');
+    httpError(404, 'Local citation is unavailable because no approved source root was recorded.');
   }
   const asset = getImportedSourceAsset(
     dbPath(databasePath),
@@ -431,7 +431,7 @@ export const readQuestionSource = async (
     sourcePath,
   );
   if (!asset) {
-    kitError(404, 'Saved source excerpt is unavailable.');
+    httpError(404, 'Saved source excerpt is unavailable.');
   }
   return await Promise.resolve({ label: asset.label, text: asset.excerpt });
 };

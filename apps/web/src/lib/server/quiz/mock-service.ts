@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import pathModule from 'node:path';
 
-import { error } from '@sveltejs/kit';
+import { error as httpError } from '@sveltejs/kit';
 
 import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
@@ -76,11 +76,11 @@ export const getMockCoverage = (
 ) => {
   const importedPack = getImportedPack(examId, packId, packVersion, dbPath(databasePath));
   if (!importedPack) {
-    error(404, 'That imported exam pack version is not available.');
+    httpError(404, 'That imported exam pack version is not available.');
   }
   const pack = getEffectivePack(dbPath(databasePath), importedPack);
   if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 100) {
-    error(400, 'Mock question count must be between 1 and 100.');
+    httpError(400, 'Mock question count must be between 1 and 100.');
   }
   const counts = Object.fromEntries(
     pack.domains.map((domain) => [
@@ -251,7 +251,7 @@ export const createMockAttempt = (options: {
     databasePath,
   );
   if (!importedPack) {
-    error(404, 'That imported exam pack version is not available.');
+    httpError(404, 'That imported exam pack version is not available.');
   }
   const pack = getEffectivePack(databasePath, importedPack);
   if (
@@ -259,7 +259,7 @@ export const createMockAttempt = (options: {
     options.durationMinutes < 1 ||
     options.durationMinutes > 600
   ) {
-    error(400, 'Duration must be between 1 and 600 minutes.');
+    httpError(400, 'Duration must be between 1 and 600 minutes.');
   }
   const coverage = getMockCoverage(
     databasePath,
@@ -269,7 +269,7 @@ export const createMockAttempt = (options: {
     options.questionCount,
   );
   if (coverage.gaps.length) {
-    error(
+    httpError(
       400,
       `Insufficient weighted mock coverage: ${coverage.gaps.map((gap) => `${gap.title} requires ${gap.required}, has ${gap.available}`).join('; ')}.`,
     );
@@ -334,21 +334,21 @@ export const saveMockAnswer = (
   const path = dbPath(databasePath);
   const attempt = readMockAttempt(path, attemptId, now);
   if (!attempt) {
-    error(404, 'Mock attempt not found.');
+    httpError(404, 'Mock attempt not found.');
   }
   if (attempt.status !== 'in_progress') {
-    error(400, 'This mock attempt is closed.');
+    httpError(400, 'This mock attempt is closed.');
   }
   const question = attempt.questions.find((item) => item.id === questionId);
   if (!question) {
-    error(400, 'That question is not part of this mock.');
+    httpError(400, 'That question is not part of this mock.');
   }
   const selected = [...new Set(answerIds)];
   if (
     !selected.length ||
     selected.some((answerId) => !question.options.some((option) => option.id === answerId))
   ) {
-    error(400, 'Select a valid answer.');
+    httpError(400, 'Select a valid answer.');
   }
   const database = openPackDatabase(path);
   try {
@@ -366,7 +366,7 @@ export const saveMockAnswer = (
   }
   const saved = readMockAttempt(path, attemptId, now);
   if (!saved) {
-    error(404, 'Mock attempt not found.');
+    httpError(404, 'Mock attempt not found.');
   }
   return saved;
 };
@@ -379,7 +379,7 @@ export const submitMockAttempt = (
   const path = dbPath(databasePath);
   const current = readMockAttempt(path, attemptId, now);
   if (!current) {
-    error(404, 'Mock attempt not found.');
+    httpError(404, 'Mock attempt not found.');
   }
   if (current.status === 'in_progress') {
     const database = openPackDatabase(path);
@@ -395,7 +395,7 @@ export const submitMockAttempt = (
   }
   const submitted = readMockAttempt(path, attemptId, now);
   if (!submitted) {
-    error(404, 'Mock attempt not found.');
+    httpError(404, 'Mock attempt not found.');
   }
   return submitted;
 };

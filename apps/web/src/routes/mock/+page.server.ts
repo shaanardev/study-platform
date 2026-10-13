@@ -1,6 +1,7 @@
 import { resolve } from '$app/paths';
-import { error as kitError, fail, redirect } from '@sveltejs/kit';
+import { error as httpError, fail, redirect } from '@sveltejs/kit';
 
+import { getFormString } from '#lib/server/form-data.js';
 import { getPackIndex } from '#lib/server/packs/importer.js';
 import {
   createMockAttempt,
@@ -16,11 +17,6 @@ import type { Actions, PageServerLoad } from './$types';
 
 const databasePath = workspacePath('.local/exam-packs.sqlite');
 
-const formString = (form: FormData, key: string) => {
-  const value = form.get(key);
-  return typeof value === 'string' ? value : '';
-};
-
 export const load: PageServerLoad = ({ url }) => {
   const packs = getPackIndex();
   const attemptId = url.searchParams.get('attempt');
@@ -29,7 +25,7 @@ export const load: PageServerLoad = ({ url }) => {
       ? getResumableMockAttempt(databasePath)
       : getMockAttempt(databasePath, attemptId);
   if (attemptId !== null && attempt === undefined) {
-    kitError(404, 'Mock attempt not found.');
+    httpError(404, 'Mock attempt not found.');
   }
   const questionCount = Number(url.searchParams.get('count') ?? '10');
   const coverages: Record<string, ReturnType<typeof getMockCoverage> | undefined> = {};
@@ -58,14 +54,14 @@ export const load: PageServerLoad = ({ url }) => {
 
 export const actions: Actions = {
   answer: async ({ request }) => {
-    const form = await request.formData();
-    const attemptId = formString(form, 'attemptId');
+    const formData = await request.formData();
+    const attemptId = getFormString(formData, 'attemptId');
     try {
       saveMockAnswer(
         databasePath,
         attemptId,
-        formString(form, 'questionId'),
-        form.getAll('answerIds').map(String),
+        getFormString(formData, 'questionId'),
+        formData.getAll('answerIds').map(String),
       );
     } catch (error) {
       if (
@@ -81,12 +77,12 @@ export const actions: Actions = {
     return redirect(303, `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`);
   },
   start: async ({ request }) => {
-    const form = await request.formData();
-    const examId = formString(form, 'examId');
-    const packId = formString(form, 'packId');
-    const packVersion = formString(form, 'packVersion');
-    const questionCount = Number(form.get('questionCount'));
-    const durationMinutes = Number(form.get('durationMinutes'));
+    const formData = await request.formData();
+    const examId = getFormString(formData, 'examId');
+    const packId = getFormString(formData, 'packId');
+    const packVersion = getFormString(formData, 'packVersion');
+    const questionCount = Number(formData.get('questionCount'));
+    const durationMinutes = Number(formData.get('durationMinutes'));
     if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 100) {
       return fail(400, { gaps: [], message: 'Mock question count must be between 1 and 100.' });
     }
@@ -120,8 +116,8 @@ export const actions: Actions = {
     }
   },
   submit: async ({ request }) => {
-    const form = await request.formData();
-    const attemptId = formString(form, 'attemptId');
+    const formData = await request.formData();
+    const attemptId = getFormString(formData, 'attemptId');
     submitMockAttempt(databasePath, attemptId);
     return redirect(303, `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`);
   },

@@ -8,6 +8,7 @@ import {
   readPackForReview,
   retireQuestion,
 } from '#lib/server/feedback/service.js';
+import { getFormString } from '#lib/server/form-data.js';
 import { getPackIndex } from '#lib/server/packs/importer.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
@@ -36,28 +37,23 @@ export const load: PageServerLoad = ({ url }) => {
   return { feedback, pack, packs };
 };
 
-const formString = (form: FormData, key: string) => {
-  const value = form.get(key);
-  return typeof value === 'string' ? value : '';
-};
-
-const key = (form: FormData) => ({
-  examId: formString(form, 'examId'),
-  packId: formString(form, 'packId'),
-  packVersion: formString(form, 'packVersion'),
-  questionId: formString(form, 'questionId'),
+const getReviewTarget = (formData: FormData) => ({
+  examId: getFormString(formData, 'examId'),
+  packId: getFormString(formData, 'packId'),
+  packVersion: getFormString(formData, 'packVersion'),
+  questionId: getFormString(formData, 'questionId'),
 });
 
-const selectedUrl = (values: ReturnType<typeof key>) =>
-  `${resolve('/review')}?examId=${encodeURIComponent(values.examId)}&packId=${encodeURIComponent(values.packId)}&packVersion=${encodeURIComponent(values.packVersion)}`;
+const selectedUrl = (reviewTarget: ReturnType<typeof getReviewTarget>) =>
+  `${resolve('/review')}?examId=${encodeURIComponent(reviewTarget.examId)}&packId=${encodeURIComponent(reviewTarget.packId)}&packVersion=${encodeURIComponent(reviewTarget.packVersion)}`;
 
 export const actions: Actions = {
   correct: async ({ request }) => {
-    const form = await request.formData();
-    const values = key(form);
+    const formData = await request.formData();
+    const reviewTarget = getReviewTarget(formData);
     let correction: unknown;
     try {
-      correction = JSON.parse(formString(form, 'correction') || '{}');
+      correction = JSON.parse(getFormString(formData, 'correction') || '{}');
     } catch {
       return fail(400, { message: 'Correction must be valid JSON.' });
     }
@@ -65,39 +61,39 @@ export const actions: Actions = {
       return fail(400, { message: 'Correction must be a JSON object.' });
     }
     try {
-      createCorrection(databasePath, { ...values, correction });
+      createCorrection(databasePath, { ...reviewTarget, correction });
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(400, { message: error.message });
       }
       throw error instanceof Error ? error : new Error('Could not save question correction.');
     }
-    return redirect(303, selectedUrl(values));
+    return redirect(303, selectedUrl(reviewTarget));
   },
   flag: async ({ request }) => {
-    const form = await request.formData();
-    const values = key(form);
+    const formData = await request.formData();
+    const reviewTarget = getReviewTarget(formData);
     try {
-      flagQuestion(databasePath, { ...values, reason: formString(form, 'reason') });
+      flagQuestion(databasePath, { ...reviewTarget, reason: getFormString(formData, 'reason') });
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(400, { message: error.message });
       }
       throw error instanceof Error ? error : new Error('Could not save question flag.');
     }
-    return redirect(303, selectedUrl(values));
+    return redirect(303, selectedUrl(reviewTarget));
   },
   retire: async ({ request }) => {
-    const form = await request.formData();
-    const values = key(form);
+    const formData = await request.formData();
+    const reviewTarget = getReviewTarget(formData);
     try {
-      retireQuestion(databasePath, values, form.get('retired') === 'true');
+      retireQuestion(databasePath, reviewTarget, formData.get('retired') === 'true');
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(400, { message: error.message });
       }
       throw error instanceof Error ? error : new Error('Could not update question retirement.');
     }
-    return redirect(303, selectedUrl(values));
+    return redirect(303, selectedUrl(reviewTarget));
   },
 };
