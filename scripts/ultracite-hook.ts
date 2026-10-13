@@ -66,12 +66,13 @@ const extractPatchPaths = (patchCommand: string): string[] => {
     const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine;
     const filePath = patchPathPattern.exec(line)?.groups?.['filePath']?.trim();
 
-    if (!filePath) {
+    if (filePath === undefined || filePath.length === 0) {
       return [];
     }
 
     const isMoveSource =
-      line.startsWith('*** Update File: ') && lines[index + 1]?.startsWith('*** Move to: ');
+      line.startsWith('*** Update File: ') &&
+      lines[index + 1]?.startsWith('*** Move to: ') === true;
 
     return isMoveSource ? [] : [filePath];
   });
@@ -101,31 +102,31 @@ const normalizePatchPaths = (patchCommand: string, basePath: string): string =>
     .join('\n');
 
 const makeFixCommands = (repoRelativePaths: string[]): FixCommand[] => {
-  const targetsByRoot = repoRelativePaths
-    .map((repoRelativePath) => {
-      const absolutePath = path.resolve(repoRoot, repoRelativePath);
+  const targetsByRoot = repoRelativePaths.map((repoRelativePath) => {
+    const absolutePath = path.resolve(repoRoot, repoRelativePath);
 
-      const app = appRoots.find(({ root }) => {
-        const pathFromRoot = path.relative(root, absolutePath);
-        return (
-          pathFromRoot !== '' && pathFromRoot !== '..' && !pathFromRoot.startsWith(`..${path.sep}`)
-        );
-      });
+    const app = appRoots.find(({ root }) => {
+      const pathFromRoot = path.relative(root, absolutePath);
+      return (
+        pathFromRoot !== '' && pathFromRoot !== '..' && !pathFromRoot.startsWith(`..${path.sep}`)
+      );
+    });
 
-      return {
-        cwd: app?.root ?? repoRoot,
-        target: absolutePath,
-      };
-    })
-    .reduce((groups, { cwd, target }) => {
-      const targets = groups.get(cwd) ?? [];
-      targets.push(target);
-      groups.set(cwd, targets);
-      return groups;
-    }, new Map<string, string[]>());
+    return {
+      cwd: app?.root ?? repoRoot,
+      target: absolutePath,
+    };
+  });
 
-  return [...targetsByRoot].map(([cwd, targets]) => ({
-    args: ['exec', 'ultracite', 'fix', '--hook', ...targets],
+  const roots = [...new Set(targetsByRoot.map(({ cwd }) => cwd))];
+  return roots.map((cwd) => ({
+    args: [
+      'exec',
+      'ultracite',
+      'fix',
+      '--hook',
+      ...targetsByRoot.filter((entry) => entry.cwd === cwd).map(({ target }) => target),
+    ],
     cwd,
   }));
 };
