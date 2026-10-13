@@ -12,6 +12,7 @@
     "test": "pnpm --filter web test",
     "check": "pnpm --filter web check",
     "verify": "ultracite fix apps/web && pnpm --filter web verify",
+    "plannotator": "PLANNOTATOR_DATA_DIR=$PWD/.plannotator plannotator",
     "lint": "ultracite check && pnpm --filter web lint",
     "lint:fix": "ultracite fix && pnpm --filter web lint:fix",
     "validate": "pnpm lint",

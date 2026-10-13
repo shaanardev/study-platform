@@ -21,6 +21,10 @@ See `requirements.md`
 - For changes affecting both apps or shared tooling, run `pnpm verify:all` from the repository root.
 - Each verify command may rewrite files through `lint:fix`. Review the resulting diff and include only changes that belong to the task. Report any failed or blocked verification in the task handoff.
 
+## Plannotator
+
+- Run Plannotator through `pnpm run plannotator <command> ...` from the repository root, for example `pnpm run plannotator review --git --diff-type uncommitted .`. The script stores Plannotator data in the repository-local `.plannotator/` directory, which is gitignored.
+
 ## Svelte Work
 
 - Use the `$svelte-best-practices` skill when writing, editing, or reviewing Svelte components or modules.
