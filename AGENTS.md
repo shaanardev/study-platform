@@ -28,5 +28,4 @@ See `requirements.md`
 ## Svelte Work
 
 - Use the `$svelte-best-practices` skill when writing, editing, or reviewing Svelte components or modules.
-- Consult the Svelte MCP for relevant Svelte or SvelteKit APIs. Call `list-sections` before `get-documentation`, and fetch only the sections needed for the task.
-- After changing Svelte code, run `svelte-autofixer` on the affected components or modules and address its issues and suggestions.
+- Use the `$svelte-error-handling` skill when designing, adding or updating error boundaries.

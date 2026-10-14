@@ -2,8 +2,5 @@
 # https://kapadiya.net/blog/codex-subagent-model-config/
 # https://kapadiya.net/blog/codex-auto-compact-token-savings/
 
-[mcp_servers.svelte]
-url = "https://mcp.svelte.dev/mcp"
-
 [plugins."worktrunk@local-repo"]
 enabled = true
