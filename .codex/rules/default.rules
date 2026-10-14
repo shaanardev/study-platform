@@ -1,0 +1,9 @@
+# This project trusts package-manager commands, including installs and scripts.
+prefix_rule(pattern=["pnpm"], decision="allow")
+
+# Routine repository work. Keep push, reset, clean, and destructive restore operations approval-gated.
+prefix_rule(pattern=["git", ["add", "commit", "diff", "log", "rebase", "show", "status", "switch", "cherry-pick"]], decision="allow")
+
+# Worktree creation/merging and review commands used in this repository.
+prefix_rule(pattern=["wt"], decision="allow")
+prefix_rule(pattern=["plannotator"], decision="allow")

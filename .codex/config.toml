@@ -2,5 +2,8 @@
 # https://kapadiya.net/blog/codex-subagent-model-config/
 # https://kapadiya.net/blog/codex-auto-compact-token-savings/
 
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+
 [plugins."worktrunk@local-repo"]
 enabled = true
