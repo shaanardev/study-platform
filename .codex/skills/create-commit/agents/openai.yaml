@@ -1,0 +1,7 @@
+interface:
+  display_name: "Create Commit"
+  short_description: "Create a commit in this repo following established standards"
+  default_prompt: "Use this skill when the user wants to create a commit"
+
+policy:
+  allow_implicit_invocation: false

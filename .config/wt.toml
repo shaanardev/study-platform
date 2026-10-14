@@ -9,7 +9,8 @@ pre-commit = "pnpm verify:all"
 template-append = """
 - Use a lowercase Conventional Commit subject in `type(scope): summary` form; the scope is optional.
 - Match established types and scopes, such as `feat(agents): ...`, `fix(citations): ...`, and `standardize: ...`.
-- Keep the summary concise and imperative. Add a body only when it provides useful implementation detail.
+- Keep the summary concise and imperative. 
+- Add a formatted body only when it carries critical context or decisions being made that is hard to trace from other sources 
 - Add the trailer `Co-authored-by: Codex <noreply@openai.com>` to every generated commit message.
 - Preserve relevant trailers such as `Co-authored-by`; do not invent issue references.
 """

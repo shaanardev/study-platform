@@ -2,3 +2,6 @@ interface:
   display_name: "Quiz Attempt Screenshots"
   short_description: "Capture one completed quiz question per qN image"
   default_prompt: "Invoke Computer Use and capture the missing completed quiz questions as numbered screenshots."
+
+policy:
+  allow_implicit_invocation: false

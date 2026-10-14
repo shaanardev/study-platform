@@ -1,0 +1,7 @@
+interface:
+  display_name: "Effect TS Best Practices"
+  short_description: "Edit Effectful typescript code using idiomatic patterns & best practices"
+  default_prompt: "Use this skill when writing any typescript file in an Effect app to ensure best practices are applied"
+
+policy:
+  allow_implicit_invocation: true
