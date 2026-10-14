@@ -1,0 +1,8 @@
+interface:
+  display_name: "Agent Orchestration"
+  short_description: "Launch isolated Codex workers through Herdr"
+
+policy:
+  products:
+    - CODEX
+  allow_implicit_invocation: false
