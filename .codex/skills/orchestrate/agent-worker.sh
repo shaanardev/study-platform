@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 usage() {
   printf '%s\n' \
-    'Usage: agent-worker <branch> <agent-name> <task-id>' \
+    'Usage: agent-worker <branch> <agent-name> <task-id> [--file <backlog-path>]' \
     '' \
     "Run from the parent repository's shell in the current Herdr pane." \
     'Loads a task from tasks-axi, creates a Work Trunk worktree, and starts a named Codex worker.' >&2
@@ -14,7 +14,7 @@ fail() {
   exit 1
 }
 
-if [[ $# -ne 3 ]]; then
+if [[ $# -ne 3 && $# -ne 5 ]]; then
   usage
   exit 2
 fi
@@ -22,6 +22,11 @@ fi
 branch=$1
 agent_name=$2
 task_id=$3
+backlog_file=''
+if [[ $# -eq 5 ]]; then
+  [[ $4 == --file && -n $5 ]] || { usage; exit 2; }
+  backlog_file=$5
+fi
 
 [[ ${HERDR_ENV:-} == 1 && -n ${HERDR_PANE_ID:-} ]] || fail 'run this from a shell inside a Herdr pane'
 [[ -n $task_id ]] || fail 'task ID must not be empty'
@@ -31,7 +36,12 @@ git check-ref-format --branch "$branch" >/dev/null 2>&1 || fail "invalid Git bra
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'current directory is not inside a Git repository'
 git show-ref --verify --quiet "refs/heads/$branch" && fail "branch already exists: $branch"
 
-task_record=$(cd "$repo_root" && pnpm --silent dlx -y tasks-axi show "$task_id" --full) || fail "could not load tasks-axi task $task_id"
+if [[ -n $backlog_file ]]; then
+  [[ $backlog_file == /* ]] || backlog_file="$repo_root/$backlog_file"
+  task_record=$(cd "$repo_root" && pnpm --silent dlx -y tasks-axi show "$task_id" --full --file "$backlog_file") || fail "could not load tasks-axi task $task_id from $backlog_file"
+else
+  task_record=$(cd "$repo_root" && pnpm --silent dlx -y tasks-axi show "$task_id" --full) || fail "could not load tasks-axi task $task_id"
+fi
 task_record=${task_record%$'\n'Done in*}
 [[ -n $task_record ]] || fail "tasks-axi returned no details for task $task_id"
 
@@ -69,8 +79,11 @@ worker_prompt=$(printf '%s\n\nTask record:\n%s\n\n%s' \
   'Handoff: complete/partial/blocked; files changed; checks and results; blocker or next step.')
 herdr agent prompt "$agent_name" "$worker_prompt" || fail "could not submit task to $agent_name; pane $pane_id is preserved"
 
-if ! (cd "$repo_root" && pnpm --silent dlx -y tasks-axi start "$task_id"); then
-  fail "worker $agent_name received the task in pane $pane_id, but tasks-axi start failed or was unconfirmed; inspect the task and pane before retrying, and do not launch a duplicate"
+if [[ -n $backlog_file ]]; then
+  start_result=$(cd "$repo_root" && pnpm --silent dlx -y tasks-axi start "$task_id" --file "$backlog_file") || fail "worker $agent_name received the task in pane $pane_id, but tasks-axi start failed or was unconfirmed; inspect the task and pane before retrying, and do not launch a duplicate"
+else
+  start_result=$(cd "$repo_root" && pnpm --silent dlx -y tasks-axi start "$task_id") || fail "worker $agent_name received the task in pane $pane_id, but tasks-axi start failed or was unconfirmed; inspect the task and pane before retrying, and do not launch a duplicate"
 fi
 
+[[ -z $start_result ]] || printf '%s\n' "$start_result"
 printf 'Started %s in pane %s on branch %s (%s) model=gpt-6-luna reasoning=xhigh\n' "$agent_name" "$pane_id" "$branch" "$worktree_path"

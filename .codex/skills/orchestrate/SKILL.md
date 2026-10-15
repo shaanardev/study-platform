@@ -7,23 +7,23 @@ metadata:
 
 # Agent Orchestration
 
-Use Herdr CLI commands to launch and coordinate fresh Codex sessions in panes of the current Herdr window. Keep the calling session responsible for decisions, review, and integration.
+Use Herdr CLI commands to launch and coordinate fresh Codex sessions in panes of the current Herdr window. Keep the calling session responsible for decisions, review, and integration. The skill may be invoked with an optional tasks-axi backlog filename or path, for example `$orchestrate db-rewrite-backlog.md`.
 
 ## Procedure
 
 1. Delegate only independent tasks where parallel work saves time. Keep dependent or tightly coupled work in this parent session.
 2. Invoke `$worktrunk` when repository-specific Work Trunk guidance is needed. Reading its SKILL.md is not a substitute for invoking the skill.
-3. Invoke the `$tasks-axi` skill. Run `pnpm dlx -y tasks-axi ready`, choose an ID in the `ready` group, then run:
+3. Invoke the `$tasks-axi` skill. If the user supplied a backlog filename or path as the skill argument, resolve a relative path from the repository root and pass it to every tasks-axi command as `--file <path>` (after the command name). Otherwise use tasks-axi's default backlog. Run `pnpm dlx -y tasks-axi ready [--file <path>]` and inspect the full `ready` group. Load task details with `pnpm dlx -y tasks-axi show <task-id> --full [--file <path>]`, identify tasks that are independent, and dispatch each selected task to its own worker:
 
    ```sh
-   bash <path-to-this-skill>/agent-worker.sh <unique-branch> <agent-name> <task-id>
+   bash <path-to-this-skill>/agent-worker.sh <unique-branch> <agent-name> <task-id> [--file <backlog-path>]
    ```
 
-   Do not run `tasks-axi start` separately; the helper does that after submitting the prompt. Use a unique lowercase agent name. If the helper reports that the prompt was submitted but the task update failed, inspect the worker and task before retrying; do not relaunch.
+   Invoke the helper once per selected task ID, passing the selected backlog with `--file` when one was supplied. The helper operates on exactly one task ID per invocation. Do not run `tasks-axi start` separately; the helper loads the task and starts it in that backlog after submitting the prompt. Use a unique lowercase agent name for each worker. If the helper reports that the prompt was submitted but the task update failed, inspect the worker and task before retrying; do not relaunch.
 
    Use this helper for backlog tasks that edit files. For read-only work, start an agent directly in a Herdr pane. New worktrees start from the current commit, so keep work that depends on uncommitted changes in the parent session.
-4. Start all independent workers before waiting. Then wait once per worker with `herdr agent wait <agent-name>`. Do not poll or repeatedly reread panes.
-5. Review each summary and actual diff in its worktree. Check scope, conflicts, and requested checks. After accepting the integrated change, run `pnpm dlx -y tasks-axi done <task-id>`. Workers report outcomes but do not change task status.
+4. Start all selected independent workers before waiting. Then wait once per worker with `herdr agent wait <agent-name>`. Do not poll or repeatedly reread panes.
+5. Review each summary and actual diff in its worktree. Check scope, conflicts, and requested checks. After accepting the integrated change, run `pnpm dlx -y tasks-axi done <task-id> [--file <path>]`, using the selected backlog path when one was supplied. Workers report outcomes but do not change task status.
 6. After integration, use `wt list` to inspect worker worktrees. Remove only clean, integrated worker worktrees with `wt remove <branch>`. Never use `--force` or `--force-delete` to clear worker state. Preserve dirty or unintegrated worktrees and report them.
 
 ## Keep work moving
@@ -39,13 +39,13 @@ Use Herdr CLI commands to launch and coordinate fresh Codex sessions in panes of
 1. Do not relaunch immediately. Compare the backlog, live agent, and worktree:
 
    ```sh
-   pnpm dlx -y tasks-axi show <task-id> --full
+   pnpm dlx -y tasks-axi show <task-id> --full [--file <path>]
    herdr agent get <agent-name>
    herdr agent read <agent-name> --source recent-unwrapped --lines 120
    wt list
    ```
 
-2. If the prompt was submitted but the task is still queued, confirm the same worker is present, then run `pnpm dlx -y tasks-axi start <task-id>`; do not relaunch it. For a timeout, stalled prompt, or blocked state, inspect the agent output before steering or retrying. If the worker is absent, inspect and preserve its worktree before deciding whether to resume or retry. Do not resend a prompt whose delivery is uncertain.
+2. If the prompt was submitted but the task is still queued, confirm the same worker is present, then run `pnpm dlx -y tasks-axi start <task-id> [--file <path>]`, using the selected backlog path when one was supplied; do not relaunch it. For a timeout, stalled prompt, or blocked state, inspect the agent output before steering or retrying. If the worker is absent, inspect and preserve its worktree before deciding whether to resume or retry. Do not resend a prompt whose delivery is uncertain.
 3. Inspect the worktree diff and required checks before marking the task done. Keep dirty or unintegrated worktrees; do not infer success from an agent lifecycle state, completion marker, or stale Ordewell session record.
 
 
