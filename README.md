@@ -5,14 +5,23 @@ A local learning app for authoring, importing, and practising versioned exam pac
 ## Layout
 
 ```text
-apps/web/          SvelteKit learning app
-apps/pack-cli/     Effect pack builder and verifier
-packs/             Authored packs and source assets
-.local/            Ignored, machine-local app data
-packages/*         Reserved for a future shared pack contract
+apps/
+  web/
+    src/routes/       Home, practice, mock, progress, review, and pack endpoints
+    src/lib/server/   Database, pack import, quiz, feedback, and progress logic
+    src/lib/types/    App and pack types
+  pack-cli/
+    src/build/        Build packs from authoring files
+    src/core/         Built-pack schema and shared CLI types
+    src/verify/       Validate packs and quality profiles
+packs/
+  exam-pack.schema.json
+  incoming/                  Versioned importable packs and assets
+  databricks-dea-may-2026/    Synthetic pack authoring project
+.local/                       Ignored, machine-local app data
 ```
 
-The shared pack contract remains implemented separately in the app and CLI; extracting it into `packages/` is deferred.
+The workspace includes `packages/*` as a future shared-module location. Built-pack validation remains in the app and CLI; extracting a shared pack contract is deferred.
 
 ## Setup
 
@@ -43,25 +52,3 @@ pnpm pack:verify /tmp/example-pack/sample-pack.json
 | Verify pack CLI | `pnpm --dir apps/pack-cli verify` | same |
 
 Run `pnpm --dir apps/web check` for web typechecking, Svelte-aware lint validation, and tests without the lint-fix step. The CLI's standalone `verify` runs its lint fixes, typechecking, and tests.
-
-## Tool ownership
-
-- Root `oxlint.config.ts` and `oxfmt.config.ts` extend Ultracite's Oxlint and Oxfmt presets. Root Ultracite runs one Oxlint pass across the monorepo, with Effect TS-Go rules scoped to pack CLI files. Root Oxfmt formats the web app and CLI.
-- `apps/web` uses Ultracite's ESLint path for Svelte components and rune modules, plus project-specific Tailwind checks. Shared JavaScript, TypeScript, and Unicorn rules are handled by root Oxlint. `svelte-check` remains responsible for Svelte and TypeScript diagnostics.
-- Tailwind linting uses `eslint-plugin-better-tailwindcss` with the app's actual CSS entry point, including Skeleton utilities. It enforces named theme values and semantic colors, shorthand and canonical utilities, and checks duplicate, conflicting, deprecated, and unknown classes.
-- `apps/pack-cli` has its own Oxlint config for standalone checks, including Effect TS-Go and CLI-specific Vitest settings. Root gates apply the Effect rules in the global pass and then run CLI typechecking/tests directly.
-- SonarJS rules are disabled. Stylelint is not used; Tailwind class semantics are checked through ESLint.
-- JSON fixtures are exercised by the pack tests; there is no dedicated JSON duplicate-key linter.
-- The pack contract still has validation logic in more than one place. Consolidating it into one shared source of truth is deferred; keep app import checks and CLI pack verification aligned.
-
-`pnpm lint` and `pnpm validate` are read-only. `pnpm lint:fix` uses Ultracite once for global Oxlint/Oxfmt fixes, then runs its web ESLint provider for Svelte checks. `pnpm verify` runs the global pass on web files, then web verification. `pnpm verify:all` runs the global pass once across the monorepo, then web and CLI typechecking/tests. Tailwind class policies are enforced by ESLint; no separate Stylelint rules are configured.
-
-### Tailwind policy
-
-| Former Biome rule | ESLint replacement |
-| --- | --- |
-| `noTailwindArbitraryValue` | `better-tailwindcss/no-restricted-classes`: disallow arbitrary values/properties; allow arbitrary variants |
-| `useTailwindShorthandClasses` | `better-tailwindcss/enforce-shorthand-classes` |
-| `noTailwindRawColors` | `better-tailwindcss/no-restricted-classes`: disallow stock palette colors, including variants and opacity modifiers |
-
-Use named theme tokens or registered utilities for bespoke values. Semantic color names and `black`, `white`, `transparent`, `current`, and `inherit` remain allowed. Oxfmt sorts Tailwind classes while formatting across the monorepo. These policies approximate Biome's rules; they do not make the two analyzers identical. Tailwind rules run through the web app's ESLint provider in Ultracite.
