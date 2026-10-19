@@ -46,3 +46,6 @@ vite.config.ts.timestamp-*
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.0/**
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.1/
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.1/**
+
+# Local development UI feedback captures
+/.ui-feedback/
