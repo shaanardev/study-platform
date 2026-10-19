@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -14,7 +14,7 @@ import {
   saveMockAnswer,
   submitMockAttempt,
 } from '#lib/server/quiz/mock-service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { sampleLearningPackFixture } from '#lib/test-fixtures.js';
 
 const MockErrorBodySchema = Schema.Struct({
   body: Schema.Struct({ message: Schema.String }),
@@ -43,11 +43,7 @@ describe('timed mock attempts', () => {
     dirs.push(directory);
     const databasePath = path.join(directory, 'packs.sqlite');
 
-    const validated = validateExamPack(
-      JSON.parse(
-        await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
-      ),
-    );
+    const validated = validateExamPack(sampleLearningPackFixture());
 
     expect.assert(validated.valid, validated.errors.join(' '));
     const { pack } = validated;

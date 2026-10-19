@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -26,7 +26,7 @@ import {
   createPracticeSession,
   getPracticeSession,
 } from '#lib/server/quiz/service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { sampleLearningPackFixture } from '#lib/test-fixtures.js';
 
 const directories: string[] = [];
 
@@ -35,9 +35,7 @@ const setup = async () => {
   directories.push(directory);
   const databasePath = path.join(directory, 'feedback.sqlite');
 
-  const validation = validateExamPack(
-    JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
-  );
+  const validation = validateExamPack(sampleLearningPackFixture());
 
   expect.assert(validation.valid, validation.errors.join(' '));
   saveImportedPack(databasePath, validation.pack);

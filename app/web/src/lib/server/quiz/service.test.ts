@@ -20,7 +20,7 @@ import {
   getPracticeSession,
   readQuestionSource,
 } from '#lib/server/quiz/service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { sampleLearningPackFixture } from '#lib/test-fixtures.js';
 
 describe('practice sessions', () => {
   const directories: string[] = [];
@@ -38,11 +38,7 @@ describe('practice sessions', () => {
     directories.push(directory);
     const databasePath = path.join(directory, 'practice.sqlite');
 
-    const pack = validateExamPack(
-      JSON.parse(
-        await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
-      ),
-    );
+    const pack = validateExamPack(sampleLearningPackFixture());
 
     expect.assert(pack.valid, pack.errors.join(' '));
     saveImportedPack(databasePath, pack.pack);
@@ -150,11 +146,7 @@ describe('practice sessions', () => {
     const databasePath = path.join(directory, 'practice.sqlite');
     await mockSamplePackFolder(incoming);
 
-    const pack = validateExamPack(
-      JSON.parse(
-        await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
-      ),
-    );
+    const pack = validateExamPack(sampleLearningPackFixture());
 
     expect.assert(pack.valid, pack.errors.join(' '));
     const result = await importPacksFromFolder({ databasePath, folder: incoming });
