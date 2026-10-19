@@ -4,17 +4,25 @@ import { text } from 'node:stream/consumers';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
-const webRoot = path.resolve(repoRoot, 'apps/web');
-const packCliRoot = path.resolve(repoRoot, 'apps/pack-cli');
+const webRoot = path.resolve(repoRoot, 'app/web');
+const packCliRoot = path.resolve(repoRoot, 'app/pack-cli');
 
 const patchPathPattern = /^(?<prefix>\*\*\* (?:Add File|Update File|Move to): )(?<filePath>.+)$/u;
 const appRoots = [{ root: webRoot }, { root: packCliRoot }] as const;
 
-interface HookPayload extends Record<string, unknown> {
-  cwd?: unknown;
-  hook_event_name?: unknown;
-  tool_input?: unknown;
-  tool_name?: unknown;
+type ParsedJsonPrimitive = boolean | null | number | string;
+
+type ParsedJsonValue = ParsedJsonPrimitive | ParsedJsonObject | ParsedJsonValue[];
+
+interface ParsedJsonObject {
+  [key: string]: ParsedJsonValue;
+}
+
+interface HookPayload extends ParsedJsonObject {
+  cwd?: ParsedJsonValue;
+  hook_event_name?: ParsedJsonValue;
+  tool_input?: ParsedJsonValue;
+  tool_name?: ParsedJsonValue;
 }
 
 interface FixCommand {
@@ -22,8 +30,35 @@ interface FixCommand {
   cwd: string;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+const isParsedJsonValue = (value: unknown): value is ParsedJsonValue => {
+  if (
+    value === null ||
+    typeof value === 'boolean' ||
+    typeof value === 'number' ||
+    typeof value === 'string'
+  ) {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.every(isParsedJsonValue);
+  }
+
+  if (typeof value !== 'object') {
+    return false;
+  }
+
+  return Object.values(value).every(isParsedJsonValue);
+};
+
+const isParsedJsonObject = (value: ParsedJsonValue | undefined): value is ParsedJsonObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isParsedJsonString = (value: ParsedJsonValue | undefined): value is string =>
+  typeof value === 'string';
+
+const isHookPayload = (value: unknown): value is HookPayload =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) && isParsedJsonValue(value);
 
 const getRepoRelativePath = (filePath: string, basePath: string): string | null => {
   const absolutePath = path.resolve(basePath, filePath.replaceAll('\\', path.sep));
@@ -42,21 +77,24 @@ const getRepoRelativePath = (filePath: string, basePath: string): string | null 
 
 const getPatchInput = (
   payload: HookPayload,
-): { command: string; toolInput: Record<string, unknown> } | null => {
+): { command: string; toolInput: ParsedJsonObject } | null => {
   if (payload.hook_event_name !== 'PostToolUse') {
     return null;
   }
+
   if (payload.tool_name !== 'apply_patch') {
     return null;
   }
 
   const toolInput = payload.tool_input;
-  if (!isRecord(toolInput)) {
+
+  if (!isParsedJsonObject(toolInput)) {
     return null;
   }
 
   const { command } = toolInput;
-  return typeof command === 'string' ? { command, toolInput } : null;
+
+  return isParsedJsonString(command) ? { command, toolInput } : null;
 };
 
 const extractPatchPaths = (patchCommand: string): string[] => {
@@ -87,16 +125,19 @@ const normalizePatchPaths = (patchCommand: string, basePath: string): string =>
       const match = patchPathPattern.exec(content);
       const prefix = match?.groups?.['prefix'];
       const filePath = match?.groups?.['filePath']?.trim();
+
       if (prefix === undefined || filePath === undefined) {
         return line;
       }
 
       const repoRelativePath = getRepoRelativePath(filePath, basePath);
+
       if (repoRelativePath === null) {
         return line;
       }
 
       const lineEnding = hasCarriageReturn ? '\r' : '';
+
       return `${prefix}${path.resolve(repoRoot, repoRelativePath)}${lineEnding}`;
     })
     .join('\n');
@@ -107,6 +148,7 @@ const makeFixCommands = (repoRelativePaths: string[]): FixCommand[] => {
 
     const app = appRoots.find(({ root }) => {
       const pathFromRoot = path.relative(root, absolutePath);
+
       return (
         pathFromRoot !== '' && pathFromRoot !== '..' && !pathFromRoot.startsWith(`..${path.sep}`)
       );
@@ -119,57 +161,65 @@ const makeFixCommands = (repoRelativePaths: string[]): FixCommand[] => {
   });
 
   const roots = [...new Set(targetsByRoot.map(({ cwd }) => cwd))];
+
   return roots.map((cwd) => ({
     args: [
       'exec',
       'ultracite',
       'fix',
       '--hook',
-      ...targetsByRoot.filter((entry) => entry.cwd === cwd).map(({ target }) => target),
+      ...targetsByRoot.flatMap((entry) => (entry.cwd === cwd ? [entry.target] : [])),
     ],
     cwd,
   }));
 };
 
-const getHookWorkingDirectory = (payload: HookPayload): string => {
-  const { cwd } = payload;
-  return typeof cwd === 'string' && path.isAbsolute(cwd) ? cwd : repoRoot;
-};
+const getHookWorkingDirectory = (payload: HookPayload): string =>
+  isParsedJsonString(payload.cwd) && path.isAbsolute(payload.cwd) ? payload.cwd : repoRoot;
 
 const main = async (): Promise<void> => {
   const input = await text(process.stdin);
+
   if (input.trim() === '') {
     return;
   }
 
   let payload: unknown;
+
   try {
-    payload = JSON.parse(input) as unknown;
+    payload = JSON.parse(input);
   } catch {
     process.stderr.write('Ultracite hook received invalid JSON; skipping fixes.\n');
     process.exitCode = 1;
+
     return;
   }
 
-  if (!isRecord(payload)) {
+  if (!isHookPayload(payload)) {
     return;
   }
 
   const patchInput = getPatchInput(payload);
+
   if (patchInput === null) {
     return;
   }
 
   const { command: patchCommand, toolInput } = patchInput;
   const sessionCwd = getHookWorkingDirectory(payload);
+
   const targets = [
     ...new Set(
-      extractPatchPaths(patchCommand)
-        .map((target) => getRepoRelativePath(target, sessionCwd))
-        .filter((target): target is string => target !== null),
+      extractPatchPaths(patchCommand).flatMap((target) => {
+        const repoRelativePath = getRepoRelativePath(target, sessionCwd);
+
+        return repoRelativePath === null ? [] : [repoRelativePath];
+      }),
     ),
   ];
+
   const commands = makeFixCommands(targets);
+
   if (commands.length === 0) {
     return;
   }
@@ -181,7 +231,8 @@ const main = async (): Promise<void> => {
       command: normalizePatchPaths(patchCommand, sessionCwd),
     },
   });
-  for (const command of commands) {
+
+  commands.some((command) => {
     const result = spawnSync('pnpm', command.args, {
       cwd: command.cwd,
       input: hookInput,
@@ -192,14 +243,18 @@ const main = async (): Promise<void> => {
     if (result.error) {
       process.stderr.write(`Failed to start Ultracite: ${result.error.message}\n`);
       process.exitCode = 1;
-      return;
+
+      return true;
     }
 
     if (result.status !== 0) {
       process.exitCode = result.status ?? 1;
-      return;
+
+      return true;
     }
-  }
+
+    return false;
+  });
 };
 
 await main();

@@ -3,9 +3,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     coverage: {
-      include: ['apps/pack-cli/src/**/*.ts', 'apps/web/src/**/*.{ts,svelte}'],
+      include: ['app/pack-cli/src/**/*.ts', 'app/web/src/**/*.{ts,svelte}'],
       thresholds: { lines: 70 },
     },
-    projects: ['./apps/pack-cli/vitest.config.ts', './apps/web/vite.config.ts'],
+    projects: ['./app/pack-cli/vitest.config.ts', './app/web/vite.config.ts'],
   },
 });
