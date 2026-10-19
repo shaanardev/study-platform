@@ -1,4 +1,5 @@
-import { Result, Schema } from 'effect';
+import { Result } from 'effect';
+import * as Schema from 'effect/Schema';
 
 const MAX_PERCENTAGE = 100;
 const MIN_ANSWER_OPTIONS = 2;
