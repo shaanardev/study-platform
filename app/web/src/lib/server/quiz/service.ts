@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 import { error as httpError } from '@sveltejs/kit';
 
 import { MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
@@ -14,10 +16,7 @@ import {
 import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';
-import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
-import type { ExamPack, PackQuestion } from '#lib/types/exam-pack.js';
 
 export interface QuizAnswer {
   questionId: string;
@@ -82,10 +81,10 @@ const parseQuestionSnapshot = (
 ): PackQuestion[] => {
   const storedQuestions = decodeJsonText(String(value));
 
-  const questions = normalizeLegacyCitations({
+  const questions = {
     ...basePack,
     questions: storedQuestions,
-  });
+  };
 
   const result = validateExamPack(questions);
 

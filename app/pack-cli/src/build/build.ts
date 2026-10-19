@@ -1,6 +1,6 @@
 import { Data, Effect, FileSystem, Path, PlatformError, Result, Schema } from 'effect';
-import type { PackForVerification } from '../core/built-pack-schema.js';
-import { BuiltExamPackSchema } from '../core/built-pack-schema.js';
+import type { PackForVerification } from '@learning-platform/exam-pack';
+import { BuiltExamPackSchema } from '@learning-platform/exam-pack';
 import { JSON_INDENT_SPACES } from '../core/constants.js';
 import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { AuthoringFile, QuestionFile } from './authoring-schema.js';

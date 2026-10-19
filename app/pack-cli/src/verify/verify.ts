@@ -1,9 +1,8 @@
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { PackForVerification } from '@learning-platform/exam-pack';
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
-import { BuiltExamPackSchema } from '../core/built-pack-schema.js';
-import type { PackForVerification } from '../core/built-pack-schema.js';
 import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
-import { DOMAIN_WEIGHT_TOLERANCE, MAX_PERCENTAGE, MIN_ANSWER_OPTIONS } from '../core/constants.js';
 import { verifyProfile } from './profile.js';
 
 export class VerifyError extends Data.TaggedError('VerifyError')<{
@@ -45,97 +44,49 @@ const readPackFile = Effect.fn(function* readPackFile(packPath: string) {
   return { absolutePath, contents };
 });
 
-const toBuiltPackVerifyError = (error: Schema.SchemaError): VerifyError =>
-  new VerifyError({
-    cause: error,
-    message: `Exam pack schema validation failed: ${String(error)}`,
-  });
-
 const validateBuiltPack = (contents: string) =>
   Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(contents).pipe(
     Effect.mapError(toVerifyError('Unable to parse exam pack JSON')),
-    Effect.flatMap((parsedJson) =>
-      Schema.decodeUnknownEffect(BuiltExamPackSchema, { onExcessProperty: 'error' })(
-        parsedJson,
-      ).pipe(Effect.mapError(toBuiltPackVerifyError)),
-    ),
+    Effect.flatMap((input) => {
+      const result = validateExamPack(input);
+
+      return result.valid
+        ? Effect.succeed(result.pack)
+        : Effect.fail(
+            new VerifyError({
+              message: `Exam pack schema validation failed: ${result.errors.join('; ')}`,
+            }),
+          );
+    }),
   );
 
-const verifyGenericStructure = Effect.fn(function* verifyGenericStructure(
-  pack: PackForVerification,
-) {
-  const domainIds = new Set(pack.domains.map(({ id }) => id));
-
-  if (domainIds.size !== pack.domains.length) {
-    return yield* new VerifyError({ message: 'Domain IDs must be unique' });
-  }
-
-  if (
-    Math.abs(pack.domains.reduce((sum, domain) => sum + domain.weight, 0) - MAX_PERCENTAGE) >
-    DOMAIN_WEIGHT_TOLERANCE
-  ) {
-    return yield* new VerifyError({ message: `Domain weights must total ${MAX_PERCENTAGE}` });
-  }
-
-  const questionIds = new Set<string>();
+const verifyCliQuality = Effect.fn(function* verifyCliQuality(pack: PackForVerification) {
   const prompts = new Set<string>();
 
-  yield* Effect.forEach(
-    pack.questions,
-    (question) =>
-      Effect.gen(function* verifyQuestion() {
-        if (questionIds.has(question.id)) {
-          return yield* new VerifyError({ message: `Duplicate question ID: ${question.id}` });
-        }
+  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach receives an iterable, not a thisArg.
+  yield* Effect.forEach(pack.questions, (question) =>
+    Effect.gen(function* verifyQuestion() {
+      const prompt = normalized(question.prompt);
 
-        questionIds.add(question.id);
-        const prompt = normalized(question.prompt);
+      if (!prompt.length) {
+        return yield* new VerifyError({ message: `${question.id}: prompt is empty` });
+      }
 
-        if (!prompt.length) {
-          return yield* new VerifyError({ message: `${question.id}: prompt is empty` });
-        }
+      if (prompts.has(prompt)) {
+        return yield* new VerifyError({ message: `${question.id}: duplicate prompt` });
+      }
 
-        if (prompts.has(prompt)) {
-          return yield* new VerifyError({ message: `${question.id}: duplicate prompt` });
-        }
+      prompts.add(prompt);
 
-        prompts.add(prompt);
+      if (
+        new Set(question.options.map(({ text }) => normalizedOption(text))).size !==
+        question.options.length
+      ) {
+        return yield* new VerifyError({ message: `${question.id}: duplicate option text` });
+      }
 
-        if (!domainIds.has(question.domainId)) {
-          return yield* new VerifyError({
-            message: `${question.id}: unknown domain ${question.domainId}`,
-          });
-        }
-
-        if (question.options.length < MIN_ANSWER_OPTIONS) {
-          return yield* new VerifyError({ message: `${question.id}: fewer than two options` });
-        }
-
-        if (new Set(question.options.map(({ id }) => id)).size !== question.options.length) {
-          return yield* new VerifyError({ message: `${question.id}: duplicate option IDs` });
-        }
-
-        if (
-          new Set(question.options.map(({ text }) => normalizedOption(text))).size !==
-          question.options.length
-        ) {
-          return yield* new VerifyError({ message: `${question.id}: duplicate option text` });
-        }
-
-        const optionIds = new Set(question.options.map(({ id }) => id));
-
-        if (
-          new Set(question.answerIds).size !== question.answerIds.length ||
-          !question.answerIds.every((id) => optionIds.has(id))
-        ) {
-          return yield* new VerifyError({
-            message: `${question.id}: answer IDs must refer to unique options`,
-          });
-        }
-
-        return yield* Effect.void;
-      }),
-    { concurrency: 1 },
+      return yield* Effect.void;
+    }),
   );
 
   return yield* Effect.void;
@@ -284,7 +235,7 @@ export const verifyPack = Effect.fn('verifyPack')((packPath: string, profilePath
   Effect.gen(function* verifyPackProgram() {
     const { absolutePath, contents } = yield* readPackFile(packPath);
     const pack = yield* validateBuiltPack(contents);
-    yield* verifyGenericStructure(pack);
+    yield* verifyCliQuality(pack);
     yield* verifySourceFiles(absolutePath, pack);
     let profileReportPath: string | undefined;
 

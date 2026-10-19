@@ -4,7 +4,8 @@ Put each versioned pack JSON file directly in `packs/incoming/`. Bundled source 
 a pack must be relative paths beside that JSON file (for example, `assets/notes.md`). Local notes
 are authored with safe relative paths and become absolute `file://` citations during the CLI build.
 
-Use [the exam pack schema](./exam-pack.schema.json) as the format reference. The included
+Use [the exam pack schema](./exam-pack.schema.json) as the format reference. It is generated from
+`packages/exam-pack`, which both the CLI and app use to validate built packs. The included
 Databricks Data Engineer Associate pack is a clearly labelled synthetic example. It is not an exam
 dump and is safe to import as a starter sample.
 
@@ -20,7 +21,7 @@ local source root; the app checks every citation against that root and saves the
 the local database. The app does not read those file paths when a learner later opens a citation.
 The approval is stored per imported pack version. Reimporting the exact same pack with a confirmed
 root refreshes its local excerpts without replacing pack content or practice history. Documentation
-URLs in preserved legacy citation metadata are metadata only; the generic UI displays pack labels.
+URLs in supported citation metadata are metadata only; the generic UI displays pack labels.
 
 Importing is explicit: open the local app, enter the approved root when packs use absolute file
 citations, check the approval box, and select **Import packs from local folder**. Valid versions are

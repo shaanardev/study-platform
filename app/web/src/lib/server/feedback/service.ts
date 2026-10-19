@@ -1,5 +1,7 @@
 import type { SQLOutputValue } from 'node:sqlite';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack, PackQuestion, PackSource } from '@learning-platform/exam-pack';
 import { error as httpError } from '@sveltejs/kit';
 import * as Schema from 'effect/Schema';
 
@@ -7,9 +9,6 @@ import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
 import { HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { decodeJsonText, isJsonArray, isJsonObject, JsonValueSchema } from '#lib/server/json.js';
 import type { JsonObject, JsonValue } from '#lib/server/json.js';
-import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
-import type { ExamPack, PackQuestion, PackSource } from '#lib/types/exam-pack.js';
 
 export interface FeedbackKey {
   examId: string;
@@ -171,8 +170,28 @@ const isQuestionCorrection = (value: unknown): value is QuestionCorrection => {
 
     if (field === 'sources') {
       return (
-        isJsonArray(fieldValue) &&
-        fieldValue.every((source) => readPackSource(source) !== undefined)
+        Array.isArray(fieldValue) &&
+        fieldValue.every((source) => {
+          if (
+            !isJsonObject(source) ||
+            !Schema.is(Schema.String)(source['path']) ||
+            !Schema.is(Schema.String)(source['label'])
+          ) {
+            return false;
+          }
+
+          return Object.entries(source).every(([key, sourceValue]) => {
+            if (key === 'path' || key === 'label' || key === 'kind' || key === 'section') {
+              return Schema.is(Schema.String)(sourceValue);
+            }
+
+            if (key === 'documentationUrls') {
+              return isJsonArray(sourceValue) && sourceValue.every(Schema.is(Schema.String));
+            }
+
+            return false;
+          });
+        })
       );
     }
 
@@ -183,31 +202,11 @@ const isQuestionCorrection = (value: unknown): value is QuestionCorrection => {
 const parseCorrection = (value: string): QuestionCorrection => {
   const parsed = decodeJsonText(value);
 
-  const question =
-    isJsonObject(parsed) && Object.hasOwn(parsed, 'sources') ? { sources: parsed['sources'] } : {};
-
-  const normalized = normalizeLegacyCitations({ questions: [question] });
-
-  const questions = isJsonObject(normalized) ? normalized['questions'] : undefined;
-  const sources = isJsonArray(questions) ? questions[0] : undefined;
-
-  let correction = parsed;
-
-  if (isJsonObject(parsed)) {
-    const updated = { ...parsed };
-
-    if (isJsonObject(sources) && isJsonArray(sources['sources'])) {
-      updated['sources'] = sources['sources'];
-    }
-
-    correction = updated;
-  }
-
-  if (!isQuestionCorrection(correction)) {
+  if (!isQuestionCorrection(parsed)) {
     throw new Error('Stored question correction is invalid.');
   }
 
-  return correction;
+  return parsed;
 };
 
 const feedbackRow = (row: FeedbackRow) => {

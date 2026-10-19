@@ -3,14 +3,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { openPackDatabase } from '#lib/server/db/packs.js';
 import { decodeJsonText } from '#lib/server/json.js';
 import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
 import { mockSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
-import type { ExamPack } from '#lib/types/exam-pack.js';
 
 const temporaryDirectories: string[] = [];
 const { join } = path;

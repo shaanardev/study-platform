@@ -12,8 +12,10 @@ app/
     src/lib/types/    App and pack types
   pack-cli/
     src/build/        Build packs from authoring files
-    src/core/         Built-pack schema and shared CLI types
+    src/core/         Build and verification helpers
     src/verify/       Validate packs and quality profiles
+packages/
+  exam-pack/         Shared Effect schema, validation, types, and JSON Schema generation
 scripts/
   ultracite-hook.ts  Local lint hook for changed files
 tooling/
@@ -25,7 +27,7 @@ packs/
 .local/                       Ignored, machine-local app data
 ```
 
-The workspace includes `packages/*` as a future shared-module location. Built-pack validation remains in the app and CLI; extracting a shared pack contract is deferred.
+The `@learning-platform/exam-pack` workspace package owns the canonical built-pack schema, shared types, and structural and semantic validation used by the web app and CLI. Generate `packs/exam-pack.schema.json` with `pnpm pack:schema:generate`; `pnpm verify:all` checks that it stays current.
 
 ## Setup
 
@@ -51,7 +53,10 @@ pnpm pack:verify /tmp/example-pack/sample-pack.json
 | Build web app | `pnpm build` | `pnpm --dir app/web build` |
 | Check the workspace | `pnpm check` | — |
 | Verify the workspace | `pnpm verify` | — |
+| Verify all workspace checks and the generated schema | `pnpm verify:all` | — |
 | Run all tests and coverage | `pnpm test` | — |
+| Generate the pack JSON Schema | `pnpm pack:schema:generate` | `pnpm --dir app/pack-cli packs schema generate` |
+| Check the generated pack JSON Schema | `pnpm pack:schema:check` | `pnpm --dir app/pack-cli packs schema check` |
 | Build a pack | `pnpm pack:build <authoring-file> <output-dir>` | `pnpm --dir app/pack-cli packs build <authoring-file> <output-dir>` |
 | Verify a pack | `pnpm pack:verify <pack-file>` | `pnpm --dir app/pack-cli packs verify <pack-file>` |
 

@@ -1,7 +1,7 @@
+import { BuiltExamPackSchema } from '@learning-platform/exam-pack';
 import { Result, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
 
-import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { validPack } from './pack-fixture.js';
 
 describe(BuiltExamPackSchema, () => {

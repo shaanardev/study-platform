@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import pathModule from 'node:path';
 import type { SQLOutputValue } from 'node:sqlite';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { PackQuestion } from '@learning-platform/exam-pack';
 import { error as httpError } from '@sveltejs/kit';
 
 import {
@@ -13,11 +15,9 @@ import { getImportedPack, openPackDatabase } from '#lib/server/db/packs.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { allocateWeightedQuestions, findCoverageGaps } from '#lib/server/quiz/mock-selection.js';
 import { createDeadline, isExpired, remainingMilliseconds } from '#lib/server/quiz/timing.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
-import type { PackQuestion } from '#lib/types/exam-pack.js';
 
 type SafeQuestion = Omit<PackQuestion, 'answerIds' | 'explanation'> & {
   explanation?: string;

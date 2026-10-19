@@ -9,7 +9,7 @@
     "pack": {
       "id": "databricks-dea-may-2026-reviewed",
       "title": "May 2026 reviewed baseline and original practice",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "synthetic": true
     },
     "domains": [

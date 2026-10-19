@@ -1,5 +1,5 @@
 import { Array as Arr, Effect, Random } from 'effect';
-import type { BuiltExamQuestion } from '../core/built-pack-schema.js';
+import type { BuiltExamQuestion } from '@learning-platform/exam-pack';
 import { CONCURRENCY_LIMIT } from '../core/concurrency.js';
 import { LOWERCASE_ASCII_A_CODE_POINT } from '../core/constants.js';
 import type { AssembledAuthoring } from './authoring-validation.js';
