@@ -6,7 +6,7 @@ export default defineConfig({
   arrowParens: 'always',
   ignorePatterns: [
     ...(ultracite.ignorePatterns ?? []),
-    'apps/pack-cli/test/fixtures/**',
+    'app/pack-cli/test/fixtures/**',
     '.local/**',
     '.ordewell/**',
     '.pnpm-store/**',

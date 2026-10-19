@@ -30,11 +30,11 @@ instead of overwriting it.
 
 ## Build and verify
 
-The Effect CLI in `apps/pack-cli` builds packs from a JSON authoring file. Its format includes `metadata`, an
+The Effect CLI in `app/pack-cli` builds packs from a JSON authoring file. Its format includes `metadata`, an
 `outputFile`, an `assetsDirectory`, deterministic `shuffle` seeds, and `questions` with option IDs,
 correct option IDs, bundled source paths, or local-note citations. See
-[`apps/pack-cli/test/fixtures/multi-domain/authoring.json`](../apps/pack-cli/test/fixtures/multi-domain/authoring.json)
-and the [single-domain example](../apps/pack-cli/test/fixtures/single-domain/authoring.json).
+[`app/pack-cli/test/fixtures/multi-domain/authoring.json`](../app/pack-cli/test/fixtures/multi-domain/authoring.json)
+and the [single-domain example](../app/pack-cli/test/fixtures/single-domain/authoring.json).
 Bundled source paths in the authoring file are relative to that file. The builder copies those
 under the output directory's asset folder. Pass `--local-note-root` when authoring local notes; the
 builder requires each note to be a regular file inside that root and writes an absolute `file://`
@@ -42,7 +42,7 @@ URL into the pack. It copies only explicitly listed bundled files and metadata a
 repository root:
 
 ```bash
-pnpm pack:build apps/pack-cli/test/fixtures/multi-domain/authoring.json /tmp/example-pack --local-note-root /path/to/local-notes
+pnpm pack:build app/pack-cli/test/fixtures/multi-domain/authoring.json /tmp/example-pack --local-note-root /path/to/local-notes
 pnpm pack:verify /tmp/example-pack/sample-pack.json
 ```
 
