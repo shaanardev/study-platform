@@ -22,7 +22,9 @@
   },
   "dependencies": {
     "@learning-platform/exam-pack": "workspace:*",
-    "effect": "4.0.2"
+    "effect": "4.0.2",
+    "html-to-image": "^1.11.13",
+    "valibot": "1.5.0"
   },
   "devDependencies": {
     "@skeletonlabs/skeleton": "^5.0.1",
