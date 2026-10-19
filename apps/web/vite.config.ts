@@ -20,11 +20,12 @@ export default defineConfig({
       // See https://svelte.dev/docs/kit/adapters for more information about adapters.
     }),
   ],
+  root: import.meta.dirname,
   test: {
     expect: { requireAssertions: true },
+    name: 'web',
     projects: [
       {
-        extends: './vite.config.ts',
         resolve: { conditions: ['browser'] },
         test: {
           environment: 'jsdom',
@@ -35,7 +36,6 @@ export default defineConfig({
       },
 
       {
-        extends: './vite.config.ts',
         test: {
           environment: 'node',
           exclude: ['src/**/*.svelte.{test,spec}.{js,ts}'],

@@ -2,10 +2,12 @@ import { Result, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
 
 import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
-import { validPack } from './verify-helpers.js';
+import { validPack } from './pack-fixture.js';
 
 describe(BuiltExamPackSchema, () => {
   it('preserves absolute file URL sources when encoding', () => {
+    const [question] = validPack.questions;
+    expect.assert(question, 'Expected a question in the valid pack fixture');
     const localNoteSource = {
       label: 'Streaming local note',
       path: 'file:///notes/streaming.md',
@@ -14,13 +16,13 @@ describe(BuiltExamPackSchema, () => {
       ...validPack,
       questions: [
         {
-          ...validPack.questions[0],
+          ...question,
           sources: [localNoteSource],
         },
       ],
     };
 
-    const encoded = Schema.encodeResult(BuiltExamPackSchema)(pack);
+    const encoded = Schema.encodeUnknownResult(BuiltExamPackSchema)(pack);
 
     expect(Result.isSuccess(encoded)).toBeTruthy();
     expect(encoded).toMatchObject({
@@ -29,6 +31,8 @@ describe(BuiltExamPackSchema, () => {
   });
 
   it('accepts and preserves migrated citation metadata when encoding', () => {
+    const [question] = validPack.questions;
+    expect.assert(question, 'Expected a question in the valid pack fixture');
     const citation = {
       documentationUrls: ['https://example.com/streaming'],
       kind: 'academy_note',
@@ -38,10 +42,10 @@ describe(BuiltExamPackSchema, () => {
     };
     const pack = {
       ...validPack,
-      questions: [{ ...validPack.questions[0], sources: [citation] }],
+      questions: [{ ...question, sources: [citation] }],
     };
 
-    const encoded = Schema.encodeResult(BuiltExamPackSchema)(pack);
+    const encoded = Schema.encodeUnknownResult(BuiltExamPackSchema)(pack);
 
     expect(Result.isSuccess(encoded)).toBeTruthy();
     expect(encoded).toMatchObject({ success: { questions: [{ sources: [citation] }] } });

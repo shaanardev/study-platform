@@ -5,7 +5,7 @@ import { workspacePath } from '#lib/server/workspace-paths.js';
 
 const samplePack = workspacePath('packs/incoming/sample-learning-pack.json');
 
-export const createSamplePackFolder = async (folder: string) => {
+export const mockSamplePackFolder = async (folder: string) => {
   const assets = path.join(folder, 'assets');
   await mkdir(assets, { recursive: true });
   await cp(samplePack, path.join(folder, 'sample-learning-pack.json'));

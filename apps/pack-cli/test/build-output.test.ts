@@ -1,5 +1,6 @@
-import { Console, Effect, FileSystem, Result, Schema } from 'effect';
+import { Effect, FileSystem, Result, Schema } from 'effect';
 import { Command } from 'effect/cli';
+import { TestConsole } from 'effect/testing';
 import { describe, expect, it } from 'vitest';
 
 import { AuthoringFile } from '../src/build/authoring-schema.js';
@@ -7,7 +8,14 @@ import { buildPack } from '../src/build/build.js';
 import { buildCommand } from '../src/build/command.js';
 import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { verifyPack } from '../src/verify/verify.js';
-import { mutablePreview, outputDirectory, run, writeJson } from './build-helpers.js';
+import {
+  mutablePreview,
+  outputDirectory,
+  relativeTestPath,
+  run,
+  testPath,
+  writeJson,
+} from './build-helpers.js';
 
 describe('build command', () => {
   it('accepts a per-pack local-note root option', async () => {
@@ -17,24 +25,16 @@ describe('build command', () => {
         const fs = yield* FileSystem.FileSystem;
         const localNoteRoot = `${fixture.root}/notes`;
         yield* fs.makeDirectory(localNoteRoot);
-        const messages: unknown[] = [];
-        const testConsole: Console.Console = new Proxy(console, {
-          get(target, property, receiver) {
-            return property === 'log'
-              ? (...values: readonly unknown[]) => messages.push(...values)
-              : (Reflect.get(target, property, receiver) as unknown);
-          },
-        });
 
         yield* Command.runWith(buildCommand, { version: '0.0.0' })([
           fixture.authoringPath,
           fixture.output,
           '--local-note-root',
           localNoteRoot,
-        ]).pipe(Effect.provideService(Console.Console, testConsole));
+        ]);
 
-        expect(messages).toStrictEqual([`Built pack in ${fixture.output}`]);
-      }),
+        expect(yield* TestConsole.logLines).toStrictEqual([`Built pack in ${fixture.output}`]);
+      }).pipe(Effect.provide(TestConsole.layer)),
     );
   });
 
@@ -42,7 +42,7 @@ describe('build command', () => {
     await run(
       Effect.gen(function* test() {
         const output = yield* outputDirectory;
-        yield* buildPack('test/fixtures/modular-preview/authoring.json', output);
+        yield* buildPack(testPath('fixtures', 'modular-preview', 'authoring.json'), output);
         const fs = yield* FileSystem.FileSystem;
         expect(yield* fs.readFileString(`${output}/preview-assets/audit/review.json`)).toBe(
           '{ "domainId": "core", "reviewedQuestionIds": ["core-q1", "core-q2"] }\n',
@@ -60,10 +60,14 @@ describe('build command', () => {
     await run(
       Effect.gen(function* test() {
         const output = yield* outputDirectory;
-        yield* buildPack('test/fixtures/modular-preview/authoring.json', output);
+        yield* buildPack(testPath('fixtures', 'modular-preview', 'authoring.json'), output);
         const { pack } = yield* verifyPack(`${output}/preview-pack.json`);
         expect(pack.domains).toStrictEqual([{ id: 'core', title: 'Core', weight: 100 }]);
         expect(pack.questions.map(({ id }) => id).toSorted()).toStrictEqual(['core-q1', 'core-q2']);
+        const expectedAnswersByQuestion = new Map([
+          ['core-q1', ['Success']],
+          ['core-q2', ['Tests', 'Type checking']],
+        ]);
         for (const question of pack.questions) {
           expect(question.sources).toStrictEqual([
             { label: 'Core notes', path: 'preview-assets/references/core.md' },
@@ -72,9 +76,9 @@ describe('build command', () => {
             .filter(({ id }) => question.answerIds.includes(id))
             .map(({ text }) => text)
             .toSorted();
-          expect(answers).toStrictEqual(
-            question.id === 'core-q1' ? ['Success'] : ['Tests', 'Type checking'],
-          );
+          const expectedAnswers = expectedAnswersByQuestion.get(question.id);
+          expect.assert(expectedAnswers, `Unexpected question ID: ${question.id}`);
+          expect(answers).toStrictEqual(expectedAnswers);
         }
         expect(
           yield* (yield* FileSystem.FileSystem).readFileString(
@@ -97,9 +101,7 @@ describe('build command', () => {
           'Checkpointing notes.\n',
         );
         const [first] = fixture.questions;
-        if (!first) {
-          throw new Error('Missing preview question');
-        }
+        expect.assert(first, 'Missing preview question');
         const citation = {
           kind: 'local_note',
           label: 'Streaming guide',
@@ -130,9 +132,7 @@ describe('build command', () => {
       Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const [first] = fixture.questions;
-        if (!first) {
-          throw new Error('Missing preview question');
-        }
+        expect.assert(first, 'Missing preview question');
         yield* writeJson(fixture.authoringPath, {
           ...fixture.input,
           questionFiles: [],
@@ -152,10 +152,8 @@ describe('build command', () => {
 
         const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
 
-        expect(Result.isFailure(result)).toBeTruthy();
-        if (Result.isFailure(result)) {
-          expect(result.failure.message).toContain('local-note root');
-        }
+        expect.assert(Result.isFailure(result));
+        expect(result.failure.message).toContain('local-note root');
       }),
     );
   });
@@ -165,8 +163,9 @@ describe('build command', () => {
       Effect.gen(function* test() {
         const first = yield* outputDirectory;
         const second = yield* outputDirectory;
-        yield* buildPack('test/fixtures/multi-domain/authoring.json', first);
-        yield* buildPack('test/fixtures/multi-domain/authoring.json', second);
+        const authoringPath = relativeTestPath('fixtures', 'multi-domain', 'authoring.json');
+        yield* buildPack(authoringPath, first);
+        yield* buildPack(authoringPath, second);
 
         const firstPack = yield* (yield* FileSystem.FileSystem).readFileString(
           `${first}/sample-pack.json`,
@@ -244,12 +243,6 @@ describe('build command', () => {
         const pack = yield* Schema.decodeUnknownEffect(BuiltExamPackSchema)(
           yield* Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown))(content),
         );
-        const positions = new Map([
-          ['a', 0],
-          ['b', 0],
-          ['c', 0],
-          ['d', 0],
-        ]);
         for (const question of pack.questions) {
           expect(question.options).toHaveLength(4);
           expect(question.answerIds).toHaveLength(1);
@@ -257,12 +250,13 @@ describe('build command', () => {
             question.options.some((option) => option.id === question.answerIds[0]),
           ).toBeTruthy();
           const [position] = question.answerIds;
-          if (position === undefined) {
-            throw new Error('Expected one correct answer ID');
-          }
-          positions.set(position, (positions.get(position) ?? 0) + 1);
+          expect.assert(position !== undefined, 'Expected one correct answer ID');
         }
-        expect([...positions.values()]).toStrictEqual([50, 50, 50, 50]);
+        const positions = ['a', 'b', 'c', 'd'].map(
+          (position) =>
+            pack.questions.filter((question) => question.answerIds.includes(position)).length,
+        );
+        expect(positions).toStrictEqual([50, 50, 50, 50]);
       }),
     );
   });
@@ -271,7 +265,7 @@ describe('build command', () => {
     await run(
       Effect.gen(function* test() {
         const output = yield* outputDirectory;
-        yield* buildPack('test/fixtures/single-domain/authoring.json', output);
+        yield* buildPack(testPath('fixtures', 'single-domain', 'authoring.json'), output);
         const content = yield* (yield* FileSystem.FileSystem).readFileString(
           `${output}/focused-pack.json`,
         );
@@ -291,12 +285,10 @@ describe('build command', () => {
       Effect.gen(function* test() {
         const output = yield* outputDirectory;
         const result = yield* Effect.result(
-          buildPack('test/fixtures/multi-domain/invalid.json', output),
+          buildPack(testPath('fixtures', 'multi-domain', 'invalid.json'), output),
         );
-        expect(Result.isFailure(result)).toBeTruthy();
-        if (Result.isFailure(result)) {
-          expect(result.failure.message).toMatch(/correct answer/iu);
-        }
+        expect.assert(Result.isFailure(result));
+        expect(result.failure.message).toMatch(/correct answer/iu);
         expect(
           yield* (yield* FileSystem.FileSystem).exists(`${output}/sample-pack.json`),
         ).toBeFalsy();

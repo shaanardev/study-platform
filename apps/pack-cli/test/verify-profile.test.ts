@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { ProfileError } from '../src/verify/profile.js';
 import { VerifyError, verifyPack } from '../src/verify/verify.js';
-import { makePack, run, validPack, writeJson } from './verify-helpers.js';
+import { validPack } from './pack-fixture.js';
+import { makePack, run, writeJson } from './verify-helpers.js';
 
 describe(verifyPack, () => {
   it('preserves the profile and filesystem causes when the profile is missing', async () => {
@@ -14,21 +15,14 @@ describe(verifyPack, () => {
         const profilePath = path.join(directory, 'profile.json');
 
         const exit = yield* Effect.exit(verifyPack(packPath, profilePath));
-        expect(Exit.isFailure(exit)).toBeTruthy();
-        if (Exit.isFailure(exit)) {
-          const failure = Cause.findError(exit.cause);
-          expect(Result.isSuccess(failure)).toBeTruthy();
-          if (Result.isSuccess(failure)) {
-            expect(failure.success).toBeInstanceOf(VerifyError);
-            const profileError = failure.success.cause;
-            expect(profileError instanceof ProfileError).toBeTruthy();
-            if (!(profileError instanceof ProfileError)) {
-              throw new Error('Expected a profile error');
-            }
-            expect(profileError.cause).toBeDefined();
-            expect(String(profileError.cause)).toContain(profilePath);
-          }
-        }
+        expect.assert(Exit.isFailure(exit));
+        const failure = Cause.findError(exit.cause);
+        expect.assert(Result.isSuccess(failure));
+        expect(failure.success).toBeInstanceOf(VerifyError);
+        const profileError = failure.success.cause;
+        expect.assert(profileError instanceof ProfileError);
+        expect(profileError.cause).toBeDefined();
+        expect(String(profileError.cause)).toContain(profilePath);
       }),
     );
   });
@@ -46,19 +40,16 @@ describe(verifyPack, () => {
         const verified = yield* verifyPack(packPath, profilePath);
         const reportPath = verified.profileReportPath;
         expect(reportPath).toBe(path.join(directory, 'assets', 'verification-report.json'));
-        if (reportPath === undefined || reportPath.length === 0) {
-          throw new Error('Expected a verification report path');
-        }
+        expect.assert(reportPath !== undefined, 'Expected a report path');
+        expect(reportPath.length).toBeGreaterThan(0);
         expect(yield* fs.readFileString(reportPath)).toContain('"status": "passed"');
 
         yield* writeJson(profilePath, {
           domains: { core: { count: 3, weight: 60 }, operations: { count: 1, weight: 40 } },
         });
         const mismatch = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(mismatch)).toBeTruthy();
-        if (Result.isFailure(mismatch)) {
-          expect(mismatch.failure.message).toContain('expected 3 questions, got 1');
-        }
+        expect.assert(Result.isFailure(mismatch));
+        expect(mismatch.failure.message).toContain('expected 3 questions, got 1');
       }),
     );
   });
@@ -78,10 +69,8 @@ describe(verifyPack, () => {
         yield* writeJson(profilePath, {});
 
         const reportResult = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(reportResult)).toBeTruthy();
-        if (Result.isFailure(reportResult)) {
-          expect(reportResult.failure.message).toContain('Verification report escapes pack folder');
-        }
+        expect.assert(Result.isFailure(reportResult));
+        expect(reportResult.failure.message).toContain('Verification report escapes pack folder');
         expect(yield* fs.readFileString(externalReportPath)).toBe('leave this file unchanged');
 
         const externalCoveragePath = path.join(outside.directory, 'coverage.json');
@@ -100,10 +89,8 @@ describe(verifyPack, () => {
         });
 
         const readResult = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(readResult)).toBeTruthy();
-        if (Result.isFailure(readResult)) {
-          expect(readResult.failure.message).toContain('Objective mapping escapes pack folder');
-        }
+        expect.assert(Result.isFailure(readResult));
+        expect(readResult.failure.message).toContain('Objective mapping escapes pack folder');
       }),
     );
   });
@@ -142,10 +129,8 @@ describe(verifyPack, () => {
         const profilePath = path.join(directory, 'profile.json');
         yield* writeJson(profilePath, { domains: { core: { count: 'one', weight: 60 } } });
         const malformed = yield* Effect.result(verifyPack(packPath, profilePath));
-        expect(Result.isFailure(malformed)).toBeTruthy();
-        if (Result.isFailure(malformed)) {
-          expect(malformed.failure.message).toContain('Profile schema validation failed');
-        }
+        expect.assert(Result.isFailure(malformed));
+        expect(malformed.failure.message).toContain('Profile schema validation failed');
 
         const baselinePack = {
           ...validPack,
@@ -204,36 +189,56 @@ describe(verifyPack, () => {
         const malformedAudits: {
           audit: unknown;
           message: string;
-          total?: number;
-          included?: number;
-          excluded?: number;
+          total: number;
+          included: number;
+          excluded: number;
         }[] = [
           {
             audit: [{ ...compactEntry, domainId: 'operations' }],
+            excluded: 0,
+            included: 1,
             message: 'baseline domain mismatch',
+            total: 1,
           },
           {
             audit: [{ ...compactEntry, objective: 'other' }],
+            excluded: 0,
+            included: 1,
             message: 'baseline objective mismatch',
+            total: 1,
           },
           {
             audit: [{ ...compactEntry, packQuestionId: 'missing-q' }],
+            excluded: 0,
+            included: 1,
             message: 'Missing baseline question missing-q',
+            total: 1,
           },
           {
             audit: [{ ...compactEntry, baselineId: 'baseline-q-002' }],
+            excluded: 0,
+            included: 1,
             message: 'Incomplete baseline audit',
+            total: 1,
           },
           {
             audit: [{ ...compactEntry, status: 'unknown' }],
+            excluded: 0,
+            included: 1,
             message: 'Baseline audit schema validation failed',
+            total: 1,
           },
           {
             audit: [{ ...compactEntry, reviewedAnswer: 'duplicated prose' }],
+            excluded: 0,
+            included: 1,
             message: 'Baseline audit schema validation failed',
+            total: 1,
           },
           {
             audit: [compactEntry, { ...compactEntry, baselineId: 'baseline-q-002', number: 2 }],
+            excluded: 0,
+            included: 2,
             message: 'Baseline audit mappings must be unique',
             total: 2,
           },
@@ -249,17 +254,18 @@ describe(verifyPack, () => {
             excluded: 1,
             included: 0,
             message: 'Baseline exclusion without rationale',
+            total: 1,
           },
         ];
         for (const scenario of malformedAudits) {
           yield* writeJson(path.join(directory, 'assets', 'baseline.json'), scenario.audit);
           yield* writeJson(profilePath, {
             baselineAudit: {
-              excluded: scenario.excluded ?? 0,
+              excluded: scenario.excluded,
               idPrefix: 'core-',
-              included: scenario.included ?? scenario.total ?? 1,
+              included: scenario.included,
               path: 'assets/baseline.json',
-              total: scenario.total ?? 1,
+              total: scenario.total,
             },
             objectives: {
               byDomain: { core: ['C1'] },
@@ -267,10 +273,8 @@ describe(verifyPack, () => {
             },
           });
           const invalidAudit = yield* Effect.result(verifyPack(baselinePackPath, profilePath));
-          expect(Result.isFailure(invalidAudit)).toBeTruthy();
-          if (Result.isFailure(invalidAudit)) {
-            expect(invalidAudit.failure.message).toContain(scenario.message);
-          }
+          expect.assert(Result.isFailure(invalidAudit));
+          expect(invalidAudit.failure.message).toContain(scenario.message);
         }
       }),
     );

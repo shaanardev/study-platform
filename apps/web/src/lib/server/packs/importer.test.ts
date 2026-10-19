@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { openPackDatabase } from '#lib/server/db/packs.js';
 import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
-import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
+import { mockSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 
 const temporaryDirectories: string[] = [];
 const { join } = path;
@@ -31,9 +31,7 @@ const isPackDocument = (value: unknown): value is PackDocument =>
 
 const readPackDocument = async (filePath: string): Promise<PackDocument> => {
   const parsed: unknown = JSON.parse(await readFile(filePath, 'utf-8')) as unknown;
-  if (!isPackDocument(parsed)) {
-    throw new Error('Expected the sample pack to contain source references.');
-  }
+  expect.assert(isPackDocument(parsed), 'Expected the sample pack to contain source references.');
   return parsed;
 };
 
@@ -51,7 +49,7 @@ describe(importPacksFromFolder, () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
-    await createSamplePackFolder(incoming);
+    await mockSamplePackFolder(incoming);
 
     const result = await importPacksFromFolder({ databasePath, folder: incoming });
 
@@ -76,7 +74,7 @@ describe(importPacksFromFolder, () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
-    await createSamplePackFolder(incoming);
+    await mockSamplePackFolder(incoming);
 
     await importPacksFromFolder({ databasePath, folder: incoming });
     const duplicate = await importPacksFromFolder({ databasePath, folder: incoming });
@@ -94,13 +92,11 @@ describe(importPacksFromFolder, () => {
     const directory = await mkdtemp(join(tmpdir(), 'exam-packs-'));
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
-    await createSamplePackFolder(incoming);
+    await mockSamplePackFolder(incoming);
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
     const source = content.questions[0]?.sources[0];
-    if (!source) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    expect.assert(source, 'Expected the sample pack to contain a source reference.');
     source.path = 'assets/not-present.md';
     await writeFile(packFile, JSON.stringify(content));
 
@@ -122,13 +118,11 @@ describe(importPacksFromFolder, () => {
     const directory = await mkdtemp(join(tmpdir(), 'exam-packs-'));
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
-    await createSamplePackFolder(incoming);
+    await mockSamplePackFolder(incoming);
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
     const citation = content.questions[0]?.sources[0];
-    if (!citation) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    expect.assert(citation, 'Expected the sample pack to contain a source reference.');
     citation.path = pathToFileURL(packFile).href;
     const databasePath = join(directory, 'state', 'packs.sqlite');
     await writeFile(packFile, JSON.stringify(content));
@@ -159,14 +153,12 @@ describe(importPacksFromFolder, () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const outside = join(directory, 'outside.md');
-    await createSamplePackFolder(incoming);
+    await mockSamplePackFolder(incoming);
     await writeFile(outside, 'outside notes');
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
     const citation = content.questions[0]?.sources[0];
-    if (!citation) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    expect.assert(citation, 'Expected the sample pack to contain a source reference.');
     citation.path = pathToFileURL(outside).href;
     await writeFile(packFile, JSON.stringify(content));
     const databasePath = join(directory, 'state', 'packs.sqlite');
@@ -189,7 +181,7 @@ describe(importPacksFromFolder, () => {
     temporaryDirectories.push(directory);
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
-    await createSamplePackFolder(incoming);
+    await mockSamplePackFolder(incoming);
 
     const database = openPackDatabase(databasePath);
     try {

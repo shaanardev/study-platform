@@ -1,5 +1,6 @@
-import { Console, Effect, Path } from 'effect';
+import { Effect, Path } from 'effect';
 import { Command } from 'effect/cli';
+import { TestConsole } from 'effect/testing';
 import { describe, expect, it } from 'vitest';
 
 import { verifyCommand } from '../src/verify/command.js';
@@ -10,23 +11,11 @@ describe('verifyPack', () => {
     await run(
       Effect.gen(function* verifyCliResult() {
         const { packPath } = yield* makePack;
-        const messages: unknown[] = [];
-        const testConsole: Console.Console = new Proxy(console, {
-          get(target, property, receiver) {
-            return property === 'log'
-              ? (...values: readonly unknown[]) => {
-                  messages.push(...values);
-                }
-              : (Reflect.get(target, property, receiver) as unknown);
-          },
-        });
-        yield* Command.runWith(verifyCommand, { version: '0.0.0' })([packPath]).pipe(
-          Effect.provideService(Console.Console, testConsole),
-        );
-        expect(messages).toStrictEqual([
+        yield* Command.runWith(verifyCommand, { version: '0.0.0' })([packPath]);
+        expect(yield* TestConsole.logLines).toStrictEqual([
           'PASS: 2 questions; structural checks and citation checks passed.',
         ]);
-      }),
+      }).pipe(Effect.provide(TestConsole.layer)),
     );
   });
 
@@ -37,26 +26,16 @@ describe('verifyPack', () => {
         const path = yield* Path.Path;
         const profilePath = path.join(directory, 'profile.json');
         yield* writeJson(profilePath, {});
-        const messages: unknown[] = [];
-        const testConsole: Console.Console = new Proxy(console, {
-          get(target, property, receiver) {
-            return property === 'log'
-              ? (...values: readonly unknown[]) => {
-                  messages.push(...values);
-                }
-              : (Reflect.get(target, property, receiver) as unknown);
-          },
-        });
         yield* Command.runWith(verifyCommand, { version: '0.0.0' })([
           packPath,
           '--profile',
           profilePath,
-        ]).pipe(Effect.provideService(Console.Console, testConsole));
-        expect(messages).toStrictEqual([
+        ]);
+        expect(yield* TestConsole.logLines).toStrictEqual([
           'PASS: 2 questions; structural checks and citation checks passed; profile checks passed.',
           `Verification report: ${path.join(directory, 'assets', 'verification-report.json')}`,
         ]);
-      }),
+      }).pipe(Effect.provide(TestConsole.layer)),
     );
   });
 });

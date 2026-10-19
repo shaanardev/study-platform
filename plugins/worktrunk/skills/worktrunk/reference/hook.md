@@ -8,14 +8,14 @@ Worktrunk hooks attach commands to worktree and commit events. The official [hoo
 
 ~~~toml
 pre-start = "pnpm install --frozen-lockfile"
-pre-commit = "pnpm verify:all"
+pre-commit = "pnpm verify"
 ~~~
 
 - pre-start blocks worktree creation until dependency installation finishes.
 - pre-commit runs before Worktrunk commits and squashes, including the commit flow used by wt merge.
 - pre-commit does not intercept plain git commit.
 
-The full repository verification command is pnpm verify:all. Do not replace it with guessed or narrower checks when editing the hook.
+The full repository verification command is pnpm verify. Do not replace it with guessed or narrower checks when editing the hook.
 
 ## Approval
 

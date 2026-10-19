@@ -3,10 +3,25 @@ import type { OxlintConfig } from 'oxlint';
 import core from 'ultracite/oxlint/core';
 import vitest from 'ultracite/oxlint/vitest';
 
+const customVitestRules = {
+  ...vitest,
+  ...(vitest.overrides === undefined
+    ? {}
+    : {
+        overrides: vitest.overrides.map((override) => ({
+          ...override,
+          rules: {
+            ...override.rules,
+            'vitest/no-conditional-in-test': 'error',
+          } satisfies typeof override.rules,
+        })),
+      }),
+};
+
 const config: OxlintConfig = defineConfig({
-  extends: [core, vitest],
+  extends: [core, customVitestRules],
   ignorePatterns: ['.local/**', 'packs/**', 'plugins/**', '.codex/**', '.agents/**'],
-  options: { typeAware: true },
+  options: { typeAware: true, typeCheck: true },
   overrides: [
     {
       env: { node: true },

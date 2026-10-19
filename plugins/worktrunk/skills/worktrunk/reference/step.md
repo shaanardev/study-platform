@@ -10,7 +10,7 @@ wt step squash
 wt step push
 ~~~
 
-These commands operate on the current worktree unless their options select another branch. wt step commit, wt step squash, and the commit flow in wt merge run the project's pre-commit hook, which uses pnpm verify:all.
+These commands operate on the current worktree unless their options select another branch. wt step commit, wt step squash, and the commit flow in wt merge run the project's pre-commit hook, which uses pnpm verify.
 
 ## Copying ignored files
 

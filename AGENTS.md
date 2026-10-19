@@ -16,10 +16,10 @@ See `requirements.md`
 
 ## Code Verification
 
-- For changes to the web app (`apps/web/`) or its configuration, run `pnpm verify` from the repository root before completing the task.
-- For changes confined to the pack CLI (`apps/pack-cli/`), run `pnpm --dir apps/pack-cli verify` before completing the task.
-- For changes affecting both apps or shared tooling, run `pnpm verify:all` from the repository root.
-- Each verify command may rewrite files through `lint:fix`. Review the resulting diff and include only changes that belong to the task. Report any failed or blocked verification in the task handoff.
+- For any code changes, run `pnpm verify` from the repository root before completing the task. It fixes lint issues, checks both apps, runs every Vitest project with coverage, and enforces at least 70% line coverage.
+- Run `pnpm test` to run all Vitest projects and inspect the coverage report; no extra coverage flag is needed.
+- `pnpm verify` may rewrite files through `lint:fix`. Review the resulting diff and include only changes that belong to the task. Report any failed or blocked verification in the task handoff.
+- Do not repeat Ultracite's optional Stylelint-missing notice in final reports unless the task changes CSS or the notice materially limits verification.
 
 ## Plannotator
 

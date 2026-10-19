@@ -2,15 +2,16 @@
 pre-start = "pnpm install --frozen-lockfile"
 
 # Run the full project verification before Worktrunk creates a commit.
-pre-commit = "pnpm verify:all"
+pre-commit = "pnpm verify"
 
 # Match the Conventional Commit format used in this repository's history.
 [commit.generation]
 template-append = """
 - Use a lowercase Conventional Commit subject in `type(scope): summary` form; the scope is optional.
 - Match established types and scopes, such as `feat(agents): ...`, `fix(citations): ...`, and `standardize: ...`.
-- Keep the summary concise and imperative. 
-- Add a formatted body only when it carries critical context or decisions being made that is hard to trace from other sources 
+- Keep the summary concise and imperative.
+- Write a concise Markdown bullet list in the body, with each bullet starting with `- ` and describing one key change in a single sentence.
+- Put distinct changes in separate bullets instead of joining them with `and`.
 - Add the trailer `Co-authored-by: Codex <noreply@openai.com>` to every generated commit message.
 - Preserve relevant trailers such as `Co-authored-by`; do not invent issue references.
 """

@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { verifyPack } from '../src/verify/verify.js';
-import { makePack, run, validPack, writeJson } from './verify-helpers.js';
+import { validPack } from './pack-fixture.js';
+import { makePack, run, writeJson } from './verify-helpers.js';
 
 describe(verifyPack, () => {
   it('accepts a valid generic pack and a pack with one domain', async () => {
@@ -34,10 +35,8 @@ describe(verifyPack, () => {
         const fs = yield* FileSystem.FileSystem;
         yield* fs.writeFileString(packPath, '{');
         const malformedJson = yield* Effect.result(verifyPack(packPath));
-        expect(Result.isFailure(malformedJson)).toBeTruthy();
-        if (Result.isFailure(malformedJson)) {
-          expect(malformedJson.failure.message).toContain('Unable to parse exam pack JSON');
-        }
+        expect.assert(Result.isFailure(malformedJson));
+        expect(malformedJson.failure.message).toContain('Unable to parse exam pack JSON');
 
         const cases: { value: unknown; message: string }[] = [
           { message: 'Exam pack schema validation failed', value: { schemaVersion: 1 } },
@@ -86,48 +85,47 @@ describe(verifyPack, () => {
               ],
             },
           },
+        ];
+        const validBoundaryCases: unknown[] = [
           {
-            message: '',
-            value: {
-              ...validPack,
-              domains: [{ ...validPack.domains[0], weight: 100 }],
-              passingThreshold: 0,
-              questions: [
-                {
-                  ...validPack.questions[0],
-                  sources: [{ label: 'Boundary', path: 'assets/source.md' }],
-                },
-              ],
-            },
+            ...validPack,
+            domains: [{ ...validPack.domains[0], weight: 100 }],
+            passingThreshold: 0,
+            questions: [
+              {
+                ...validPack.questions[0],
+                sources: [{ label: 'Boundary', path: 'assets/source.md' }],
+              },
+            ],
           },
           {
-            message: '',
-            value: {
-              ...validPack,
-              questions: [
-                {
-                  ...validPack.questions[0],
-                  sources: [
-                    {
-                      documentationUrls: ['http://docs.example.com/streaming'],
-                      kind: 'legacy_note',
-                      label: 'Streaming notes',
-                      path: 'assets/source.md',
-                    },
-                  ],
-                },
-              ],
-            },
+            ...validPack,
+            questions: [
+              {
+                ...validPack.questions[0],
+                sources: [
+                  {
+                    documentationUrls: ['http://docs.example.com/streaming'],
+                    kind: 'legacy_note',
+                    label: 'Streaming notes',
+                    path: 'assets/source.md',
+                  },
+                ],
+              },
+            ],
           },
-          { message: '', value: { ...validPack, passingThreshold: 100 } },
+          { ...validPack, passingThreshold: 100 },
         ];
         for (const scenario of cases) {
           yield* writeJson(packPath, scenario.value);
           const result = yield* Effect.result(verifyPack(packPath));
-          expect(Result.isFailure(result)).toBe(scenario.message.length > 0);
-          if (Result.isFailure(result) && scenario.message) {
-            expect(result.failure.message).toContain(scenario.message);
-          }
+          expect.assert(Result.isFailure(result));
+          expect(result.failure.message).toContain(scenario.message);
+        }
+        for (const value of validBoundaryCases) {
+          yield* writeJson(packPath, value);
+          const result = yield* Effect.result(verifyPack(packPath));
+          expect(Result.isSuccess(result)).toBeTruthy();
         }
       }),
     );
