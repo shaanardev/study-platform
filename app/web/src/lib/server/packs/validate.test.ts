@@ -1,10 +1,8 @@
-import { readFile } from 'node:fs/promises';
-
 import { validateExamPack } from '@learning-platform/exam-pack';
 import type { PackSource } from '@learning-platform/exam-pack';
 import { describe, expect, it } from 'vitest';
 
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import currentDatabricksPack from '../../../../../../packs/incoming/databricks-dea-may-2026-v1.2.1.json' with { type: 'json' };
 
 const validPack = {
   domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
@@ -68,12 +66,8 @@ describe(validateExamPack, () => {
     });
   });
 
-  it('accepts the current Databricks pack with citation metadata', async () => {
-    const current: unknown = JSON.parse(
-      await readFile(workspacePath('packs/incoming/databricks-dea-may-2026-v1.2.1.json'), 'utf-8'),
-    );
-
-    const result = validateExamPack(current);
+  it('accepts the current Databricks pack with citation metadata', () => {
+    const result = validateExamPack(currentDatabricksPack);
     expect.assert(result.valid, 'Expected the current Databricks pack to validate.');
     expect(hasCitationMetadata(result.pack.questions[0]?.sources[0])).toBeTruthy();
   });

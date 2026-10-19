@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -10,7 +10,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { openPackDatabase } from '#lib/server/db/packs.js';
 import { decodeJsonText } from '#lib/server/json.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+
+import migratedPack from '../../../../../../packs/incoming/databricks-dea-may-2026-v1.2.1.json' with { type: 'json' };
 
 const temporaryDirectories: string[] = [];
 const { join } = path;
@@ -30,12 +31,7 @@ describe('importPacksFromFolder citation metadata', () => {
     const incoming = join(directory, 'incoming');
     const databasePath = join(directory, 'state', 'packs.sqlite');
 
-    const artifactText = await readFile(
-      workspacePath('packs/incoming/databricks-dea-may-2026-v1.2.1.json'),
-      'utf-8',
-    );
-
-    const validation = validateExamPack(decodeJsonText(artifactText));
+    const validation = validateExamPack(structuredClone(migratedPack));
     expect.assert(validation.valid, 'Expected the migrated pack to contain citation sources.');
     const artifact = validation.pack;
     const notesRoot = join(directory, 'approved-notes');

@@ -1,17 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 
 import { validateExamPack } from '@learning-platform/exam-pack';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { sampleLearningPackFixture } from '#lib/test-fixtures.js';
 
 import ReviewPage from './+page.svelte';
 
-const packValidation = validateExamPack(
-  JSON.parse(readFileSync(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
-);
+const packValidation = validateExamPack(sampleLearningPackFixture());
 
 assert.ok(packValidation.valid, packValidation.errors.join('\n'));
 
