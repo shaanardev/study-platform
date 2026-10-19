@@ -45,6 +45,19 @@ pnpm pack:build app/pack-cli/test/fixtures/multi-domain/authoring.json /tmp/exam
 pnpm pack:verify /tmp/example-pack/sample-pack.json
 ```
 
+## Local database
+
+Run `pnpm db:up` to initialize `.local/app.sqlite` and apply pending Kysely migrations. Server startup also applies pending migrations before serving requests. The command creates the schema only; import packs explicitly from the app. The previous `.local/exam-packs.sqlite` is archived data and is never used by the new app.
+
+For agent runs and experiments, use an absolute disposable database path through the private `DB_PATH` environment variable. Use the same path for initialization and the server:
+
+```bash
+DB_PATH=/tmp/learning-platform-review/app.sqlite pnpm db:up
+DB_PATH=/tmp/learning-platform-review/app.sqlite pnpm dev
+```
+
+Explicit paths must be distinct from the personal database, including symlink and hard-link aliases. Tests create isolated temporary stores. Importing modules or building the app does not open SQLite.
+
 ## Workspace commands
 
 | Work | Root command | App-scoped command |

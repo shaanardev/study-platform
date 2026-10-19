@@ -25,7 +25,7 @@ URLs in supported citation metadata are metadata only; the generic UI displays p
 
 Importing is explicit: open the local app, enter the approved root when packs use absolute file
 citations, check the approval box, and select **Import packs from local folder**. Valid versions are
-stored in `.local/exam-packs.sqlite`; personal pack files and local database files are excluded
+stored in `.local/app.sqlite` (or the database selected by `DB_PATH`); personal pack files and local database files are excluded
 from Git. A changed pack with an already stored exam, pack, and version is reported as a duplicate
 instead of overwriting it.
 
