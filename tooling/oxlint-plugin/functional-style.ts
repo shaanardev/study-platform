@@ -1,8 +1,8 @@
-interface ForOfNode {
+export interface ForOfNode {
   type: 'ForOfStatement';
 }
 
-interface RuleContext {
+export interface RuleContext {
   report: (diagnostic: { messageId: string; node: ForOfNode }) => void;
 }
 

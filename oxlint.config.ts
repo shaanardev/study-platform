@@ -33,18 +33,21 @@ const config: OxlintConfig = defineConfig({
           {
             paths: [
               {
-                message: 'Use only the Schema module from Effect in the SvelteKit app.',
+                message:
+                  "Use `import * as Schema from 'effect/Schema'`; the SvelteKit app cannot import from the Effect barrel.",
                 name: 'effect',
               },
             ],
             patterns: [
               {
                 group: ['effect/**', '!effect/Schema'],
-                message: 'Use only effect/Schema from the Effect package in the SvelteKit app.',
+                message:
+                  "Use `import * as Schema from 'effect/Schema'`; no other Effect subpath is allowed in the SvelteKit app.",
               },
             ],
           },
         ],
+        'project/effect-schema-import': 'error',
       },
     },
     {
