@@ -7,28 +7,28 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "preview": "pnpm --filter web preview",
-    "typecheck": "pnpm --filter web typecheck",
+    "typecheck": "pnpm --filter web typecheck && pnpm --dir apps/pack-cli typecheck",
     "check:watch": "pnpm --filter web check:watch",
-    "test": "pnpm --filter web test",
-    "check": "pnpm --filter web check",
-    "verify": "ultracite fix apps/web && pnpm --filter web verify",
+    "test": "vitest run --coverage",
+    "check": "pnpm lint && pnpm test",
+    "verify": "pnpm lint:fix && pnpm check",
     "plannotator": "PLANNOTATOR_DATA_DIR=$PWD/.plannotator plannotator",
-    "lint": "ultracite check && pnpm --filter web lint",
-    "lint:fix": "ultracite fix && pnpm --filter web lint:fix",
-    "validate": "pnpm lint",
-    "verify:all": "pnpm lint:fix && pnpm --filter web check && pnpm --dir apps/pack-cli typecheck && pnpm --dir apps/pack-cli test",
+    "lint": "ultracite check && pnpm --dir apps/pack-cli lint && pnpm --filter web lint",
+    "lint:fix": "ultracite fix && pnpm --dir apps/pack-cli lint:fix && pnpm --filter web lint:fix",
     "pack:build": "tsx apps/pack-cli/src/index.ts build",
     "pack:verify": "tsx apps/pack-cli/src/index.ts verify"
   },
   "devDependencies": {
     "@effect/tsgo": "0.51.1",
     "@types/node": "^26.6.5",
+    "@vitest/coverage-v8": "^5.0.5",
     "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "ultracite": "8.0.0"
+    "ultracite": "8.0.0",
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": "24.21.0"

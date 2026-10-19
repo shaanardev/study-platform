@@ -32,7 +32,7 @@ pnpm install
 pnpm dev
 ```
 
-The development server binds to `127.0.0.1`. The root app commands (`dev`, `serve`, `build`, and `verify`) forward to `apps/web`. Pack CLI commands run from the repository root so their input and output paths are interpreted relative to the repository:
+The development server binds to `127.0.0.1`. Root commands run the web app or verify the full workspace. Pack CLI commands run from the repository root so their input and output paths are interpreted relative to the repository:
 
 ```bash
 pnpm pack:build apps/pack-cli/test/fixtures/multi-domain/authoring.json /tmp/example-pack
@@ -41,14 +41,14 @@ pnpm pack:verify /tmp/example-pack/sample-pack.json
 
 ## Workspace commands
 
-| Work | Root command | App-scoped command |
-| --- | --- | --- |
-| Run web app | `pnpm dev` | `pnpm --dir apps/web dev` |
-| Build web app | `pnpm build` | `pnpm --dir apps/web build` |
-| Verify web app | `pnpm verify` | `pnpm --dir apps/web verify` |
-| Verify both apps | `pnpm verify:all` | — |
-| Build a pack | `pnpm pack:build <authoring-file> <output-dir>` | `pnpm --dir apps/pack-cli packs build <authoring-file> <output-dir>` |
-| Verify a pack | `pnpm pack:verify <pack-file>` | `pnpm --dir apps/pack-cli packs verify <pack-file>` |
-| Verify pack CLI | `pnpm --dir apps/pack-cli verify` | same |
+| Work                       | Root command                                    |
+| -------------------------- | ----------------------------------------------- |
+| Run web app                | `pnpm dev`                                      |
+| Build web app              | `pnpm build`                                    |
+| Check the workspace        | `pnpm check`                                    |
+| Verify the workspace       | `pnpm verify`                                   |
+| Run all tests and coverage | `pnpm test`                                     |
+| Build a pack               | `pnpm pack:build <authoring-file> <output-dir>` |
+| Verify a pack              | `pnpm pack:verify <pack-file>`                  |
 
-Run `pnpm --dir apps/web check` for web typechecking, Svelte-aware lint validation, and tests without the lint-fix step. The CLI's standalone `verify` runs its lint fixes, typechecking, and tests.
+`pnpm test` runs all Vitest projects and writes `coverage/index.html`. The run fails if repository-wide line coverage falls below 70%.

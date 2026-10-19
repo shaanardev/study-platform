@@ -10,7 +10,7 @@ Worktrunk manages Git worktrees. For this repository, use the checked-in project
 ## Repository setup
 
 - The repository's .worktrees/ directory holds one worktree directory per sanitized branch. The path template is in `~/.config/worktrunk/config.toml`; `.worktrees/` is ignored by Git.
-- .config/wt.toml runs pnpm install --frozen-lockfile in pre-start and pnpm verify:all in pre-commit. Use these declared commands; do not make up substitutes.
+- .config/wt.toml runs pnpm install --frozen-lockfile in pre-start and pnpm verify in pre-commit. Use these declared commands; do not make up substitutes.
 - pnpm 12.6 is configured with virtualStoreType: global. The shared store contains package content; each worktree still gets its own install links. Keep the pre-start install and do not add a copy-ignored hook for node_modules by default. See reference/tips-patterns.md and the [pnpm docs](https://pnpm.io/global-virtual-store).
 - Ordewell owns its task worktrees and setup. Do not manage .ordewell/worktrees with Worktrunk. For Ordewell recovery, follow .codex/skills/ordewell-worktree-handoff/SKILL.md.
 

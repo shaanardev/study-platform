@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { render, screen } from '@testing-library/svelte';
@@ -11,9 +12,7 @@ import ReviewPage from './+page.svelte';
 const packValidation = validateExamPack(
   JSON.parse(readFileSync(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
 );
-if (!packValidation.valid) {
-  throw new Error(packValidation.errors.join('\n'));
-}
+assert.ok(packValidation.valid, packValidation.errors.join('\n'));
 const currentPack = packValidation.pack;
 
 describe('review page citations', () => {
@@ -76,10 +75,9 @@ describe('review page citations', () => {
 
   it('renders a current pack note and documentation link', () => {
     const question = currentPack.questions.find((item) => item.sources.length > 0);
-    const citation = question?.sources[0];
-    if (question === undefined || citation === undefined) {
-      throw new Error('The current pack has no citation');
-    }
+    expect.assert(question, 'The current pack has no question with a citation.');
+    const [citation] = question.sources;
+    expect.assert(citation, 'The current pack has no citation.');
 
     const pack = { ...currentPack, questions: [question] };
     render(ReviewPage, {
@@ -110,14 +108,9 @@ describe('review page citations', () => {
       params: {},
     });
 
-    expect(
-      screen
-        .getAllByRole('link')
-        .some(
-          (link) =>
-            link.textContent?.includes(citation.label) &&
-            link.getAttribute('href')?.includes(encodeURIComponent(citation.path)) === true,
-        ),
-    ).toBeTruthy();
+    const citationLink = screen.getByRole('link', {
+      name: (accessibleName) => accessibleName.includes(citation.label),
+    });
+    expect(citationLink.getAttribute('href')).toContain(encodeURIComponent(citation.path));
   });
 });

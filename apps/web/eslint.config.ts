@@ -6,6 +6,8 @@ import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/type
 import sveltePlugin from 'eslint-plugin-svelte';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
+import vitest from 'ultracite/eslint/vitest';
+import vitestTypeAware from 'ultracite/eslint/vitest/type-aware';
 
 const webDirectory = import.meta.dirname;
 const loadedSvelteConfig = await loadConfig(webDirectory, { traverse: false });
@@ -22,13 +24,33 @@ if (!loadedSvelteConfig || !('config' in loadedSvelteConfig)) {
 }
 
 const svelteFiles = ['src/**/*.svelte', 'src/**/*.svelte.js', 'src/**/*.svelte.ts'];
+const vitestFiles = [
+  '**/*.{test,spec,test-d,spec-d}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
+  '**/__tests__/**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
+];
 const tailwindPaletteClassPattern = String.raw`^(?:.*:)?!?(?:bg|text|decoration|placeholder|border(?:-(?:x|y|s|e|t|r|b|l))?|divide(?:-(?:x|y))?|outline|ring|ring-offset|inset-ring|(?:inset-)?shadow|accent|caret|fill|stroke|from|via|to)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950)(?:/[^ ]+)?!?$`;
 
 export default defineConfig([
+  ...vitest,
+  ...vitestTypeAware,
+  {
+    files: vitestFiles,
+    languageOptions: {
+      parser: tsParser,
+    },
+    rules: {
+      'vitest/no-conditional-in-test': 'error',
+      // These layout rules overlap and add blank lines between each assertion group.
+      'vitest/padding-around-all': 'off',
+      'vitest/padding-around-expect-groups': 'off',
+    },
+  },
   {
     ignores: [
       '**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
       '!**/*.svelte.{js,ts}',
+      '!**/*.{test,spec,test-d,spec-d}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
+      '!**/__tests__/**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
       '.svelte-kit/**',
       'build/**',
       'dist/**',

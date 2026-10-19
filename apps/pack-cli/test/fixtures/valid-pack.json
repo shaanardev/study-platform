@@ -1,0 +1,37 @@
+{
+  "domains": [
+    { "id": "core", "title": "Core", "weight": 60 },
+    { "id": "operations", "title": "Operations", "weight": 40 }
+  ],
+  "exam": { "id": "generic-exam", "title": "Generic Exam", "version": "1" },
+  "pack": { "id": "generic-pack", "synthetic": true, "title": "Generic Pack", "version": "1" },
+  "questions": [
+    {
+      "answerIds": ["yes"],
+      "domainId": "core",
+      "explanation": "Yes is the valid result.",
+      "id": "core-q1",
+      "options": [
+        { "id": "yes", "text": "Yes" },
+        { "id": "no", "text": "No" }
+      ],
+      "prompt": "Choose the valid result.",
+      "sources": [{ "label": "Generic source", "path": "assets/source.md" }],
+      "type": "single_choice"
+    },
+    {
+      "answerIds": ["safe"],
+      "domainId": "operations",
+      "explanation": "Safe is the correct operation.",
+      "id": "operations-q1",
+      "options": [
+        { "id": "safe", "text": "Safe" },
+        { "id": "unsafe", "text": "Unsafe" }
+      ],
+      "prompt": "Choose the safe operation.",
+      "sources": [{ "label": "Generic source", "path": "assets/source.md" }],
+      "type": "single_choice"
+    }
+  ],
+  "schemaVersion": 1
+}

@@ -48,20 +48,18 @@ describe('importPacksFromFolder citation metadata', () => {
       'utf-8',
     );
     const parsed: unknown = JSON.parse(artifactText) as unknown;
-    if (!isArtifact(parsed)) {
-      throw new Error('Expected the migrated pack to contain citation sources.');
-    }
+    expect.assert(isArtifact(parsed), 'Expected the migrated pack to contain citation sources.');
     const artifact = parsed;
     const notesRoot = join(directory, 'approved-notes');
     const notePath = join(notesRoot, 'reference.md');
     await mkdir(notesRoot, { recursive: true });
     await writeFile(notePath, 'Test-local citation content.\n');
-    for (const question of artifact.questions) {
-      for (const source of question.sources) {
-        if (source.path.startsWith('file:')) {
-          source.path = pathToFileURL(notePath).href;
-        }
-      }
+    const fileSources = artifact.questions
+      .flatMap(({ sources }) => sources)
+      .filter(({ path: sourcePath }) => sourcePath.startsWith('file:'));
+    expect(fileSources.length).toBeGreaterThan(0);
+    for (const source of fileSources) {
+      source.path = pathToFileURL(notePath).href;
     }
     await mkdir(incoming, { recursive: true });
     await writeFile(join(incoming, 'migrated-pack.json'), JSON.stringify(artifact));
@@ -82,29 +80,20 @@ describe('importPacksFromFolder citation metadata', () => {
       const row: unknown = database
         .prepare('SELECT content_json FROM imported_packs WHERE pack_version = ?')
         .get('1.2.1');
-      if (
-        typeof row !== 'object' ||
-        row === null ||
-        !('content_json' in row) ||
-        typeof row.content_json !== 'string'
-      ) {
-        throw new Error('Expected the migrated pack to be stored.');
-      }
-      const stored: unknown = JSON.parse(row.content_json) as unknown;
-      if (!isRecord(stored) || !isUnknownArray(stored['questions'])) {
-        throw new Error('Expected stored pack questions.');
-      }
+      expect.assert(isRecord(row), 'Expected the migrated pack to be stored.');
+      expect.assert('content_json' in row, 'Expected the migrated pack content.');
+      expect.assert(typeof row['content_json'] === 'string', 'Expected stored JSON content.');
+      const stored: unknown = JSON.parse(row['content_json']) as unknown;
+      expect.assert(isRecord(stored), 'Expected stored pack content.');
+      expect.assert(isUnknownArray(stored['questions']), 'Expected stored pack questions.');
       const [question] = stored['questions'];
-      if (!isRecord(question) || !isUnknownArray(question['sources'])) {
-        throw new Error('Expected stored citation sources.');
-      }
+      expect.assert(isRecord(question), 'Expected a stored question.');
+      expect.assert(isUnknownArray(question['sources']), 'Expected stored citation sources.');
       const [source] = question['sources'];
-      if (!isRecord(source)) {
-        throw new Error('Expected stored citation metadata.');
-      }
+      expect.assert(isRecord(source), 'Expected stored citation metadata.');
       expect(isUnknownArray(source['documentationUrls'])).toBeTruthy();
-      expect('kind' in source ? source['kind'] : undefined).toBe('academy_note');
-      expect('section' in source ? source['section'] : undefined).toBeTypeOf('string');
+      expect(source['kind']).toBe('academy_note');
+      expect(source['section']).toBeTypeOf('string');
     } finally {
       database.close();
     }

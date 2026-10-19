@@ -42,9 +42,7 @@ describe('practice sessions', () => {
         await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
       ),
     );
-    if (!pack.valid) {
-      throw new Error(pack.errors.join(' '));
-    }
+    expect.assert(pack.valid, pack.errors.join(' '));
     saveImportedPack(databasePath, pack.pack);
     return { databasePath, pack: pack.pack };
   };
@@ -61,15 +59,20 @@ describe('practice sessions', () => {
       random: () => 0,
     });
     const result = answerQuestion(databasePath, session.id, 'pipeline-validation-basics', ['a']);
+    const [sessionQuestion] = session.questions;
+    expect.assert(sessionQuestion, 'The practice session should include a question.');
     const saved = getPracticeSession(databasePath, session.id);
+    expect.assert(saved, 'The submitted practice session should remain available.');
+    const [savedAnswer] = saved.answers;
+    expect.assert(savedAnswer, 'The submitted practice session should contain an answer.');
 
     expect({
       correct: result.correct,
       correctAnswerIds: result.answerIdsCorrect,
       explanationContainsExpectedText: result.explanation.includes('Quality checks'),
-      hiddenAnswerIds: Object.hasOwn(session.questions[0] ?? {}, 'answerIds'),
-      persistedAnswerCount: saved?.answers.length,
-      persistedAnswerIds: saved?.answers[0]?.answerIds,
+      hiddenAnswerIds: Object.hasOwn(sessionQuestion, 'answerIds'),
+      persistedAnswerCount: saved.answers.length,
+      persistedAnswerIds: savedAnswer.answerIds,
       submittedAnswerIds: result.answerIds,
     }).toStrictEqual({
       correct: false,
@@ -142,9 +145,7 @@ describe('practice sessions', () => {
         await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
       ),
     );
-    if (!pack.valid) {
-      throw new Error(pack.errors.join(' '));
-    }
+    expect.assert(pack.valid, pack.errors.join(' '));
     const result = await importPacksFromFolder({ databasePath, folder: incoming });
     await rm(incoming, { force: true, recursive: true });
 
@@ -172,15 +173,12 @@ describe('practice sessions', () => {
     await writeFile(notePath, 'Local citation content.\n');
     const packPath = path.join(incoming, 'sample-learning-pack.json');
     const parsed = validateExamPack(JSON.parse(await readFile(packPath, 'utf-8')));
-    if (!parsed.valid) {
-      throw new Error(parsed.errors.join(' '));
-    }
+    expect.assert(parsed.valid, parsed.errors.join(' '));
     const authored = parsed.pack;
     const [firstQuestion] = authored.questions;
     const bundledCitation = firstQuestion?.sources[0];
-    if (!firstQuestion || !bundledCitation) {
-      throw new Error('Missing representative question source.');
-    }
+    expect.assert(firstQuestion, 'Missing representative question.');
+    expect.assert(bundledCitation, 'Missing representative question source.');
     const noteCitation = { label: 'Local notes', path: pathToFileURL(notePath).href };
     firstQuestion.sources.push(noteCitation);
     await writeFile(packPath, JSON.stringify(authored));
@@ -288,21 +286,16 @@ describe('practice sessions', () => {
     await writeFile(notePath, 'Reapproved local notes.\n');
     const packPath = path.join(incoming, 'sample-learning-pack.json');
     const parsed = validateExamPack(JSON.parse(await readFile(packPath, 'utf-8')));
-    if (!parsed.valid) {
-      throw new Error(parsed.errors.join(' '));
-    }
+    expect.assert(parsed.valid, parsed.errors.join(' '));
     const authored = parsed.pack;
     const [question] = authored.questions;
     const citation = question?.sources[0];
-    if (!question || !citation) {
-      throw new Error('Missing representative question citation.');
-    }
+    expect.assert(question, 'Missing representative question.');
+    expect.assert(citation, 'Missing representative question citation.');
     citation.path = pathToFileURL(notePath).href;
     await writeFile(packPath, JSON.stringify(authored));
     const validated = validateExamPack(authored);
-    if (!validated.valid) {
-      throw new Error(validated.errors.join(' '));
-    }
+    expect.assert(validated.valid, validated.errors.join(' '));
     saveImportedPack(databasePath, validated.pack);
     const session = createPracticeSession({
       databasePath,

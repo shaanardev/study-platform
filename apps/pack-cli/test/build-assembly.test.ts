@@ -16,20 +16,16 @@ describe('build command', () => {
       Effect.gen(function* test() {
         const fixture = yield* mutablePreview;
         const invalidAuthoring = validateAuthoring({ ...fixture.input, questions: [] });
-        expect(Result.isFailure(invalidAuthoring)).toBeTruthy();
-        if (Result.isFailure(invalidAuthoring)) {
-          expect(invalidAuthoring.failure).toBeInstanceOf(AuthoringValidationError);
-          expect(invalidAuthoring.failure.message).toBe(
-            'Authoring must contain at least one question',
-          );
-        }
+        expect.assert(Result.isFailure(invalidAuthoring));
+        expect(invalidAuthoring.failure).toBeInstanceOf(AuthoringValidationError);
+        expect(invalidAuthoring.failure.message).toBe(
+          'Authoring must contain at least one question',
+        );
 
         const invalidPath = safeRelativePath('../outside', 'assetFiles path');
-        expect(Result.isFailure(invalidPath)).toBeTruthy();
-        if (Result.isFailure(invalidPath)) {
-          expect(invalidPath.failure).toBeInstanceOf(AuthoringValidationError);
-          expect(invalidPath.failure.message).toBe('assetFiles path must be a safe relative path');
-        }
+        expect.assert(Result.isFailure(invalidPath));
+        expect(invalidPath.failure).toBeInstanceOf(AuthoringValidationError);
+        expect(invalidPath.failure.message).toBe('assetFiles path must be a safe relative path');
       }),
     );
   });
@@ -45,16 +41,11 @@ describe('build command', () => {
         });
         const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
 
-        expect(Result.isFailure(result)).toBeTruthy();
-        if (Result.isFailure(result)) {
-          expect(result.failure).toBeInstanceOf(BuildError);
-          expect(result.failure.message).toBe('Authoring must contain at least one question');
-          expect(result.failure.cause).toBeInstanceOf(AuthoringValidationError);
-          if (!(result.failure.cause instanceof AuthoringValidationError)) {
-            throw new Error('Expected authoring validation error cause');
-          }
-          expect(result.failure.cause.message).toBe('Authoring must contain at least one question');
-        }
+        expect.assert(Result.isFailure(result));
+        expect(result.failure).toBeInstanceOf(BuildError);
+        expect(result.failure.message).toBe('Authoring must contain at least one question');
+        expect.assert(result.failure.cause instanceof AuthoringValidationError);
+        expect(result.failure.cause.message).toBe('Authoring must contain at least one question');
       }),
     );
   });
@@ -71,10 +62,8 @@ describe('build command', () => {
           yield* writeJson(fixture.authoringPath, input);
           yield* writeJson(`${fixture.root}/authoring/questions/core.json`, []);
           const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
-          expect(Result.isFailure(result)).toBeTruthy();
-          if (Result.isFailure(result)) {
-            expect(result.failure.message).toMatch(/at least one question/iu);
-          }
+          expect.assert(Result.isFailure(result));
+          expect(result.failure.message).toMatch(/at least one question/iu);
           expect(yield* fs.exists(fixture.output)).toBeFalsy();
         }
       }),
@@ -87,9 +76,8 @@ describe('build command', () => {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
         const [first, second] = fixture.questions;
-        if (!first || !second) {
-          throw new Error('Missing preview questions');
-        }
+        expect.assert(first, 'Missing first preview question');
+        expect.assert(second, 'Missing second preview question');
         const cases = [
           {
             error: /duplicate question ID/iu,
@@ -146,10 +134,8 @@ describe('build command', () => {
           yield* writeJson(fixture.authoringPath, scenario.input);
           yield* writeJson(`${fixture.root}/authoring/questions/core.json`, scenario.questions);
           const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
-          expect(Result.isFailure(result)).toBeTruthy();
-          if (Result.isFailure(result)) {
-            expect(result.failure.message).toMatch(scenario.error);
-          }
+          expect.assert(Result.isFailure(result));
+          expect(result.failure.message).toMatch(scenario.error);
           expect(yield* fs.exists(fixture.output)).toBeFalsy();
         }
       }),
@@ -162,9 +148,8 @@ describe('build command', () => {
         const fixture = yield* mutablePreview;
         const fs = yield* FileSystem.FileSystem;
         const [first, second] = fixture.questions;
-        if (!first || !second) {
-          throw new Error('Missing preview questions');
-        }
+        expect.assert(first, 'Missing first preview question');
+        expect.assert(second, 'Missing second preview question');
         const inline = { ...first, id: 'inline-q3', prompt: 'Which outcome means a check passed?' };
         yield* writeJson(`${fixture.root}/authoring/questions/core.json`, [first]);
         yield* writeJson(`${fixture.root}/authoring/questions/extra.json`, [second]);
@@ -202,11 +187,9 @@ describe('build command', () => {
         for (const content of ['{', '{ "questions": [] }', '[{ "id": "missing-fields" }]']) {
           yield* fs.writeFileString(`${fixture.root}/authoring/questions/core.json`, content);
           const result = yield* Effect.result(buildPack(fixture.authoringPath, fixture.output));
-          expect(Result.isFailure(result)).toBeTruthy();
-          if (Result.isFailure(result)) {
-            expect(result.failure.message).toContain('questions/core.json');
-            expect(result.failure.message).toMatch(/invalid question file/iu);
-          }
+          expect.assert(Result.isFailure(result));
+          expect(result.failure.message).toContain('questions/core.json');
+          expect(result.failure.message).toMatch(/invalid question file/iu);
           expect(yield* fs.exists(fixture.output)).toBeFalsy();
         }
       }),

@@ -35,27 +35,33 @@ const setup = async () => {
   const validation = validateExamPack(
     JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
   );
-  if (!validation.valid) {
-    throw new Error(validation.errors.join(' '));
-  }
+  expect.assert(validation.valid, validation.errors.join(' '));
   saveImportedPack(databasePath, validation.pack);
   return { databasePath, pack: validation.pack };
 };
 
 const questionAt = (pack: Awaited<ReturnType<typeof setup>>['pack'], index: number) => {
   const question = pack.questions[index];
-  if (!question) {
-    throw new Error(`Test pack is missing question ${index}.`);
-  }
+  expect.assert(question, `Test pack is missing question ${index}.`);
   return question;
 };
 
 const findQuestion = (pack: Awaited<ReturnType<typeof setup>>['pack'], id: string) => {
   const question = pack.questions.find((item) => item.id === id);
-  if (!question) {
-    throw new Error(`Test pack is missing question "${id}".`);
-  }
+  expect.assert(question, `Test pack is missing question "${id}".`);
   return question;
+};
+
+const isUnknownArray = (value: unknown): value is unknown[] => Array.isArray(value);
+
+const exportedItemsFrom = (json: string) => {
+  const exportedFeedback: unknown = JSON.parse(json) as unknown;
+  expect.assert(typeof exportedFeedback === 'object');
+  expect.assert(exportedFeedback !== null);
+  expect.assert('items' in exportedFeedback);
+  const items: unknown = exportedFeedback.items;
+  expect.assert(isUnknownArray(items));
+  return items;
 };
 
 describe('question feedback', () => {
@@ -189,14 +195,7 @@ describe('question feedback', () => {
         ?.questions[0],
     }).toStrictEqual({ feedbackCount: 1, importedQuestion: original });
     saveImportedPack(databasePath, { ...pack, pack: { ...pack.pack, version: '2.0.0' } });
-    const exportedFeedback: unknown = JSON.parse(exportFeedback(databasePath));
-    const exportedItems =
-      typeof exportedFeedback === 'object' &&
-      exportedFeedback !== null &&
-      'items' in exportedFeedback &&
-      Array.isArray(exportedFeedback.items)
-        ? exportedFeedback.items
-        : [];
+    const exportedItems = exportedItemsFrom(exportFeedback(databasePath));
     expect({
       correctionAnswerIds: listFeedback(
         databasePath,

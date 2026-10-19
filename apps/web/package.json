@@ -11,17 +11,14 @@
     "dev": "vite dev --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "serve": "vite dev --host 127.0.0.1",
     "prepare": "svelte-kit sync",
-    "check": "pnpm typecheck && pnpm validate && pnpm test",
-    "verify": "pnpm lint:fix && pnpm check",
+    "check": "pnpm --dir ../.. check",
+    "verify": "pnpm --dir ../.. verify",
     "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
-    "lint": "ultracite check",
-    "validate": "pnpm lint",
+    "lint": "ultracite check && pnpm typecheck",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint:fix": "ultracite fix",
-    "test:unit": "vitest run",
-    "test": "vitest run"
+    "test": "pnpm --dir ../.. test"
   },
   "devDependencies": {
     "@skeletonlabs/skeleton": "^5.0.1",
@@ -34,6 +31,7 @@
     "@testing-library/svelte": "^5.4.2",
     "@types/node": "^26.6.5",
     "@typescript-eslint/parser": "8.71.1",
+    "@vitest/eslint-plugin": "1.6.27",
     "caniuse-lite": "^1.0.30001815",
     "eslint": "10.12.0",
     "eslint-plugin-better-tailwindcss": "4.9.0",
@@ -48,7 +46,7 @@
     "typescript": "^6.0.3",
     "ultracite": "8.0.0",
     "vite": "^8.3.4",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": "24.21.0"

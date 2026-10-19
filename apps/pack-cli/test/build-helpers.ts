@@ -2,26 +2,32 @@ import { Effect, FileSystem, Schema } from 'effect';
 import { afterEach } from 'vitest';
 
 import { AuthoringFile, QuestionFile } from '../src/build/authoring-schema.js';
-import { makeTemporaryDirectoryTracker, run } from './test-helpers.js';
+import previewAuthoring from './fixtures/modular-preview/authoring.json' with { type: 'json' };
+import previewQuestions from './fixtures/modular-preview/questions/core.json' with { type: 'json' };
+import { makeTemporaryDirectoryTracker, run, testPath } from './helpers.js';
 
-export { run, writeJson } from './test-helpers.js';
+export { relativeTestPath, run, testPath, writeJson } from './helpers.js';
 
 const outputDirectories = makeTemporaryDirectoryTracker();
+const previewAuthoringData: unknown = previewAuthoring;
+const previewQuestionData: unknown = previewQuestions;
+const previewInput = Schema.decodeUnknownSync(AuthoringFile)(previewAuthoringData);
+const previewQuestionBank = Schema.decodeUnknownSync(QuestionFile)(previewQuestionData);
 
 export const outputDirectory = outputDirectories.make('pack-build-');
 
 export const mutablePreview = Effect.gen(function* mutablePreview() {
   const root = yield* outputDirectory;
   const fs = yield* FileSystem.FileSystem;
-  yield* fs.copy('test/fixtures/modular-preview', `${root}/authoring`);
+  yield* fs.copy(testPath('fixtures', 'modular-preview'), `${root}/authoring`);
   const authoringPath = `${root}/authoring/authoring.json`;
-  const input = yield* Schema.decodeEffect(Schema.fromJsonString(AuthoringFile))(
-    yield* fs.readFileString(authoringPath),
-  );
-  const questions = yield* Schema.decodeEffect(Schema.fromJsonString(QuestionFile))(
-    yield* fs.readFileString(`${root}/authoring/questions/core.json`),
-  );
-  return { authoringPath, input, output: `${root}/built`, questions, root };
+  return {
+    authoringPath,
+    input: previewInput,
+    output: `${root}/built`,
+    questions: previewQuestionBank,
+    root,
+  };
 });
 
 afterEach(async () => {

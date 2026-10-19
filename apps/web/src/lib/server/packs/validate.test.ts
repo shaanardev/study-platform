@@ -29,11 +29,15 @@ const validPack = {
   ],
   schemaVersion: 1,
 };
-const hasCitationMetadata = (source: PackSource | undefined) =>
-  source !== undefined &&
-  Array.isArray(source.documentationUrls) &&
-  source.kind === 'academy_note' &&
-  typeof source.section === 'string';
+
+const firstCitationFrom = (result: ReturnType<typeof validateExamPack>): PackSource => {
+  expect.assert(result.valid, result.errors.join(' '));
+  const [question] = result.pack.questions;
+  expect.assert(question, 'Expected a pack question.');
+  const [source] = question.sources;
+  expect.assert(source, 'Expected a pack citation.');
+  return source;
+};
 
 describe(validateExamPack, () => {
   it('accepts a valid versioned pack and returns its normalized value', () => {
@@ -47,9 +51,7 @@ describe(validateExamPack, () => {
   it('accepts and preserves supported citation metadata', () => {
     const pack = structuredClone(validPack);
     const [question] = pack.questions;
-    if (!question) {
-      throw new Error('Expected the valid pack to contain a question.');
-    }
+    expect.assert(question, 'Expected the valid pack to contain a question.');
     const source = {
       documentationUrls: ['https://example.com/streaming/checkpoints'],
       kind: 'academy_note',
@@ -78,23 +80,30 @@ describe(validateExamPack, () => {
 
     const currentResult = validateExamPack(current);
     const legacyResult = validateExamPack(normalizeLegacyCitations(legacy));
-    const currentSource = currentResult.valid
-      ? currentResult.pack.questions[0]?.sources[0]
-      : undefined;
-    const legacySource = legacyResult.valid
-      ? legacyResult.pack.questions[0]?.sources[0]
-      : undefined;
+    const currentSource = firstCitationFrom(currentResult);
+    const legacySource = firstCitationFrom(legacyResult);
 
-    expect(currentResult.valid && hasCitationMetadata(currentSource)).toBeTruthy();
-    expect(legacyResult.valid && hasCitationMetadata(legacySource)).toBeTruthy();
+    expect({
+      current: {
+        documentationUrls: Array.isArray(currentSource.documentationUrls),
+        kind: currentSource.kind,
+        section: typeof currentSource.section,
+      },
+      legacy: {
+        documentationUrls: Array.isArray(legacySource.documentationUrls),
+        kind: legacySource.kind,
+        section: typeof legacySource.section,
+      },
+    }).toStrictEqual({
+      current: { documentationUrls: true, kind: 'academy_note', section: 'string' },
+      legacy: { documentationUrls: true, kind: 'academy_note', section: 'string' },
+    });
   });
 
   it('accepts an absolute local file URL as a generic citation', () => {
     const pack = structuredClone(validPack);
     const [question] = pack.questions;
-    if (!question) {
-      throw new Error('Expected the valid pack to contain a question.');
-    }
+    expect.assert(question, 'Expected the valid pack to contain a question.');
     question.sources = [{ label: 'Local reference', path: 'file:///tmp/reference%20notes.md' }];
 
     expect(validateExamPack(pack)).toStrictEqual({ errors: [], pack, valid: true });
@@ -103,10 +112,9 @@ describe(validateExamPack, () => {
   it('rejects unsupported URL schemes as citation paths', () => {
     const pack = structuredClone(validPack);
     const [question] = pack.questions;
-    const [source] = question?.sources ?? [];
-    if (!source) {
-      throw new Error('Expected the valid pack to contain a source.');
-    }
+    expect.assert(question, 'Expected the valid pack to contain a question.');
+    const [source] = question.sources;
+    expect.assert(source, 'Expected the valid pack to contain a source.');
     source.path = 'https://example.com/notes.md';
 
     const result = validateExamPack(pack);
@@ -121,10 +129,10 @@ describe(validateExamPack, () => {
     const invalidPack = structuredClone(validPack);
     const [domain] = invalidPack.domains;
     const [question] = invalidPack.questions;
-    const [source] = question?.sources ?? [];
-    if (!domain || !source) {
-      throw new Error('Expected the valid pack to contain domain and source data.');
-    }
+    expect.assert(question, 'Expected the valid pack to contain a question.');
+    const [source] = question.sources;
+    expect.assert(domain, 'Expected the valid pack to contain a domain.');
+    expect.assert(source, 'Expected the valid pack to contain a source.');
     domain.weight = 90;
     source.path = '../private/notes.md';
 
@@ -140,9 +148,7 @@ describe(validateExamPack, () => {
   it('rejects repeated question IDs', () => {
     const invalidPack = structuredClone(validPack);
     const [firstQuestion] = invalidPack.questions;
-    if (!firstQuestion) {
-      throw new Error('Expected the valid pack to contain a question.');
-    }
+    expect.assert(firstQuestion, 'Expected the valid pack to contain a question.');
     invalidPack.questions.push({ ...firstQuestion });
 
     const result = validateExamPack(invalidPack);
@@ -154,9 +160,7 @@ describe(validateExamPack, () => {
   it('rejects unknown question fields', () => {
     const invalidPack = structuredClone(validPack);
     const [question] = invalidPack.questions;
-    if (!question) {
-      throw new Error('Expected the valid pack to contain a question.');
-    }
+    expect.assert(question, 'Expected the valid pack to contain a question.');
     Object.assign(question, { internalNote: 'not part of the pack schema' });
 
     const result = validateExamPack(invalidPack);

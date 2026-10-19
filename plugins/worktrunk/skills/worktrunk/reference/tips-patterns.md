@@ -16,7 +16,7 @@ Worktrunk's `wt step copy-ignored` copies ignored files from one worktree into a
 
 ## Verification before Worktrunk commits
 
-`.config/wt.toml` uses `pre-commit = "pnpm verify:all"`. Keep this exact project verification entry. Worktrunk runs it for Worktrunk commit operations; a plain `git commit` does not invoke the hook.
+`.config/wt.toml` uses `pre-commit = "pnpm verify"`. Keep this exact project verification entry. Worktrunk runs it for Worktrunk commit operations; a plain `git commit` does not invoke the hook.
 
 ## Ordewell worktrees
 
