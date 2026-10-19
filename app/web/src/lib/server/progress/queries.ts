@@ -1,11 +1,11 @@
 import type { SQLOutputValue } from 'node:sqlite';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
 import * as Schema from 'effect/Schema';
 
 import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
 import { openPackDatabase } from '#lib/server/db/packs.js';
 import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
 export interface ProgressAttempt {

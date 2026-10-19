@@ -16,7 +16,10 @@
     "lint": "ultracite check && pnpm --dir app/pack-cli lint && pnpm --filter web lint",
     "lint:fix": "ultracite fix && pnpm --dir app/pack-cli lint:fix && pnpm --filter web lint:fix",
     "pack:build": "tsx app/pack-cli/src/index.ts build",
-    "pack:verify": "tsx app/pack-cli/src/index.ts verify"
+    "pack:verify": "tsx app/pack-cli/src/index.ts verify",
+    "verify:all": "pnpm lint:fix && pnpm --dir app/pack-cli check:schema && pnpm typecheck && pnpm test",
+    "pack:schema:generate": "pnpm --dir app/pack-cli packs schema generate",
+    "pack:schema:check": "pnpm --dir app/pack-cli packs schema check"
   },
   "devDependencies": {
     "@effect/tsgo": "0.51.1",

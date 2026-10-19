@@ -1,7 +1,7 @@
+import { BuiltExamPackSchema } from '@learning-platform/exam-pack';
 import { Effect, FileSystem, Path, Result, Schema } from 'effect';
 import { describe, expect, it } from 'vitest';
 
-import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { verifyPack } from '../src/verify/verify.js';
 import { validPack } from './pack-fixture.js';
 import { makePack, run, writeJson } from './verify-helpers.js';

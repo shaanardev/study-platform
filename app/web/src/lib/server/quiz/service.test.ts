@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
@@ -13,7 +14,6 @@ import {
 } from '#lib/server/db/packs.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
 import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import {
   answerQuestion,
   createPracticeSession,

@@ -1,3 +1,4 @@
+import { BuiltExamPackSchema } from '@learning-platform/exam-pack';
 import { Effect, FileSystem, Result, Schema } from 'effect';
 import { Command } from 'effect/cli';
 import { TestConsole } from 'effect/testing';
@@ -6,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import { AuthoringFile } from '../src/build/authoring-schema.js';
 import { buildPack } from '../src/build/build.js';
 import { buildCommand } from '../src/build/command.js';
-import { BuiltExamPackSchema } from '../src/core/built-pack-schema.js';
 import { verifyPack } from '../src/verify/verify.js';
 import {
   mutablePreview,

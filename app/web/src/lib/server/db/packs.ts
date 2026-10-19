@@ -3,13 +3,12 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { SQLOutputValue } from 'node:sqlite';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack } from '@learning-platform/exam-pack';
 import * as Schema from 'effect/Schema';
 
 import { decodeJsonText } from '#lib/server/json.js';
-import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
-import type { ExamPack } from '#lib/types/exam-pack.js';
 
 type DatabaseRow = Record<string, SQLOutputValue>;
 
@@ -47,7 +46,7 @@ const readNumberColumn = (row: DatabaseRow, column: string): number => {
 };
 
 const parseStoredPack = (content: string): ExamPack => {
-  const parsed = normalizeLegacyCitations(decodeJsonText(content));
+  const parsed = decodeJsonText(content);
   const result = validateExamPack(parsed);
 
   if (!result.valid) {

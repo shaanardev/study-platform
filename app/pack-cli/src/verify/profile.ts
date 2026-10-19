@@ -1,7 +1,7 @@
+import type { PackForVerification } from '@learning-platform/exam-pack';
 import { Crypto, Data, Effect, FileSystem, Option, Path, Result, Schema } from 'effect';
 import { Hex } from 'effect/encoding';
 
-import type { PackForVerification } from '../core/built-pack-schema.js';
 import {
   JSON_INDENT_SPACES,
   LOWERCASE_ASCII_A_CODE_POINT,

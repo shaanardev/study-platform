@@ -3,13 +3,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
 import * as Schema from 'effect/Schema';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { openPackDatabase } from '#lib/server/db/packs.js';
 import { decodeJsonText } from '#lib/server/json.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
 const temporaryDirectories: string[] = [];

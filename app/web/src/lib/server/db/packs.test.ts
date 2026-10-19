@@ -2,10 +2,10 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { getImportedPack, openPackDatabase, saveImportedPack } from '#lib/server/db/packs.js';
-import type { ExamPack } from '#lib/types/exam-pack.js';
 
 const temporaryDirectories: string[] = [];
 

@@ -21,6 +21,7 @@
     "test": "pnpm --dir ../.. test"
   },
   "dependencies": {
+    "@learning-platform/exam-pack": "workspace:*",
     "effect": "4.0.2"
   },
   "devDependencies": {

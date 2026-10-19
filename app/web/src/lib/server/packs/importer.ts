@@ -3,6 +3,9 @@ import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack, PackSource } from '@learning-platform/exam-pack';
+
 import {
   listImportedPacks,
   refreshApprovedLocalSources,
@@ -10,9 +13,7 @@ import {
 } from '#lib/server/db/packs.js';
 import type { ImportedSourceAsset } from '#lib/server/db/packs.js';
 import { decodeJsonText } from '#lib/server/json.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
-import type { ExamPack, PackSource } from '#lib/types/exam-pack.js';
 
 export interface ImportResult {
   imported: string[];

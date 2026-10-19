@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
 import * as Schema from 'effect/Schema';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -15,7 +16,6 @@ import {
   retireQuestion,
 } from '#lib/server/feedback/service.js';
 import { decodeJsonText } from '#lib/server/json.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import {
   createMockAttempt,
   saveMockAnswer,

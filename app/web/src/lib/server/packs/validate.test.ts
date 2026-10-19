@@ -1,13 +1,10 @@
 import { readFile } from 'node:fs/promises';
 
-import * as Schema from 'effect/Schema';
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { PackSource } from '@learning-platform/exam-pack';
 import { describe, expect, it } from 'vitest';
 
-import { decodeJsonText } from '#lib/server/json.js';
-import { normalizeLegacyCitations } from '#lib/server/packs/legacy.js';
-import { validateExamPack } from '#lib/server/packs/validate.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
-import type { PackSource } from '#lib/types/exam-pack.js';
 
 const validPack = {
   domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
@@ -32,15 +29,11 @@ const validPack = {
   schemaVersion: 1,
 };
 
-const firstCitationFrom = (result: ReturnType<typeof validateExamPack>): PackSource => {
-  expect.assert(result.valid, result.errors.join(' '));
-  const [question] = result.pack.questions;
-  expect.assert(question, 'Expected a pack question.');
-  const [source] = question.sources;
-  expect.assert(source, 'Expected a pack citation.');
-
-  return source;
-};
+const hasCitationMetadata = (source: PackSource | undefined): boolean =>
+  source !== undefined &&
+  source.documentationUrls !== undefined &&
+  source.section !== undefined &&
+  source.kind === 'academy_note';
 
 describe(validateExamPack, () => {
   it('accepts a valid versioned pack and returns its normalized value', () => {
@@ -75,39 +68,14 @@ describe(validateExamPack, () => {
     });
   });
 
-  it('accepts migrated v1.2.1 and legacy v1.2.0 pack citations', async () => {
-    const current = decodeJsonText(
+  it('accepts the current Databricks pack with citation metadata', async () => {
+    const current: unknown = JSON.parse(
       await readFile(workspacePath('packs/incoming/databricks-dea-may-2026-v1.2.1.json'), 'utf-8'),
     );
 
-    const legacy = decodeJsonText(
-      await readFile(workspacePath('packs/incoming/databricks-dea-may-2026-v1.2.0.json'), 'utf-8'),
-    );
-
-    const currentResult = validateExamPack(current);
-    const legacyResult = validateExamPack(normalizeLegacyCitations(legacy));
-    const currentSource = firstCitationFrom(currentResult);
-    const legacySource = firstCitationFrom(legacyResult);
-
-    expect({
-      current: {
-        hasDocumentationUrls: Schema.is(Schema.Array(Schema.String))(
-          currentSource.documentationUrls,
-        ),
-        hasSection: Schema.is(Schema.String)(currentSource.section),
-        kind: currentSource.kind,
-      },
-      legacy: {
-        hasDocumentationUrls: Schema.is(Schema.Array(Schema.String))(
-          legacySource.documentationUrls,
-        ),
-        hasSection: Schema.is(Schema.String)(legacySource.section),
-        kind: legacySource.kind,
-      },
-    }).toStrictEqual({
-      current: { hasDocumentationUrls: true, hasSection: true, kind: 'academy_note' },
-      legacy: { hasDocumentationUrls: true, hasSection: true, kind: 'academy_note' },
-    });
+    const result = validateExamPack(current);
+    expect.assert(result.valid, 'Expected the current Databricks pack to validate.');
+    expect(hasCitationMetadata(result.pack.questions[0]?.sources[0])).toBeTruthy();
   });
 
   it('accepts an absolute local file URL as a generic citation', () => {
