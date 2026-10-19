@@ -27,7 +27,7 @@ packs/
 .local/                       Ignored, machine-local app data
 ```
 
-The `@learning-platform/exam-pack` workspace package owns the canonical built-pack schema, shared types, and structural and semantic validation used by the web app and CLI. Generate `packs/exam-pack.schema.json` with `pnpm pack:schema:generate`; `pnpm verify:all` checks that it stays current.
+The `@learning-platform/exam-pack` workspace package owns the canonical built-pack schema, shared types, and structural and semantic validation used by the web app and CLI. Generate `packs/exam-pack.schema.json` with `pnpm pack:schema:generate`; check that it stays current with `pnpm pack:schema:check`.
 
 ## Setup
 
@@ -53,7 +53,6 @@ pnpm pack:verify /tmp/example-pack/sample-pack.json
 | Build web app | `pnpm build` | `pnpm --dir app/web build` |
 | Check the workspace | `pnpm check` | — |
 | Verify the workspace | `pnpm verify` | — |
-| Verify all workspace checks and the generated schema | `pnpm verify:all` | — |
 | Run all tests and coverage | `pnpm test` | — |
 | Generate the pack JSON Schema | `pnpm pack:schema:generate` | `pnpm --dir app/pack-cli packs schema generate` |
 | Check the generated pack JSON Schema | `pnpm pack:schema:check` | `pnpm --dir app/pack-cli packs schema check` |
