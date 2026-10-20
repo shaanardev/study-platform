@@ -7,5 +7,5 @@ const migrationRegistry: Record<string, Migration> = {
 };
 
 export const migrationProvider: MigrationProvider = {
-  getMigrations: () => Promise.resolve(migrationRegistry),
+  getMigrations: async () => await Promise.resolve(migrationRegistry),
 };

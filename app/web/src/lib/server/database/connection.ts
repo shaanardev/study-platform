@@ -85,5 +85,9 @@ export const createDatabase = async (databasePath: string): Promise<AppDatabase>
     throw error;
   }
 
-  return Object.assign(db, { close: async () => db.destroy() });
+  return Object.assign(db, {
+    close: async () => {
+      await db.destroy();
+    },
+  });
 };

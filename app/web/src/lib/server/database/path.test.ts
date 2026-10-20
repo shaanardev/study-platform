@@ -13,26 +13,32 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const workspace = vi.hoisted(() => ({ root: '' }));
+const originalDatabasePath = process.env['DB_PATH'];
 
 vi.mock(import('#lib/server/workspace-paths.js'), () => ({
   workspacePath: (...segments: string[]) => path.join(workspace.root, ...segments),
 }));
 vi.mock(import('$app/env/private'), () => ({
   get DB_PATH(): string | undefined {
-    return process.env.DB_PATH;
+    return process.env['DB_PATH'];
   },
 }));
 
 describe('database path isolation', () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.stubEnv('DB_PATH');
+    Reflect.deleteProperty(process.env, 'DB_PATH');
     workspace.root = mkdtempSync(path.join(tmpdir(), 'database-path-'));
     mkdirSync(path.join(workspace.root, '.local'));
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    if (originalDatabasePath === undefined) {
+      Reflect.deleteProperty(process.env, 'DB_PATH');
+    } else {
+      process.env['DB_PATH'] = originalDatabasePath;
+    }
     rmSync(workspace.root, { force: true, recursive: true });
   });
 
@@ -51,11 +57,12 @@ describe('database path isolation', () => {
     );
   });
 
-  it.each(['app.sqlite', 'exam-packs.sqlite'])(
+  it.each(['app.sqlite', 'exam-packs.sqlite', 'backups/exam-packs-before-rewrite.sqlite'])(
     'rejects hard-link aliases of protected %s',
     async (filename) => {
       const protectedPath = path.join(workspace.root, '.local', filename);
       const alias = path.join(workspace.root, 'hard-link.sqlite');
+      mkdirSync(path.dirname(protectedPath), { recursive: true });
       writeFileSync(protectedPath, 'protected fixture');
       linkSync(protectedPath, alias);
       vi.stubEnv('DB_PATH', alias);

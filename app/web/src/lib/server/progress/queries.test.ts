@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '#lib/server/database/connection.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { createCorrection, retireQuestion } from '#lib/server/feedback/service.js';
+import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { getProgress } from '#lib/server/progress/queries.js';
 import {
   createMockAttempt,
@@ -146,7 +146,6 @@ describe('progress queries', () => {
     ]);
   });
 
-
   it('keeps historical scores and missed questions tied to the attempt snapshot after feedback changes', async () => {
     const { database, pack } = await fixture();
     const session = await createPracticeSession({
@@ -169,7 +168,12 @@ describe('progress queries', () => {
       database,
     );
     await retireQuestion(
-      { examId: pack.exam.id, packId: pack.pack.id, packVersion: pack.pack.version, questionId: 'q-storage' },
+      {
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        questionId: 'q-storage',
+      },
       true,
       database,
     );

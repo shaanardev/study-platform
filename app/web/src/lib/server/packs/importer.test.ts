@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { AppDatabase } from '#lib/server/database/connection.js';
 import { createDatabase } from '#lib/server/database/connection.js';
-import { getApprovedSourceRoot, getImportedSourceAsset } from '#lib/server/packs/repository.js';
 import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
+import { getApprovedSourceRoot, getImportedSourceAsset } from '#lib/server/packs/repository.js';
 import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 
 const temporaryDirectories: string[] = [];

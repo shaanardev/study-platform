@@ -1,4 +1,5 @@
-import { sql, type Kysely } from 'kysely';
+import { sql } from 'kysely';
+import type { Kysely } from 'kysely';
 
 import type { AppDatabaseSchema } from '#lib/server/database/types.js';
 

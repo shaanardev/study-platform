@@ -118,7 +118,6 @@ export const savePracticeAnswer = async (
     answerIds: string[];
     correct: boolean;
     answeredAt: string;
-    complete: boolean;
   },
   database?: AppDatabase,
 ): Promise<void> => {

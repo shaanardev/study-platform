@@ -64,12 +64,18 @@ const versionKey = (examId: string, packId: string, packVersion: string): string
 const scoreKey = (examId: string, packId: string, packVersion: string, domainId: string): string =>
   [versionKey(examId, packId, packVersion), domainId].join('\0');
 
-const missedKey = (examId: string, packId: string, packVersion: string, questionId: string): string =>
-  [versionKey(examId, packId, packVersion), questionId].join('\0');
+const missedKey = (
+  examId: string,
+  packId: string,
+  packVersion: string,
+  questionId: string,
+): string => [versionKey(examId, packId, packVersion), questionId].join('\0');
 
 const attemptKey = (kind: ProgressAttempt['kind'], id: string): string => `${kind}\0${id}`;
 
-export const getProgress = async (database: AppDatabase = getAppDatabase()): Promise<ProgressData> => {
+export const getProgress = async (
+  database: AppDatabase = getAppDatabase(),
+): Promise<ProgressData> => {
   const [practiceRows, mockRows, answerRows] = await Promise.all([
     database
       .selectFrom('practice_sessions as s')

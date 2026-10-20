@@ -63,12 +63,18 @@ const findQuestion = (pack: Awaited<ReturnType<typeof setup>>['pack'], id: strin
 };
 
 describe('question feedback', () => {
-  afterEach(() =>
-    Promise.all([
-      ...databases.splice(0).map((database) => database.close()),
-      ...directories.splice(0).map((directory) => rm(directory, { force: true, recursive: true })),
-    ]),
-  );
+  afterEach(async () => {
+    await Promise.all(
+      databases.splice(0).map(async (database) => {
+        await database.close();
+      }),
+    );
+    await Promise.all(
+      directories.splice(0).map(async (directory) => {
+        await rm(directory, { force: true, recursive: true });
+      }),
+    );
+  });
 
   it('exports flags and schema-validated corrections in a stable JSON format', async () => {
     const { database, pack } = await setup();

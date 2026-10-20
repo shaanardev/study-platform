@@ -9,6 +9,7 @@ import { databasePathVariable } from '../../../env.js';
 
 const activeDatabasePath = workspacePath('.local/app.sqlite');
 const archivedDatabasePath = workspacePath('.local/exam-packs.sqlite');
+const archivedBackupPath = workspacePath('.local/backups/exam-packs-before-rewrite.sqlite');
 
 /** Resolve paths through existing symlinked ancestors, including when the file is new. */
 const canonicalPath = (input: string, depth = 0): string => {
@@ -56,7 +57,8 @@ const isSameDatabase = (left: string, right: string): boolean =>
 const assertNotProtectedDatabase = (selectedPath: string, source: string): void => {
   if (
     isSameDatabase(selectedPath, activeDatabasePath) ||
-    isSameDatabase(selectedPath, archivedDatabasePath)
+    isSameDatabase(selectedPath, archivedDatabasePath) ||
+    isSameDatabase(selectedPath, archivedBackupPath)
   ) {
     throw new Error(`${source} must not point to a protected workspace database.`);
   }
@@ -74,22 +76,6 @@ export const databasePath = (() => {
   assertNotProtectedDatabase(selectedPath, databasePathVariable);
   return selectedPath;
 })();
-
-/** Keep explicit legacy service paths confined to the selected disposable database. */
-export const assertDatabasePath = (input: string): string => {
-  const resolvedPath = path.resolve(input);
-  if (!(DB_PATH === undefined && resolvedPath === path.resolve(activeDatabasePath))) {
-    assertNotProtectedDatabase(resolvedPath, 'Database path');
-  }
-  if (
-    DB_PATH !== undefined &&
-    canonicalPath(resolvedPath) !== canonicalPath(databasePath) &&
-    !sameFile(resolvedPath, databasePath)
-  ) {
-    throw new Error(`The app can only open the database selected by ${databasePathVariable}.`);
-  }
-  return resolvedPath;
-};
 
 /** Reject accidental factory paths into either the app DB or its archived predecessor. */
 export const assertSafeDatabasePath = (input: string): string => {
