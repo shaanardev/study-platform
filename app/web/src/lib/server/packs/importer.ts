@@ -3,9 +3,7 @@ import { readdir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { validateExamPack } from '@learning-platform/exam-pack';
-import type { ExamPack, PackSource } from '@learning-platform/exam-pack';
-
+import type { AppDatabase } from '#lib/server/database/connection.js';
 import {
   listImportedPacks,
   refreshApprovedLocalSources,
@@ -14,25 +12,24 @@ import {
 import type { ImportedSourceAsset } from '#lib/server/db/packs.js';
 import { decodeJsonText } from '#lib/server/json.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack, PackSource } from '@learning-platform/exam-pack';
 
 export interface ImportResult {
   imported: string[];
   refreshed: string[];
   errors: string[];
 }
-
 export interface ImportOptions {
   folder?: string;
-  databasePath?: string;
+  database?: AppDatabase;
   approvedSourceRoot?: string;
 }
 
 const defaultFolder = workspacePath('packs/incoming');
-const defaultDatabase = workspacePath('.local/exam-packs.sqlite');
 
 const isWithin = (parent: string, candidate: string): boolean => {
   const pathFromParent = path.relative(parent, candidate);
-
   return (
     pathFromParent === '' ||
     (!pathFromParent.startsWith(`..${path.sep}`) &&
@@ -46,21 +43,17 @@ interface ResolvedSource {
   questionId: string;
   source: PackSource;
 }
-
 type SourceResolution = ResolvedSource | { error: string };
-
 type FileImportResult =
   | { kind: 'error'; error: string }
   | { kind: 'imported'; packKey: string }
   | { kind: 'refreshed'; packKey: string };
-
 interface PreparedPackImport {
   entryName: string;
   pack: ExamPack;
   packKey: string;
   sourceAssets: ImportedSourceAsset[];
 }
-
 type PackPreparationResult = { error: string } | { prepared: PreparedPackImport };
 
 const importPreparationBatchSize = 8;
@@ -73,17 +66,14 @@ const resolveCitation = async (
   approvedSourceRoot: string | undefined,
 ): Promise<SourceResolution> => {
   let candidate: string;
-
   if (source.path.startsWith('file:')) {
     if (approvedSourceRoot === undefined) {
       return {
         error: `absolute local citation "${source.path}" requires an explicitly approved local source root`,
       };
     }
-
     try {
       const url = new URL(source.path);
-
       if (
         url.protocol !== 'file:' ||
         url.hostname !== '' ||
@@ -93,12 +83,10 @@ const resolveCitation = async (
       ) {
         throw new Error('unsupported file URL');
       }
-
       candidate = fileURLToPath(url);
     } catch {
       return { error: `absolute local citation "${source.path}" is not a valid local file URL` };
     }
-
     if (!isWithin(approvedSourceRoot, path.resolve(candidate))) {
       return {
         error: `absolute local citation "${source.path}" is outside the approved local source root`,
@@ -106,7 +94,6 @@ const resolveCitation = async (
     }
   } else {
     candidate = path.resolve(path.dirname(filePath), source.path);
-
     if (!isWithin(path.dirname(filePath), candidate)) {
       return { error: `source path "${source.path}" escapes the pack folder` };
     }
@@ -116,7 +103,6 @@ const resolveCitation = async (
     const actualPath = await realpath(candidate);
     const allowedRoot = source.path.startsWith('file:') ? approvedSourceRoot : packDirectory;
     const actualPathInfo = await stat(actualPath);
-
     if (
       allowedRoot === undefined ||
       !isWithin(allowedRoot, actualPath) ||
@@ -125,12 +111,10 @@ const resolveCitation = async (
       const reason = source.path.startsWith('file:')
         ? 'resolves outside the approved local source root or is not a file'
         : 'is not a file within the pack folder';
-
       return {
         error: `${source.path.startsWith('file:') ? 'absolute local citation' : 'source path'} "${source.path}" ${reason}`,
       };
     }
-
     return { filePath: actualPath, questionId, source };
   } catch {
     return { error: `source path "${source.path}" does not resolve to a local file` };
@@ -149,15 +133,16 @@ const resolveRequestedSources = async (
         await resolveCitation(source, questionId, filePath, packDirectory, approvedSourceRoot),
     ),
   );
-
   const firstError = resolutions.find((resolution) => 'error' in resolution);
-
   if (firstError !== undefined && 'error' in firstError) {
     return firstError;
   }
-
-  const sources = resolutions.flatMap((resolution) => ('error' in resolution ? [] : [resolution]));
-
+  const sources: ResolvedSource[] = [];
+  for (const resolution of resolutions) {
+    if (!('error' in resolution)) {
+      sources.push(resolution);
+    }
+  }
   return { sources };
 };
 
@@ -167,11 +152,9 @@ const resolvePackSources = async (
   approvedSourceRoot: string | undefined,
 ): Promise<{ error: string } | { sources: ResolvedSource[] }> => {
   const packDirectory = await realpath(path.dirname(filePath));
-
   const requestedSources = pack.questions.flatMap((question) =>
     question.sources.map((source) => ({ questionId: question.id, source })),
   );
-
   return await resolveRequestedSources(
     requestedSources,
     filePath,
@@ -186,29 +169,21 @@ const preparePackFile = async (
   approvedSourceRoot: string | undefined,
 ): Promise<PackPreparationResult> => {
   let input: unknown;
-
   try {
     input = decodeJsonText(await readFile(filePath, 'utf-8'));
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'unknown error';
-
     return { error: `${entryName}: could not read valid JSON (${reason}).` };
   }
-
   const validation = validateExamPack(input);
-
   if (!validation.valid) {
     return { error: `${entryName}: ${validation.errors.join(' ')}` };
   }
-
   const resolution = await resolvePackSources(validation.pack, filePath, approvedSourceRoot);
-
   if ('error' in resolution) {
     return { error: `${entryName}: ${resolution.error}.` };
   }
-
   let sourceAssets: ImportedSourceAsset[];
-
   try {
     sourceAssets = await Promise.all(
       resolution.sources.map(async ({ questionId, source, filePath: sourcePath }) => ({
@@ -219,40 +194,32 @@ const preparePackFile = async (
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'unknown file error';
-
     return { error: `${entryName}: could not read source files (${reason}).` };
   }
-
   const packKey = `${validation.pack.exam.id}/${validation.pack.pack.id}@${validation.pack.pack.version}`;
-
   return {
     prepared: { entryName, pack: validation.pack, packKey, sourceAssets },
   };
 };
 
-const storePreparedPack = (
+const storePreparedPack = async (
   prepared: PreparedPackImport,
-  databasePath: string,
+  database: AppDatabase | undefined,
   approvedSourceRoot: string | undefined,
-): FileImportResult => {
+): Promise<FileImportResult> => {
   const { entryName, pack, packKey, sourceAssets } = prepared;
-
   try {
-    saveImportedPack(databasePath, pack, sourceAssets, approvedSourceRoot);
-
+    await saveImportedPack(database, pack, sourceAssets, approvedSourceRoot);
     return { kind: 'imported', packKey };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown database error';
-
     if (!message.includes('UNIQUE constraint failed')) {
       return { error: `${entryName}: could not store this pack (${message}).`, kind: 'error' };
     }
-
     try {
       const refreshed =
         approvedSourceRoot !== undefined &&
-        refreshApprovedLocalSources(databasePath, pack, sourceAssets, approvedSourceRoot);
-
+        (await refreshApprovedLocalSources(database, pack, sourceAssets, approvedSourceRoot));
       return refreshed
         ? { kind: 'refreshed', packKey }
         : {
@@ -262,7 +229,6 @@ const storePreparedPack = (
     } catch (refreshError) {
       const reason =
         refreshError instanceof Error ? refreshError.message : 'unknown database error';
-
       return {
         error: `${entryName}: could not refresh approved local citations (${reason}).`,
         kind: 'error',
@@ -271,24 +237,55 @@ const storePreparedPack = (
   }
 };
 
+const storePreparedBatch = async (
+  preparations: PackPreparationResult[],
+  index: number,
+  database: AppDatabase | undefined,
+  approvedSourceRoot: string | undefined,
+  result: ImportResult,
+): Promise<void> => {
+  const preparation = preparations[index];
+  if (preparation === undefined) {
+    return;
+  }
+  const importResult: FileImportResult =
+    'error' in preparation
+      ? { error: preparation.error, kind: 'error' }
+      : await storePreparedPack(preparation.prepared, database, approvedSourceRoot);
+  switch (importResult.kind) {
+    case 'error': {
+      result.errors.push(importResult.error);
+      break;
+    }
+    case 'imported': {
+      result.imported.push(importResult.packKey);
+      break;
+    }
+    case 'refreshed': {
+      result.refreshed.push(importResult.packKey);
+      break;
+    }
+    default: {
+      throw new Error(`Unexpected file import result: ${JSON.stringify(importResult)}`);
+    }
+  }
+  await storePreparedBatch(preparations, index + 1, database, approvedSourceRoot, result);
+};
+
 const getApprovedSourceRoot = async (value: string | undefined): Promise<string | undefined> => {
   if (value === undefined || value.trim().length === 0) {
     return undefined;
   }
-
   const sourceRoot = await realpath(path.resolve(value));
   const sourceRootInfo = await stat(sourceRoot);
-
   if (!sourceRootInfo.isDirectory()) {
     throw new Error('not a directory');
   }
-
   return sourceRoot;
 };
 
 const getPackFiles = async (folder: string): Promise<Dirent[]> => {
   const entries = await readdir(folder, { withFileTypes: true });
-
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
     .toSorted((a, b) => a.name.localeCompare(b.name));
@@ -297,13 +294,12 @@ const getPackFiles = async (folder: string): Promise<Dirent[]> => {
 const importPackFilesInBatches = async (
   files: Dirent[],
   folder: string,
-  databasePath: string,
+  database: AppDatabase | undefined,
   approvedSourceRoot: string | undefined,
   result: ImportResult,
 ): Promise<void> => {
   for (let offset = 0; offset < files.length; offset += importPreparationBatchSize) {
     const batch = files.slice(offset, offset + importPreparationBatchSize);
-
     // Keep only one bounded batch of source files in memory at a time.
     // oxlint-disable-next-line no-await-in-loop
     const preparations = await Promise.all(
@@ -312,39 +308,17 @@ const importPackFilesInBatches = async (
           await preparePackFile(entry.name, path.join(folder, entry.name), approvedSourceRoot),
       ),
     );
-
-    const batchResults = preparations.map((preparation): FileImportResult =>
-      'error' in preparation
-        ? { error: preparation.error, kind: 'error' }
-        : storePreparedPack(preparation.prepared, databasePath, approvedSourceRoot),
-    );
-
-    result.errors.push(
-      ...batchResults.flatMap((importResult) =>
-        importResult.kind === 'error' ? [importResult.error] : [],
-      ),
-    );
-    result.imported.push(
-      ...batchResults.flatMap((importResult) =>
-        importResult.kind === 'imported' ? [importResult.packKey] : [],
-      ),
-    );
-    result.refreshed.push(
-      ...batchResults.flatMap((importResult) =>
-        importResult.kind === 'refreshed' ? [importResult.packKey] : [],
-      ),
-    );
+    // oxlint-disable-next-line no-await-in-loop -- bound source preparation memory by batch.
+    await storePreparedBatch(preparations, 0, database, approvedSourceRoot, result);
   }
 };
 
 export const importPacksFromFolder = async (options: ImportOptions = {}): Promise<ImportResult> => {
   const folder = path.resolve(options.folder ?? defaultFolder);
-  const databasePath = path.resolve(options.databasePath ?? defaultDatabase);
   const imported: string[] = [];
   const refreshed: string[] = [];
   const errors: string[] = [];
   let approvedSourceRoot: string | undefined;
-
   try {
     approvedSourceRoot = await getApprovedSourceRoot(options.approvedSourceRoot);
   } catch {
@@ -356,9 +330,7 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
       refreshed,
     };
   }
-
   let files: Dirent[];
-
   try {
     files = await getPackFiles(folder);
   } catch {
@@ -368,18 +340,15 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
       refreshed,
     };
   }
-
   if (files.length === 0) {
     errors.push(`No .json exam packs found in ${folder}.`);
   }
-
-  await importPackFilesInBatches(files, folder, databasePath, approvedSourceRoot, {
+  await importPackFilesInBatches(files, folder, options.database, approvedSourceRoot, {
     errors,
     imported,
     refreshed,
   });
-
   return { errors, imported, refreshed };
 };
 
-export const getPackIndex = (databasePath = defaultDatabase) => listImportedPacks(databasePath);
+export const getPackIndex = async (database?: AppDatabase) => await listImportedPacks(database);

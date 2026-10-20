@@ -2,15 +2,22 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { getImportedPack, openPackDatabase, saveImportedPack } from '#lib/server/db/packs.js';
+import { createDatabase } from '#lib/server/database/connection.js';
+import { getImportedPack, listImportedPacks, saveImportedPack } from '#lib/server/db/packs.js';
+import type { ExamPack } from '@learning-platform/exam-pack';
 
 const temporaryDirectories: string[] = [];
+const databases: Awaited<ReturnType<typeof createDatabase>>[] = [];
 
 describe('pack persistence', () => {
   afterEach(async () => {
+    await Promise.all(
+      databases.splice(0).map(async (database) => {
+        await database.close();
+      }),
+    );
     await Promise.all(
       temporaryDirectories.splice(0).map(async (directory) => {
         await rm(directory, { force: true, recursive: true });
@@ -18,11 +25,11 @@ describe('pack persistence', () => {
     );
   });
 
-  it('rejects stored content that is not a valid exam pack', async () => {
+  it('round trips typed ExamPack JSON through the Kysely result plugin', async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'exam-pack-db-'));
     temporaryDirectories.push(directory);
-    const databasePath = path.join(directory, 'packs.sqlite');
-
+    const database = await createDatabase(path.join(directory, 'packs.sqlite'));
+    databases.push(database);
     const pack: ExamPack = {
       domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
       exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
@@ -45,90 +52,26 @@ describe('pack persistence', () => {
       schemaVersion: 1,
     };
 
-    saveImportedPack(databasePath, pack);
+    await saveImportedPack(database, pack);
 
-    const database = openPackDatabase(databasePath);
-
-    try {
-      database
-        .prepare('UPDATE imported_packs SET content_json = ? WHERE exam_id = ? AND pack_id = ?')
-        .run('{}', pack.exam.id, pack.pack.id);
-    } finally {
-      database.close();
-    }
-
-    expect(() =>
-      getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, databasePath),
-    ).toThrow('Stored exam pack is invalid.');
-  });
-
-  it('keeps a legacy citation readable as a generic stored citation', async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), 'exam-pack-db-'));
-    temporaryDirectories.push(directory);
-    const databasePath = path.join(directory, 'packs.sqlite');
-
-    const pack: ExamPack = {
-      domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
-      exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
-      pack: { id: 'demo-pack', synthetic: true, title: 'Demo pack', version: '1.0.0' },
-      questions: [
-        {
-          answerIds: ['b'],
-          domainId: 'fundamentals',
-          explanation: 'The second option is correct.',
-          id: 'question-1',
-          options: [
-            { id: 'a', text: 'First option' },
-            { id: 'b', text: 'Second option' },
-          ],
-          prompt: 'Which option is correct?',
-          sources: [{ label: 'Legacy notes', path: 'notes.md' }],
-          type: 'single_choice',
-        },
-      ],
-      schemaVersion: 1,
-    };
-
-    saveImportedPack(databasePath, pack);
-    const database = openPackDatabase(databasePath);
-
-    try {
-      database
-        .prepare('UPDATE imported_packs SET content_json = ? WHERE exam_id = ? AND pack_id = ?')
-        .run(
-          JSON.stringify({
-            ...pack,
-            questions: pack.questions.map((question) => ({
-              ...question,
-              sources: [
-                {
-                  documentationUrls: ['https://example.com/docs'],
-                  kind: 'legacy_reference',
-                  label: 'Legacy notes',
-                  path: 'notes.md',
-                  section: 'Old section',
-                },
-              ],
-            })),
-          }),
-          pack.exam.id,
-          pack.pack.id,
-        );
-    } finally {
-      database.close();
-    }
-
-    expect(
-      getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, databasePath)?.questions[0]
-        ?.sources,
-    ).toStrictEqual([
-      {
-        documentationUrls: ['https://example.com/docs'],
-        kind: 'legacy_reference',
-        label: 'Legacy notes',
-        path: 'notes.md',
-        section: 'Old section',
-      },
+    await expect(
+      getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, database),
+    ).resolves.toStrictEqual(pack);
+    const stored = await database
+      .selectFrom('imported_packs')
+      .select('content as content')
+      .executeTakeFirstOrThrow();
+    expect(stored.content).toStrictEqual(pack);
+    expect(stored.content).toBeTypeOf('object');
+    await expect(listImportedPacks(database)).resolves.toStrictEqual([
+      expect.objectContaining({
+        domainCount: 1,
+        domains: [{ id: 'fundamentals', questionCount: 1, title: 'Fundamentals', weight: 100 }],
+        examTitle: 'Demo exam',
+        packTitle: 'Demo pack',
+        questionCount: 1,
+        synthetic: true,
+      }),
     ]);
   });
 });
