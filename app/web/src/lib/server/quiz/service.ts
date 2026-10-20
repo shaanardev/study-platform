@@ -60,19 +60,10 @@ const containsInvalidAnswer = (submitted: string[], options: PackQuestion['optio
 const matchesAnswerSet = (submitted: string[], correct: string[]): boolean =>
   submitted.length === correct.length && correct.every((id) => submitted.includes(id));
 
-const readSession = async (
-  id: string,
-  database?: AppDatabase,
-): Promise<PracticeSession | undefined> => {
-  const stored = await getPracticeSessionRecord(id, database);
-  if (!stored) {
-    return undefined;
-  }
+const toPracticeSession = (
+  stored: NonNullable<Awaited<ReturnType<typeof getPracticeSessionRecord>>>,
+): PracticeSession => {
   const { session: row, answers: storedAnswers } = stored;
-  const pack = await getImportedPack(row.exam_id, row.pack_id, row.pack_version, database);
-  if (!pack) {
-    return undefined;
-  }
   const questions = row.question_snapshot;
   const answers = storedAnswers.map((answer) => {
     const question = questions.find((item) => item.id === answer.question_id);
@@ -114,6 +105,11 @@ const readSession = async (
     status: row.status,
     updatedAt: row.updated_at,
   };
+};
+
+const readSession = async (id: string, database?: AppDatabase) => {
+  const stored = await getPracticeSessionRecord(id, database);
+  return stored ? toPracticeSession(stored) : undefined;
 };
 
 export const createPracticeSession = async (
@@ -221,7 +217,8 @@ export const answerQuestion = async (
   answerIds: string[],
   database?: AppDatabase,
 ): Promise<QuizAnswer> => {
-  const session = await readSession(sessionId, database);
+  const stored = await getPracticeSessionRecord(sessionId, database);
+  const session = stored ? toPracticeSession(stored) : undefined;
   if (session?.status !== 'in_progress') {
     httpError(HTTP_NOT_FOUND, 'This practice session is no longer in progress.');
   }
@@ -229,11 +226,7 @@ export const answerQuestion = async (
   if (!question || session.answers.some((answer) => answer.questionId === questionId)) {
     httpError(HTTP_BAD_REQUEST, 'That question cannot be answered in this session.');
   }
-  const pack = await getImportedPack(session.examId, session.packId, session.packVersion, database);
-  const sessionRecord = await getPracticeSessionRecord(sessionId, database);
-  const correctQuestion =
-    sessionRecord?.session.question_snapshot.find((item) => item.id === questionId) ??
-    pack?.questions.find((item) => item.id === questionId);
+  const correctQuestion = stored?.session.question_snapshot.find((item) => item.id === questionId);
   if (!correctQuestion) {
     httpError(HTTP_NOT_FOUND, 'Question not found in the imported pack version.');
   }
@@ -247,7 +240,6 @@ export const answerQuestion = async (
     {
       answerIds: submitted,
       answeredAt,
-      complete: session.answers.length + 1 >= session.questionIds.length,
       correct,
       questionId,
       sessionId,

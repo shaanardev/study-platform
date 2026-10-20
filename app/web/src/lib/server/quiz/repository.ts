@@ -135,10 +135,20 @@ export const savePracticeAnswer = async (
           session_id: input.sessionId,
         })
         .execute();
+      const session = await trx
+        .selectFrom('practice_sessions')
+        .select('question_ids')
+        .where('id', '=', input.sessionId)
+        .executeTakeFirstOrThrow();
+      const { count } = await trx
+        .selectFrom('practice_answers')
+        .select((eb) => eb.fn.countAll().as('count'))
+        .where('session_id', '=', input.sessionId)
+        .executeTakeFirstOrThrow();
       await trx
         .updateTable('practice_sessions')
         .set({
-          status: input.complete ? 'completed' : 'in_progress',
+          status: Number(count) >= session.question_ids.length ? 'completed' : 'in_progress',
           updated_at: input.answeredAt,
         })
         .where('id', '=', input.sessionId)

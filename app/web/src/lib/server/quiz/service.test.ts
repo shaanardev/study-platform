@@ -90,6 +90,34 @@ describe('practice sessions', () => {
     });
   });
 
+  it('completes a session when concurrent answers fill the stored question set', async () => {
+    const { database, pack } = await setup();
+    const questionIds = ['pipeline-validation-basics', 'delta-transaction-basics'];
+    const session = await createPracticeSession({
+      database,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: questionIds.length,
+      questionIds,
+    });
+
+    await Promise.all(
+      questionIds.map(
+        async (questionId) => await answerQuestion(session.id, questionId, ['a'], database),
+      ),
+    );
+
+    const completed = await getPracticeSession(session.id, database);
+    expect({
+      answerIds: completed?.answers.map((answer) => answer.questionId).toSorted(),
+      status: completed?.status,
+    }).toStrictEqual({
+      answerIds: questionIds.toSorted(),
+      status: 'completed',
+    });
+  });
+
   it('favours unseen questions first and offers missed questions again within the chosen domain', async () => {
     const { database, pack } = await setup();
     const first = await createPracticeSession({
