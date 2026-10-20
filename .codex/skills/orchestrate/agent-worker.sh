@@ -74,9 +74,9 @@ active_branch=$(git -C "$worktree_path" branch --show-current 2>/dev/null) || fa
 herdr agent start "$agent_name" --kind codex --pane "$pane_id" -- --model gpt-6-luna --config 'model_reasoning_effort="xhigh"' || fail "could not start Codex worker $agent_name; pane $pane_id is preserved"
 
 worker_prompt=$(printf '%s\n\nTask record:\n%s\n\n%s' \
-  "Task-axi ID: $task_id. Treat this record as the scope and acceptance criteria. Work only in this worktree; do not switch or remove it. The parent owns backlog state and integration; do not change task status. If blocked, stop and report the exact blocker and next needed action." \
+  "Task-axi ID: $task_id. Treat this record as requirements and acceptance criteria; follow relevant dependencies and affected files as needed to deliver them. Work only in this worktree; do not switch or remove it. The parent owns backlog state and integration; do not change task status. If blocked, stop and report the exact blocker and next needed action." \
   "$task_record" \
-  'Handoff: complete/partial/blocked; files changed; checks and results; blocker or next step.')
+  'Use batched targeted searches and read relevant file sections; widen as evidence requires. Reuse findings instead of repeating scans. Wait on long commands once, then inspect a focused result. Complete the full task and its checks. Handoff: complete/partial/blocked; files changed; checks and results; blocker or next step.')
 herdr agent prompt "$agent_name" "$worker_prompt" || fail "could not submit task to $agent_name; pane $pane_id is preserved"
 
 if [[ -n $backlog_file ]]; then
