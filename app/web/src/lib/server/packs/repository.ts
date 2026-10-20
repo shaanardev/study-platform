@@ -180,7 +180,7 @@ export const listImportedPacks = async (database?: AppDatabase): Promise<PackInd
     }));
 };
 
-/** Read one imported pack; the optional database is last to preserve its old argument order. */
+/** Read one imported pack version. */
 export const getImportedPack = async (
   examId: string,
   packId: string,

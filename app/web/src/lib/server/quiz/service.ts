@@ -12,7 +12,7 @@ import {
   getImportedPack,
   getImportedSourceAsset,
   openPackDatabase,
-} from '#lib/server/db/packs.js';
+} from '#lib/server/packs/repository.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';

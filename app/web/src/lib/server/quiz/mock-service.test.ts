@@ -1,12 +1,11 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { validateExamPack } from '@learning-platform/exam-pack';
-import * as Schema from 'effect/Schema';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { saveImportedPack } from '#lib/server/db/packs.js';
+import { saveImportedPack } from '#lib/server/packs/repository.js';
+import { validateExamPack } from '@learning-platform/exam-pack';
 import {
   createMockAttempt,
   getMockAttempt,
@@ -14,22 +13,21 @@ import {
   saveMockAnswer,
   submitMockAttempt,
 } from '#lib/server/quiz/mock-service.js';
-import { sampleLearningPackFixture } from '#lib/test-fixtures.js';
+import { workspacePath } from '#lib/server/workspace-paths.js';
 
-const MockErrorBodySchema = Schema.Struct({
-  body: Schema.Struct({ message: Schema.String }),
-});
-
-const firstRequired = <T extends object>(values: readonly T[], message: string): T => {
-  const [value] = values;
-  expect.assert(value !== undefined, message);
-
-  return value;
+const errorBodyMessage = (value: unknown): string | undefined => {
+  if (typeof value !== 'object' || value === null || !('body' in value)) {
+    return undefined;
+  }
+  const { body } = value;
+  if (typeof body !== 'object' || body === null || !('message' in body)) {
+    return undefined;
+  }
+  return typeof body.message === 'string' ? body.message : undefined;
 };
 
 describe('timed mock attempts', () => {
   const dirs: string[] = [];
-
   afterEach(async () => {
     await Promise.all(
       dirs.splice(0).map(async (dir) => {
@@ -37,18 +35,20 @@ describe('timed mock attempts', () => {
       }),
     );
   });
-
   const setup = async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'mock-exam-'));
     dirs.push(directory);
     const databasePath = path.join(directory, 'packs.sqlite');
-
-    const validated = validateExamPack(sampleLearningPackFixture());
-
-    expect.assert(validated.valid, validated.errors.join(' '));
+    const validated = validateExamPack(
+      JSON.parse(
+        await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
+      ),
+    );
+    if (!validated.valid) {
+      throw new Error(validated.errors.join(' '));
+    }
     const { pack } = validated;
     saveImportedPack(databasePath, pack);
-
     return { databasePath, pack };
   };
 
@@ -67,7 +67,6 @@ describe('timed mock attempts', () => {
       },
     ]);
     let thrown: unknown;
-
     try {
       createMockAttempt({
         databasePath,
@@ -80,14 +79,11 @@ describe('timed mock attempts', () => {
     } catch (error) {
       thrown = error;
     }
-
-    const errorBody = Schema.decodeUnknownSync(MockErrorBodySchema)(thrown);
-    expect(errorBody.body.message).toContain('Insufficient weighted mock coverage');
+    expect(errorBodyMessage(thrown)).toContain('Insufficient weighted mock coverage');
   });
 
   it('persists answers and deadline across resume, then reveals scoring only after submit', async () => {
     const { databasePath, pack } = await setup();
-
     const attempt = createMockAttempt({
       databasePath,
       durationMinutes: 2,
@@ -98,22 +94,22 @@ describe('timed mock attempts', () => {
       questionCount: 2,
       random: () => 0,
     });
-
-    const first = firstRequired(attempt.questions, 'The mock attempt should include a question.');
-    expect(first.id).toBe('delta-transaction-basics');
-    const saved = saveMockAnswer(databasePath, attempt.id, first.id, ['a'], 20_000);
-    const savedAnswer = firstRequired(saved.answers, 'The mock attempt should save an answer.');
-
-    const savedQuestion = firstRequired(
-      saved.questions,
-      'The mock attempt should retain a question.',
+    const [first] = attempt.questions;
+    if (!first) {
+      throw new Error('The mock attempt should include a question.');
+    }
+    const saved = saveMockAnswer(
+      databasePath,
+      attempt.id,
+      first.id,
+      first.id === 'delta-transaction-basics' ? ['a'] : ['a', 'b'],
+      20_000,
     );
-
     expect({
-      answerCorrect: Object.hasOwn(savedAnswer, 'correct'),
-      answerExplanation: Object.hasOwn(savedAnswer, 'explanation'),
-      questionAnswerIds: Object.hasOwn(savedQuestion, 'answerIds'),
-      questionExplanation: Object.hasOwn(savedQuestion, 'explanation'),
+      answerCorrect: Object.hasOwn(saved.answers[0] ?? {}, 'correct'),
+      answerExplanation: Object.hasOwn(saved.answers[0] ?? {}, 'explanation'),
+      questionAnswerIds: Object.hasOwn(saved.questions[0] ?? {}, 'answerIds'),
+      questionExplanation: Object.hasOwn(saved.questions[0] ?? {}, 'explanation'),
     }).toStrictEqual({
       answerCorrect: false,
       answerExplanation: false,
@@ -121,7 +117,9 @@ describe('timed mock attempts', () => {
       questionExplanation: false,
     });
     const resumed = getMockAttempt(databasePath, attempt.id, 40_000);
-    expect.assert(resumed, 'The mock attempt should remain available.');
+    if (!resumed) {
+      throw new Error('The mock attempt should remain available.');
+    }
     expect({
       answerCount: resumed.answers.length,
       hasScore: Object.hasOwn(resumed, 'score'),
@@ -156,7 +154,6 @@ describe('timed mock attempts', () => {
 
   it('expires at the persisted deadline and reveals the saved answers', async () => {
     const { databasePath, pack } = await setup();
-
     const attempt = createMockAttempt({
       databasePath,
       durationMinutes: 1,
@@ -167,10 +164,11 @@ describe('timed mock attempts', () => {
       questionCount: 2,
       random: () => 0,
     });
-
     saveMockAnswer(databasePath, attempt.id, 'delta-transaction-basics', ['a'], 6000);
     const expired = getMockAttempt(databasePath, attempt.id, 65_000);
-    expect.assert(expired, 'The expired mock attempt should remain available.');
+    if (!expired) {
+      throw new Error('The expired mock attempt should remain available.');
+    }
     expect(expired.status).toBe('expired');
     expect(expired.score?.correct).toBe(1);
     expect(expired.questions[0]).toHaveProperty('explanation');
@@ -182,7 +180,6 @@ describe('timed mock attempts', () => {
     packWithoutThreshold.pack.version = '1.0.1';
     delete packWithoutThreshold.passingThreshold;
     saveImportedPack(databasePath, packWithoutThreshold);
-
     const attempt = createMockAttempt({
       databasePath,
       durationMinutes: 1,

@@ -11,7 +11,7 @@ import {
   getImportedSourceAsset,
   openPackDatabase,
   saveImportedPack,
-} from '#lib/server/db/packs.js';
+} from '#lib/server/packs/repository.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
 import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 import {

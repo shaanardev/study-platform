@@ -8,11 +8,10 @@ import {
   listImportedPacks,
   refreshApprovedLocalSources,
   saveImportedPack,
-} from '#lib/server/db/packs.js';
-import type { ImportedSourceAsset } from '#lib/server/db/packs.js';
-import { decodeJsonText } from '#lib/server/json.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+} from '#lib/server/packs/repository.js';
+import type { ImportedSourceAsset } from '#lib/server/packs/repository.js';
 import { validateExamPack } from '@learning-platform/exam-pack';
+import { workspacePath } from '#lib/server/workspace-paths.js';
 import type { ExamPack, PackSource } from '@learning-platform/exam-pack';
 
 export interface ImportResult {
@@ -170,7 +169,7 @@ const preparePackFile = async (
 ): Promise<PackPreparationResult> => {
   let input: unknown;
   try {
-    input = decodeJsonText(await readFile(filePath, 'utf-8'));
+    input = JSON.parse(await readFile(filePath, 'utf-8')) as unknown;
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'unknown error';
     return { error: `${entryName}: could not read valid JSON (${reason}).` };

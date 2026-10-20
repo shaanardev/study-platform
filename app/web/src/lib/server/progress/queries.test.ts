@@ -5,7 +5,7 @@ import path from 'node:path';
 import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { saveImportedPack } from '#lib/server/db/packs.js';
+import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { getProgress } from '#lib/server/progress/queries.js';
 import {
   createMockAttempt,

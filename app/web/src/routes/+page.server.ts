@@ -4,7 +4,7 @@ import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.
 
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = () => ({ packs: getPackIndex() });
+export const load: PageServerLoad = async () => ({ packs: await getPackIndex() });
 
 export const actions: Actions = {
   import: async ({ request }) => {

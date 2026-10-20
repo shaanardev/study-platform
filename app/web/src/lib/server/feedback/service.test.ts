@@ -6,7 +6,7 @@ import { validateExamPack } from '@learning-platform/exam-pack';
 import * as Schema from 'effect/Schema';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { getImportedPack, saveImportedPack } from '#lib/server/db/packs.js';
+import { getImportedPack, saveImportedPack } from '#lib/server/packs/repository.js';
 import {
   createCorrection,
   exportFeedback,

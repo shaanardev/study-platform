@@ -1,12 +1,10 @@
 import type { SQLOutputValue } from 'node:sqlite';
 
-import { validateExamPack } from '@learning-platform/exam-pack';
-import * as Schema from 'effect/Schema';
-
-import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
-import { openPackDatabase } from '#lib/server/db/packs.js';
+import { PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
+import { openPackDatabase } from '#lib/server/packs/repository.js';
 import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { validateExamPack } from '@learning-platform/exam-pack';
+import { databasePath as selectedDatabasePath } from '#lib/server/database/path.js';
 
 export interface ProgressAttempt {
   id: string;
@@ -60,35 +58,28 @@ type DatabaseRow = Record<string, SQLOutputValue>;
 
 const textColumn = (row: DatabaseRow, column: string): string => {
   const value = row[column];
-
-  if (!Schema.is(Schema.String)(value)) {
+  if (typeof value !== 'string') {
     throw new TypeError(`Database column "${column}" is not text.`);
   }
-
   return value;
 };
 
 const numberColumn = (row: DatabaseRow, column: string): number => {
   const value = row[column];
-
-  if (!Schema.is(Schema.Finite)(value)) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new TypeError(`Database column "${column}" is not a finite number.`);
   }
-
   return value;
 };
 
 const nullableTextColumn = (row: DatabaseRow, column: string): string | null => {
   const value = row[column];
-
   if (value === null) {
     return null;
   }
-
-  if (!Schema.is(Schema.String)(value)) {
+  if (typeof value !== 'string') {
     throw new TypeError(`Database column "${column}" is not text.`);
   }
-
   return value;
 };
 
@@ -101,23 +92,19 @@ const stringArray = (json: string): string[] => {
 };
 
 const parsePack = (json: string) => {
-  const result = validateExamPack(decodeJsonText(json));
-
+  const parsed = decodeJsonText(json);
+  const result = validateExamPack(parsed);
   if (!result.valid) {
     throw new Error('Stored exam pack is invalid.');
   }
-
   return result.pack;
 };
 
 const sameAnswerSet = (first: string[], second: string[]): boolean =>
   first.length === second.length && first.every((id) => second.includes(id));
 
-export const getProgress = (
-  databasePath = workspacePath('.local/exam-packs.sqlite'),
-): ProgressData => {
+export const getProgress = (databasePath = selectedDatabasePath): ProgressData => {
   const database = openPackDatabase(databasePath);
-
   try {
     const sessionRows = database
       .prepare(
@@ -135,7 +122,6 @@ export const getProgress = (
     `,
       )
       .all();
-
     const recentAttempts: ProgressAttempt[] = sessionRows.map((row) => ({
       answeredCount: numberColumn(row, 'answeredCount'),
       completedAt: textColumn(row, 'updatedAt'),
@@ -154,7 +140,6 @@ export const getProgress = (
 
     const mockAttempts = new Map<string, ProgressAttempt>();
     const packs = new Map<string, ReturnType<typeof parsePack>>();
-
     const mockRows = database
       .prepare(
         `
@@ -170,24 +155,20 @@ export const getProgress = (
       )
       .all();
 
-    mockRows.forEach((row) => {
+    for (const row of mockRows) {
       const id = textColumn(row, 'id');
       let attempt = mockAttempts.get(id);
-
       if (!attempt) {
         const versionKey = [
           textColumn(row, 'examId'),
           textColumn(row, 'packId'),
           textColumn(row, 'packVersion'),
         ].join('\0');
-
         let pack = packs.get(versionKey);
-
         if (!pack) {
           pack = parsePack(textColumn(row, 'contentJson'));
           packs.set(versionKey, pack);
         }
-
         attempt = {
           answeredCount: 0,
           completedAt: textColumn(row, 'createdAt'),
@@ -208,29 +189,22 @@ export const getProgress = (
 
       const questionId = nullableTextColumn(row, 'questionId');
       const answerIds = nullableTextColumn(row, 'answerIds');
-
       if (questionId === null || answerIds === null) {
-        return;
+        continue;
       }
-
       attempt.answeredCount += 1;
 
       const versionKey = [attempt.examId, attempt.packId, attempt.packVersion].join('\0');
       const question = packs.get(versionKey)?.questions.find((item) => item.id === questionId);
-
       if (!question) {
-        return;
+        continue;
       }
-
       const submitted = stringArray(answerIds);
-
       if (sameAnswerSet(question.answerIds, submitted)) {
         attempt.correctCount += 1;
       }
-    });
-
+    }
     recentAttempts.push(...mockAttempts.values());
-
     const orderedAttempts = recentAttempts.toSorted((a, b) =>
       b.completedAt.localeCompare(a.completedAt),
     );
@@ -251,23 +225,19 @@ export const getProgress = (
 
     const domainTotals = new Map<string, DomainScore>();
     const missedTotals = new Map<string, MissedQuestion>();
-
-    answerRows.forEach((row) => {
+    for (const row of answerRows) {
       const pack = parsePack(textColumn(row, 'contentJson'));
       const questionId = textColumn(row, 'questionId');
       const question = pack.questions.find((item) => item.id === questionId);
       const domain = question && pack.domains.find((item) => item.id === question.domainId);
-
       if (!question || !domain) {
-        return;
+        continue;
       }
-
       const examId = textColumn(row, 'examId');
       const packId = textColumn(row, 'packId');
       const packVersion = textColumn(row, 'packVersion');
       const versionKey = [examId, packId, packVersion].join('\0');
       const scoreKey = [versionKey, domain.id].join('\0');
-
       const score = domainTotals.get(scoreKey) ?? {
         answeredCount: 0,
         correctCount: 0,
@@ -280,7 +250,6 @@ export const getProgress = (
         packVersion,
         percent: 0,
       };
-
       score.answeredCount += 1;
       score.correctCount += numberColumn(row, 'correct');
       score.percent = Math.round((score.correctCount / score.answeredCount) * PERCENTAGE_SCALE);
@@ -288,7 +257,6 @@ export const getProgress = (
 
       if (numberColumn(row, 'correct') === 0) {
         const missKey = [versionKey, question.id].join('\0');
-
         const missed = missedTotals.get(missKey) ?? {
           domainId: domain.id,
           domainTitle: domain.title,
@@ -301,11 +269,10 @@ export const getProgress = (
           prompt: question.prompt,
           questionId: question.id,
         };
-
         missed.missCount += 1;
         missedTotals.set(missKey, missed);
       }
-    });
+    }
 
     return {
       domainScores: [...domainTotals.values()].toSorted(
@@ -321,7 +288,7 @@ export const getProgress = (
           a.examTitle.localeCompare(b.examTitle) ||
           a.questionId.localeCompare(b.questionId),
       ),
-      recentAttempts: orderedAttempts.slice(0, MAX_RECENT_ATTEMPTS),
+      recentAttempts: orderedAttempts.slice(0, 20),
     };
   } finally {
     database.close();
