@@ -5,7 +5,7 @@ import { ReadableStream } from 'node:stream/web';
 import { error } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
-import * as v from 'valibot';
+import * as Schema from 'effect/Schema';
 
 import { initializeAppDatabase } from '#lib/server/database/app-database.js';
 import { assertSafeDatabasePath, databasePath } from '#lib/server/database/path.js';
@@ -42,7 +42,8 @@ const readBody = async (request: Request): Promise<Uint8Array<ArrayBuffer>> => {
 
   const chunks: Uint8Array[] = [];
   let size = 0;
-  const stream = Readable.fromWeb(v.parse(v.instance(ReadableStream), request.body), { signal });
+  const body = Schema.decodeUnknownSync(Schema.instanceOf(ReadableStream))(request.body);
+  const stream = Readable.fromWeb(body, { signal });
 
   const iterator = stream[Symbol.asyncIterator]();
 
@@ -57,7 +58,7 @@ const readBody = async (request: Request): Promise<Uint8Array<ArrayBuffer>> => {
       }
 
       const chunk: unknown = result.value;
-      const value = v.parse(v.instance(Uint8Array), chunk);
+      const value = Schema.decodeUnknownSync(Schema.instanceOf(Uint8Array))(chunk);
       size += value.byteLength;
 
       if (size > LIMITS.requestBytes) {

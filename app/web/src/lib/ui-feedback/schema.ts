@@ -1,4 +1,4 @@
-import * as v from 'valibot';
+import * as Schema from 'effect/Schema';
 
 export const LIMITS = {
   base64BytesPerChunk: 3,
@@ -20,105 +20,128 @@ export const LIMITS = {
 } as const;
 
 const ID_PATTERN = /^[A-Za-z0-9_-]+$/u;
+
+const ISO_TIMESTAMP_PATTERN =
+  /^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])[T ](?:0\d|1\d|2[0-3])(?::[0-5]\d){2}(?:\.\d{1,9})?(?:Z| ?[+-](?:0\d|1\d|2[0-3])(?::?[0-5]\d)?)$/u;
+
 export const PNG_PREFIX = 'data:image/png;base64,';
 export const PNG_PATTERN = /^data:image\/png;base64,(?<png>[A-Za-z0-9+/]+={0,2})$/u;
 
-const text = v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.feedbackText));
-const id = v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.id), v.regex(ID_PATTERN));
-const size = v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(LIMITS.dimension));
+const text = Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(LIMITS.feedbackText));
 
-const coordinate = v.pipe(
-  v.number(),
-  v.finite(),
-  v.minValue(-LIMITS.coordinate),
-  v.maxValue(LIMITS.coordinate),
+const id = Schema.String.check(
+  Schema.isMinLength(1),
+  Schema.isMaxLength(LIMITS.id),
+  Schema.isPattern(ID_PATTERN),
 );
 
-export const ShortcutSchema = v.object({
-  alt: v.boolean(),
-  ctrl: v.boolean(),
-  key: v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.key)),
-  meta: v.boolean(),
-  shift: v.boolean(),
+const size = Schema.Finite.check(
+  Schema.isGreaterThanOrEqualTo(0),
+  Schema.isLessThanOrEqualTo(LIMITS.dimension),
+);
+
+const coordinate = Schema.Finite.check(
+  Schema.isGreaterThanOrEqualTo(-LIMITS.coordinate),
+  Schema.isLessThanOrEqualTo(LIMITS.coordinate),
+);
+
+const safeInteger = Schema.Number.check(Schema.makeFilter((value) => Number.isSafeInteger(value)));
+
+const note = Schema.Trim.check(Schema.isMinLength(1), Schema.isMaxLength(LIMITS.note));
+
+export const ShortcutSchema = Schema.Struct({
+  alt: Schema.Boolean,
+  ctrl: Schema.Boolean,
+  key: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(LIMITS.key)),
+  meta: Schema.Boolean,
+  shift: Schema.Boolean,
 });
 
-export const BoundsSchema = v.object({ height: size, width: size, x: coordinate, y: coordinate });
+export const BoundsSchema = Schema.Struct({
+  height: size,
+  width: size,
+  x: coordinate,
+  y: coordinate,
+});
 
-export const SvelteLocationSchema = v.object({
-  column: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
+export const SvelteLocationSchema = Schema.Struct({
+  column: safeInteger.check(Schema.isGreaterThanOrEqualTo(0)),
   file: text,
-  line: v.pipe(v.number(), v.safeInteger(), v.minValue(1)),
+  line: safeInteger.check(Schema.isGreaterThanOrEqualTo(1)),
 });
 
-export const SvelteMetadataSchema = v.object({ loc: SvelteLocationSchema });
+export const SvelteMetadataSchema = Schema.Struct({ loc: SvelteLocationSchema });
 
-export const SourceSchema = v.object({
-  ...SvelteLocationSchema.entries,
-  ancestor: v.boolean(),
-  vendor: v.boolean(),
+export const SourceSchema = Schema.Struct({
+  ...SvelteLocationSchema.fields,
+  ancestor: Schema.Boolean,
+  vendor: Schema.Boolean,
 });
 
-export const DomDetailsSchema = v.object({
-  selector: v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.domSelector)),
-  tag: v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.domTag)),
-  text: v.pipe(v.string(), v.maxLength(LIMITS.domText)),
+export const DomDetailsSchema = Schema.Struct({
+  selector: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(LIMITS.domSelector)),
+  tag: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(LIMITS.domTag)),
+  text: Schema.String.check(Schema.isMaxLength(LIMITS.domText)),
 });
 
-export const SelectionSchema = v.variant('kind', [
-  v.object({
-    bounds: BoundsSchema,
-    dom: v.object({ ...DomDetailsSchema.entries, kind: v.literal('element') }),
-    kind: v.literal('element'),
-    source: v.nullable(SourceSchema),
-  }),
-  v.object({
-    bounds: BoundsSchema,
-    dom: v.variant('kind', [
-      v.object({ ...DomDetailsSchema.entries, kind: v.literal('rectangle-center') }),
-      v.object({ kind: v.literal('unavailable') }),
-    ]),
-    kind: v.literal('rectangle'),
-    source: v.nullable(SourceSchema),
-  }),
-]);
+const ElementSelectionSchema = Schema.Struct({
+  bounds: BoundsSchema,
+  dom: Schema.Struct({ ...DomDetailsSchema.fields, kind: Schema.Literal('element') }),
+  kind: Schema.Literal('element'),
+  source: Schema.NullOr(SourceSchema),
+});
 
-export const FeedbackSchema = v.object({
-  createdAt: v.pipe(v.string(), v.isoTimestamp()),
+const RectangleSelectionSchema = Schema.Struct({
+  bounds: BoundsSchema,
+  dom: Schema.Union([
+    Schema.Struct({ ...DomDetailsSchema.fields, kind: Schema.Literal('rectangle-center') }),
+    Schema.Struct({ kind: Schema.Literal('unavailable') }),
+  ]),
+  kind: Schema.Literal('rectangle'),
+  source: Schema.NullOr(SourceSchema),
+});
+
+export const SelectionSchema = Schema.Union([ElementSelectionSchema, RectangleSelectionSchema]);
+
+export const FeedbackSchema = Schema.Struct({
+  createdAt: Schema.String.check(Schema.isPattern(ISO_TIMESTAMP_PATTERN)),
   id,
-  note: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(LIMITS.note)),
-  route: v.pipe(v.string(), v.startsWith('/'), v.maxLength(LIMITS.route)),
+  note,
+  route: Schema.String.check(Schema.isPattern(/^\//u), Schema.isMaxLength(LIMITS.route)),
   selection: SelectionSchema,
-  viewport: v.object({
-    devicePixelRatio: v.pipe(
-      v.number(),
-      v.finite(),
-      v.minValue(LIMITS.viewportPixelRatioMinimum),
-      v.maxValue(LIMITS.viewportPixelRatioMaximum),
+  viewport: Schema.Struct({
+    devicePixelRatio: Schema.Finite.check(
+      Schema.isGreaterThanOrEqualTo(LIMITS.viewportPixelRatioMinimum),
+      Schema.isLessThanOrEqualTo(LIMITS.viewportPixelRatioMaximum),
     ),
-    height: v.pipe(size, v.minValue(1)),
+    height: size.check(Schema.isGreaterThanOrEqualTo(1)),
     scrollX: coordinate,
     scrollY: coordinate,
-    width: v.pipe(size, v.minValue(1)),
+    width: size.check(Schema.isGreaterThanOrEqualTo(1)),
   }),
 });
 
-export const SessionIdSchema = v.pipe(v.string(), v.minLength(1), v.maxLength(LIMITS.id));
+export const SessionIdSchema = Schema.String.check(
+  Schema.isMinLength(1),
+  Schema.isMaxLength(LIMITS.id),
+);
 
-export const SubmissionSchema = v.object({
-  feedback: FeedbackSchema,
-  screenshot: v.pipe(
-    v.string(),
-    v.maxLength(
-      Math.ceil(LIMITS.pngBytes / LIMITS.base64BytesPerChunk) * LIMITS.base64CharactersPerChunk +
-        PNG_PREFIX.length,
-    ),
-    v.regex(PNG_PATTERN),
+export const ScreenshotSchema = Schema.String.check(
+  Schema.isMaxLength(
+    Math.ceil(LIMITS.pngBytes / LIMITS.base64BytesPerChunk) * LIMITS.base64CharactersPerChunk +
+      PNG_PREFIX.length,
   ),
-  sessionId: v.optional(SessionIdSchema),
+  Schema.isPattern(PNG_PATTERN),
+);
+
+export const SubmissionSchema = Schema.Struct({
+  feedback: FeedbackSchema,
+  screenshot: ScreenshotSchema,
+  sessionId: Schema.optional(SessionIdSchema),
 });
 
-export const FilesSchema = v.object({ feedbackPath: text, screenshotPath: text });
-export const SessionChoiceSchema = v.object({ id: SessionIdSchema, label: text });
+export const FilesSchema = Schema.Struct({ feedbackPath: text, screenshotPath: text });
+export const SessionChoiceSchema = Schema.Struct({ id: SessionIdSchema, label: text });
 
 export enum DeliveryStatus {
   Delivered = 'delivered',
@@ -146,62 +169,69 @@ export enum DeliveryPhase {
   Submit = 'submit',
 }
 
-export const DeliveredSchema = v.object({
+export const DeliveredSchema = Schema.Struct({
   files: FilesSchema,
   message: text,
-  status: v.literal(DeliveryStatus.Delivered),
+  status: Schema.Literal(DeliveryStatus.Delivered),
 });
 
-export const ChoiceSchema = v.object({
+export const ChoiceSchema = Schema.Struct({
   files: FilesSchema,
   message: text,
-  sessions: v.pipe(v.array(SessionChoiceSchema), v.minLength(1)),
-  status: v.literal(DeliveryStatus.Choose),
+  sessions: Schema.Array(SessionChoiceSchema).check(Schema.isMinLength(1)),
+  status: Schema.Literal(DeliveryStatus.Choose),
 });
 
-export const FailedSchema = v.object({
-  files: v.nullable(FilesSchema),
+export const FailedSchema = Schema.Struct({
+  files: Schema.NullOr(FilesSchema),
   message: text,
-  retry: v.picklist([RetryAction.Send, RetryAction.Check]),
-  status: v.literal(DeliveryStatus.Failed),
+  retry: Schema.Literals([RetryAction.Send, RetryAction.Check]),
+  status: Schema.Literal(DeliveryStatus.Failed),
 });
 
-export const DeliveryResultSchema = v.variant('status', [
-  DeliveredSchema,
-  ChoiceSchema,
-  FailedSchema,
-]);
+export const DeliveryResultSchema = Schema.Union([DeliveredSchema, ChoiceSchema, FailedSchema]);
 
-export const QueueItemSchema = v.object({
-  capture: v.picklist([CaptureStatus.Pending, CaptureStatus.Captured]),
+const QueuedResultSchema = Schema.Struct({ status: Schema.Literal(QueueStatus.Queued) });
+
+const NeedsReselectionResultSchema = Schema.Struct({
+  message: text,
+  status: Schema.Literal(QueueStatus.NeedsReselection),
+});
+
+export const QueueItemSchema = Schema.Struct({
+  capture: Schema.Literals([CaptureStatus.Pending, CaptureStatus.Captured]),
   feedback: FeedbackSchema,
-  result: v.variant('status', [
-    v.object({ status: v.literal(QueueStatus.Queued) }),
-    v.object({ message: text, status: v.literal(QueueStatus.NeedsReselection) }),
+  result: Schema.Union([
+    QueuedResultSchema,
+    NeedsReselectionResultSchema,
     DeliveredSchema,
     ChoiceSchema,
     FailedSchema,
   ]),
 });
 
-export type Bounds = v.InferOutput<typeof BoundsSchema>;
+export type Bounds = typeof BoundsSchema.Type;
 
-export type Shortcut = v.InferOutput<typeof ShortcutSchema>;
+export type Shortcut = typeof ShortcutSchema.Type;
 
-export type Selection = v.InferOutput<typeof SelectionSchema>;
+export type Selection = typeof SelectionSchema.Type;
 
 export type FeedbackTarget = Omit<Feedback, 'note'>;
 
-export type DomDetails = v.InferOutput<typeof DomDetailsSchema>;
+export type DomDetails = typeof DomDetailsSchema.Type;
 
-export type Feedback = v.InferOutput<typeof FeedbackSchema>;
+export type Feedback = Omit<typeof FeedbackSchema.Type, 'note'> & { readonly note: string };
 
-export type Submission = v.InferOutput<typeof SubmissionSchema>;
+export type Submission = Omit<typeof SubmissionSchema.Type, 'feedback'> & {
+  readonly feedback: Feedback;
+};
 
-export type Files = v.InferOutput<typeof FilesSchema>;
+export type Files = typeof FilesSchema.Type;
 
-export type SessionChoice = v.InferOutput<typeof SessionChoiceSchema>;
+export type SessionChoice = typeof SessionChoiceSchema.Type;
 
-export type DeliveryResult = v.InferOutput<typeof DeliveryResultSchema>;
+export type DeliveryResult = typeof DeliveryResultSchema.Type;
 
-export type QueueItem = v.InferOutput<typeof QueueItemSchema>;
+export type QueueItem = Omit<typeof QueueItemSchema.Type, 'feedback'> & {
+  readonly feedback: Feedback;
+};

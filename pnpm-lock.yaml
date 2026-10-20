@@ -254,9 +254,6 @@ importers:
       kysely:
         specifier: ^0.29.7
         version: 0.29.7
-      valibot:
-        specifier: 1.5.0
-        version: 1.5.0(typescript@6.0.3)
     devDependencies:
       '@skeletonlabs/skeleton':
         specifier: ^5.0.1

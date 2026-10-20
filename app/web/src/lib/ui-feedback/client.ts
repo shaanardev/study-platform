@@ -1,6 +1,6 @@
-import * as v from 'valibot';
+import * as Schema from 'effect/Schema';
 
-import { QueueItemSchema, SvelteMetadataSchema, ShortcutSchema, SubmissionSchema } from './schema';
+import { QueueItemSchema, ScreenshotSchema, SvelteMetadataSchema, ShortcutSchema } from './schema';
 import type {
   Bounds,
   DomDetails,
@@ -33,7 +33,7 @@ const MODIFIERS = [
 ] as const;
 
 const WHITESPACE = /\s+/gu;
-const SAVED_QUEUE_SCHEMA = v.array(v.unknown());
+const SAVED_QUEUE_SCHEMA = Schema.Array(Schema.Unknown);
 const DOM_TEXT_LIMIT = 240;
 const SELECTOR_CLASS_LIMIT = 3;
 const ID_SUFFIX_RADIX = 36;
@@ -91,10 +91,10 @@ export const readShortcut: (() => Shortcut) & ((readStorageItem: StorageReader) 
 
     if (stored !== null && stored.length > 0) {
       const parsed: unknown = JSON.parse(stored);
-      const result = v.safeParse(ShortcutSchema, parsed);
+      const result = Schema.decodeUnknownResult(ShortcutSchema)(parsed);
 
-      if (result.success) {
-        return result.output;
+      if (result._tag === 'Success') {
+        return result.success;
       }
     }
   } catch (error) {
@@ -139,10 +139,10 @@ const selectionSource = (target: Element): Selection['source'] => {
     current = current.parentElement
   ) {
     const metadata = '__svelte_meta' in current ? current.__svelte_meta : undefined;
-    const result = v.safeParse(SvelteMetadataSchema, metadata);
+    const result = Schema.decodeUnknownResult(SvelteMetadataSchema)(metadata);
 
-    if (result.success) {
-      const { file, line, column } = result.output.loc;
+    if (result._tag === 'Success') {
+      const { file, line, column } = result.success.loc;
 
       return {
         ancestor,
@@ -408,13 +408,13 @@ export const loadScreenshot = async (
     signal,
   );
 
-  const result = v.safeParse(SubmissionSchema.entries.screenshot, screenshot);
+  const result = Schema.decodeUnknownResult(ScreenshotSchema)(screenshot);
 
-  if (result.success) {
-    SCREENSHOT_CACHE.set(id, result.output);
+  if (result._tag === 'Success') {
+    SCREENSHOT_CACHE.set(id, result.success);
   }
 
-  return result.success ? result.output : undefined;
+  return result._tag === 'Success' ? result.success : undefined;
 };
 
 export const removeScreenshot = async (id: string, signal?: AbortSignal): Promise<void> => {
@@ -440,17 +440,19 @@ export const restoreQueue: (() => RestoredQueue) &
     }
 
     const parsed: unknown = JSON.parse(serialized);
-    const entries = v.safeParse(SAVED_QUEUE_SCHEMA, parsed);
+    const entries = Schema.decodeUnknownResult(SAVED_QUEUE_SCHEMA)(parsed);
 
-    if (!entries.success) {
+    if (entries._tag === 'Failure') {
       return { items: [], warning: INVALID_QUEUE };
     }
 
-    const decoded = entries.output.map((item) => v.safeParse(QueueItemSchema, item));
+    const decoded = entries.success.map((item) =>
+      Schema.decodeUnknownResult(QueueItemSchema)(item),
+    );
 
     return {
-      items: decoded.flatMap((entry) => (entry.success ? [entry.output] : [])),
-      warning: decoded.some((entry) => !entry.success) ? INVALID_QUEUE : '',
+      items: decoded.flatMap((entry) => (entry._tag === 'Success' ? [entry.success] : [])),
+      warning: decoded.some((entry) => entry._tag === 'Failure') ? INVALID_QUEUE : '',
     };
   } catch {
     return {

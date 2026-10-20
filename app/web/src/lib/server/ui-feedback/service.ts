@@ -7,7 +7,7 @@ import type { Readable } from 'node:stream';
 import { setInterval as interval } from 'node:timers/promises';
 
 import { HERDR_ENV } from '$app/env/private';
-import * as v from 'valibot';
+import * as Schema from 'effect/Schema';
 
 import { findWorkspaceRoot } from '#lib/server/workspace-paths.js';
 import {
@@ -58,41 +58,45 @@ const AGENT_STATUSES = [
 
 const RECEIPT_MESSAGE = 'The matching Codex agent acknowledged this feedback.';
 
-const PaneSchema = v.object({
-  cwd: v.optional(v.string()),
-  foreground_cwd: v.optional(v.string()),
+const PaneSchema = Schema.Struct({
+  cwd: Schema.optional(Schema.String),
+  foreground_cwd: Schema.optional(Schema.String),
   pane_id: SessionIdSchema,
 });
 
-const AgentSchema = v.object({
-  ...PaneSchema.entries,
-  agent: v.string(),
-  agent_status: v.optional(v.picklist(AGENT_STATUSES), AgentStatus.Unknown),
-  interactive_ready: v.optional(v.boolean()),
-  name: v.optional(SessionIdSchema),
-  terminal_title: v.optional(v.string()),
+const AgentSchema = Schema.Struct({
+  ...PaneSchema.fields,
+  agent: Schema.String,
+  agent_status: Schema.optional(Schema.Literals(AGENT_STATUSES)),
+  interactive_ready: Schema.optional(Schema.Boolean),
+  name: Schema.optional(SessionIdSchema),
+  terminal_title: Schema.optional(Schema.String),
 });
 
-const AgentsSchema = v.object({ agents: v.array(AgentSchema) });
+const AgentsSchema = Schema.Struct({ agents: Schema.Array(AgentSchema) });
 
-const WorktreesSchema = v.object({
-  source: v.object({ repo_root: v.string() }),
-  worktrees: v.array(v.object({ open_workspace_id: v.optional(v.string()), path: v.string() })),
+const WorktreesSchema = Schema.Struct({
+  source: Schema.Struct({ repo_root: Schema.String }),
+  worktrees: Schema.Array(
+    Schema.Struct({ open_workspace_id: Schema.optional(Schema.String), path: Schema.String }),
+  ),
 });
 
-const PanesSchema = v.object({ panes: v.array(PaneSchema) });
+const PanesSchema = Schema.Struct({ panes: Schema.Array(PaneSchema) });
 
-const OpenedSchema = v.object({
-  root_pane: v.optional(PaneSchema),
-  workspace: v.optional(v.object({ workspace_id: v.string() })),
+const OpenedSchema = Schema.Struct({
+  root_pane: Schema.optional(PaneSchema),
+  workspace: Schema.optional(Schema.Struct({ workspace_id: Schema.String })),
 });
 
-const EnvelopeSchema = v.object({ result: v.unknown() });
-const FileErrorSchema = v.object({ code: v.picklist(['ENOENT', 'EEXIST']) });
+const EnvelopeSchema = Schema.Struct({ result: Schema.Unknown });
+const FileErrorSchema = Schema.Struct({ code: Schema.Literals(['ENOENT', 'EEXIST']) });
 
-type Agent = v.InferOutput<typeof AgentSchema>;
+type Agent = typeof AgentSchema.Type;
 
-type Pane = v.InferOutput<typeof PaneSchema>;
+type Pane = typeof PaneSchema.Type;
+
+type FileErrorCode = (typeof FileErrorSchema.Type)['code'];
 
 type CommandArgs =
   | readonly ['agent', 'list']
@@ -112,11 +116,8 @@ interface SubmitOptions {
   herdrEnvironment?: string;
 }
 
-const fileError = (cause: unknown, code: v.InferOutput<typeof FileErrorSchema>['code']) => {
-  const parsed = v.safeParse(FileErrorSchema, cause);
-
-  return parsed.success && parsed.output.code === code;
-};
+const fileError = (cause: unknown, code: FileErrorCode) =>
+  Schema.is(FileErrorSchema)(cause) && cause.code === code;
 
 const exists = async (file: string) => {
   try {
@@ -149,7 +150,7 @@ const readCommandOutput = async (stream: Readable) => {
       }
 
       const chunk: unknown = result.value;
-      const buffer = Buffer.from(v.parse(v.instance(Uint8Array), chunk));
+      const buffer = Buffer.from(Schema.decodeUnknownSync(Schema.instanceOf(Uint8Array))(chunk));
       length += buffer.length;
 
       if (length > COMMAND_OUTPUT_LIMIT_BYTES) {
@@ -305,10 +306,13 @@ const execute = async (root: string, args: CommandArgs, signal?: AbortSignal) =>
   const closed = once(child, 'close');
 
   try {
-    const [output, errorOutput, [code]] = v.parse(
-      v.tuple([v.string(), v.string(), v.tuple([v.nullable(v.number()), v.nullable(v.string())])]),
-      await Promise.all([stdout, stderr, closed]),
-    );
+    const [output, errorOutput, [code]] = Schema.decodeUnknownSync(
+      Schema.Tuple([
+        Schema.String,
+        Schema.String,
+        Schema.Tuple([Schema.NullOr(Schema.Number), Schema.NullOr(Schema.String)]),
+      ]),
+    )(await Promise.all([stdout, stderr, closed]));
 
     if (code !== 0) {
       throw new Error(errorOutput || `Herdr exited with code ${String(code)}.`);
@@ -322,17 +326,17 @@ const execute = async (root: string, args: CommandArgs, signal?: AbortSignal) =>
   }
 };
 
-const query = async <T>(
+const query = async <S extends Schema.ConstraintDecoder<unknown>>(
   command: Command,
   args: CommandArgs,
-  schema: v.GenericSchema<unknown, T>,
+  schema: S,
   signal?: AbortSignal,
-) => {
+): Promise<S['Type']> => {
   signal?.throwIfAborted();
   const output: unknown = JSON.parse(await command(args, signal));
-  const envelope = v.parse(EnvelopeSchema, output);
+  const envelope = Schema.decodeUnknownSync(EnvelopeSchema)(output);
 
-  return v.parse(schema, envelope.result);
+  return Schema.decodeUnknownSync(schema)(envelope.result);
 };
 
 const agentId = (agent: Agent) => agent.name ?? agent.pane_id;
@@ -539,7 +543,7 @@ const deliver = async (input: Submission, options: SubmitOptions = {}): Promise<
 
   try {
     signal.throwIfAborted();
-    const submission = v.parse(SubmissionSchema, input);
+    const submission = Schema.decodeUnknownSync(SubmissionSchema)(input);
     const root = await realpath(options.workspaceRoot ?? findWorkspaceRoot(import.meta.dirname));
     signal.throwIfAborted();
 
@@ -586,9 +590,11 @@ const deliver = async (input: Submission, options: SubmitOptions = {}): Promise<
       return target;
     }
 
+    const agentStatus = target.agent_status ?? AgentStatus.Unknown;
+
     if (
-      target.agent_status === AgentStatus.Blocked ||
-      target.agent_status === AgentStatus.Unknown ||
+      agentStatus === AgentStatus.Blocked ||
+      agentStatus === AgentStatus.Unknown ||
       target.interactive_ready === false
     ) {
       throw new Error('The selected Codex agent is not ready to receive feedback.');
