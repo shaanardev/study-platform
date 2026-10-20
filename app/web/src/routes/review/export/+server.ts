@@ -1,10 +1,9 @@
 import { exportFeedback } from '#lib/server/feedback/service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
 
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = () =>
-  new Response(exportFeedback(workspacePath('.local/exam-packs.sqlite')), {
+export const GET: RequestHandler = async () =>
+  new Response(await exportFeedback(), {
     headers: {
       'cache-control': 'no-store',
       'content-disposition': 'attachment; filename="question-feedback.json"',

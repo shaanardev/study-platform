@@ -1,19 +1,18 @@
-import type { SQLOutputValue } from 'node:sqlite';
-
 import { error as httpError } from '@sveltejs/kit';
 
-import { getImportedPack, openPackDatabase } from '#lib/server/packs/repository.js';
+import type { AppDatabase } from '#lib/server/database/connection.js';
+import {
+  listAllFeedbackRows,
+  listFeedbackRows,
+  updateFeedback,
+} from '#lib/server/feedback/repository.js';
+import type { FeedbackKey, StoredFeedback } from '#lib/server/feedback/repository.js';
 import { HTTP_NOT_FOUND } from '#lib/server/http-status.js';
-import { decodeJsonText } from '#lib/server/json.js';
+import { getImportedPack } from '#lib/server/packs/repository.js';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 
-export interface FeedbackKey {
-  examId: string;
-  packId: string;
-  packVersion: string;
-  questionId: string;
-}
+export type { FeedbackKey } from '#lib/server/feedback/repository.js';
 export type QuestionCorrection = Partial<
   Pick<
     PackQuestion,
@@ -24,12 +23,6 @@ export type FeedbackItem = FeedbackKey & {
   flags: { reason: string }[];
   correction?: QuestionCorrection;
   retired: boolean;
-};
-
-type FeedbackRow = Record<string, SQLOutputValue> & {
-  flagsJson?: SQLOutputValue;
-  correctionJson?: SQLOutputValue;
-  retired?: SQLOutputValue;
 };
 
 type JsonRecord = Record<string, unknown> & {
@@ -45,15 +38,6 @@ type JsonRecord = Record<string, unknown> & {
   answerIds?: unknown;
   explanation?: unknown;
   sources?: unknown;
-  questions?: unknown;
-};
-
-const readText = (row: Record<string, SQLOutputValue>, field: string): string => {
-  const value = row[field];
-  if (typeof value !== 'string') {
-    throw new TypeError(`Stored feedback field "${field}" is not text.`);
-  }
-  return value;
 };
 
 const isRecord = (value: unknown): value is JsonRecord =>
@@ -62,13 +46,12 @@ const isRecord = (value: unknown): value is JsonRecord =>
 const citationKey = (value: object): string =>
   JSON.stringify(Object.entries(value).toSorted(([left], [right]) => left.localeCompare(right)));
 
-const parseFlags = (value: string): FeedbackItem['flags'] => {
-  const parsed = decodeJsonText(value);
-  if (!Array.isArray(parsed)) {
+const validateStoredFlags = (value: unknown): FeedbackItem['flags'] => {
+  if (!Array.isArray(value)) {
     throw new TypeError('Stored question feedback flags are invalid.');
   }
   const flags: FeedbackItem['flags'] = [];
-  for (const flag of parsed) {
+  for (const flag of value) {
     if (!isRecord(flag) || typeof flag.reason !== 'string') {
       throw new Error('Stored question feedback flags are invalid.');
     }
@@ -140,25 +123,14 @@ const isQuestionCorrection = (value: unknown): value is QuestionCorrection => {
   });
 };
 
-const parseCorrection = (value: string): QuestionCorrection => {
-  const parsed = decodeJsonText(value);
-  if (!isQuestionCorrection(parsed)) {
+const validateStoredCorrection = (correction: unknown): QuestionCorrection | undefined => {
+  if (correction === null) {
+    return undefined;
+  }
+  if (!isQuestionCorrection(correction)) {
     throw new Error('Stored question correction is invalid.');
   }
-  return parsed;
-};
-
-const feedbackRow = (row: FeedbackRow) => {
-  const { flagsJson } = row;
-  const { correctionJson } = row;
-  const { retired } = row;
-  if (
-    typeof flagsJson !== 'string' ||
-    (correctionJson !== null && typeof correctionJson !== 'string')
-  ) {
-    throw new Error('Stored question feedback is invalid.');
-  }
-  return { correctionJson, flagsJson, retired: typeof retired === 'number' && retired !== 0 };
+  return correction;
 };
 
 export class FeedbackValidationError extends Error {
@@ -170,21 +142,6 @@ export class FeedbackValidationError extends Error {
     this.name = 'FeedbackValidationError';
   }
 }
-
-const currentFeedback = (databasePath: string, key: FeedbackKey) => {
-  const database = openPackDatabase(databasePath);
-  try {
-    const row = database
-      .prepare(
-        `SELECT flags_json AS flagsJson, correction_json AS correctionJson, retired
-      FROM question_feedback WHERE exam_id = ? AND pack_id = ? AND pack_version = ? AND question_id = ?`,
-      )
-      .get(key.examId, key.packId, key.packVersion, key.questionId);
-    return row ? feedbackRow(row) : undefined;
-  } finally {
-    database.close();
-  }
-};
 
 const addCitationIssues = (original: PackQuestion, sources: unknown, issues: string[]) => {
   if (
@@ -312,208 +269,103 @@ const validateCorrection = (
   return normalizeCorrection(correction, validatedQuestion);
 };
 
-export const flagQuestion = (
-  databasePath: string,
+const toFeedbackItem = (row: StoredFeedback): FeedbackItem => {
+  const correction = validateStoredCorrection(row.correction);
+  if (row.retired !== 0 && row.retired !== 1) {
+    throw new Error('Stored question retirement value is invalid.');
+  }
+  return {
+    ...(correction ? { correction } : {}),
+    examId: row.examId,
+    flags: validateStoredFlags(row.flags),
+    packId: row.packId,
+    packVersion: row.packVersion,
+    questionId: row.questionId,
+    retired: row.retired === 1,
+  };
+};
+
+export const flagQuestion = async (
   input: FeedbackKey & { reason: string },
-): FeedbackItem => {
+  database?: AppDatabase,
+): Promise<FeedbackItem> => {
   const reason = input.reason.trim();
   if (!reason) {
     throw new FeedbackValidationError(['A flag reason is required.']);
   }
-  const pack = getImportedPack(input.examId, input.packId, input.packVersion, databasePath);
+  const pack = await getImportedPack(input.examId, input.packId, input.packVersion, database);
   if (pack?.questions.some((question) => question.id === input.questionId) !== true) {
     throw new FeedbackValidationError(['Question is not in this imported pack version.']);
   }
-  const previous = currentFeedback(databasePath, input);
-  const flags = previous ? parseFlags(previous.flagsJson) : [];
-  if (!flags.some((flag) => flag.reason === reason)) {
-    flags.push({ reason });
-  }
-  const sortedFlags = flags.toSorted((left, right) => left.reason.localeCompare(right.reason));
-  const database = openPackDatabase(databasePath);
-  try {
-    database
-      .prepare(
-        `INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
-      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET flags_json = excluded.flags_json, updated_at = CURRENT_TIMESTAMP`,
-      )
-      .run(
-        input.examId,
-        input.packId,
-        input.packVersion,
-        input.questionId,
-        JSON.stringify(sortedFlags),
-        previous?.correctionJson ?? null,
-        Number(previous?.retired ?? false),
-      );
-  } finally {
-    database.close();
-  }
-  return {
-    ...(previous?.correctionJson !== null &&
-    previous?.correctionJson !== undefined &&
-    previous.correctionJson.length > 0
-      ? { correction: parseCorrection(previous.correctionJson) }
-      : {}),
-    examId: input.examId,
-    flags: sortedFlags,
-    packId: input.packId,
-    packVersion: input.packVersion,
-    questionId: input.questionId,
-    retired: previous?.retired ?? false,
-  };
+  const row = await updateFeedback(input, database, (previous) => {
+    const flags = previous ? validateStoredFlags(previous.flags) : [];
+    if (!flags.some((flag) => flag.reason === reason)) {
+      flags.push({ reason });
+    }
+    return {
+      correction: previous?.correction ?? null,
+      flags: flags.toSorted((left, right) => left.reason.localeCompare(right.reason)),
+      retired: previous?.retired ?? 0,
+    };
+  });
+  return toFeedbackItem(row);
 };
 
-export const createCorrection = (
-  databasePath: string,
+export const createCorrection = async (
   input: FeedbackKey & { correction: unknown },
-): FeedbackItem => {
-  const pack = getImportedPack(input.examId, input.packId, input.packVersion, databasePath);
+  database?: AppDatabase,
+): Promise<FeedbackItem> => {
+  const pack = await getImportedPack(input.examId, input.packId, input.packVersion, database);
   if (!pack) {
     throw new FeedbackValidationError(['Imported pack version is unavailable.']);
   }
   const correction = validateCorrection(pack, input.questionId, input.correction);
-  const previous = currentFeedback(databasePath, input);
-  const database = openPackDatabase(databasePath);
-  try {
-    database
-      .prepare(
-        `INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
-      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET correction_json = excluded.correction_json, updated_at = CURRENT_TIMESTAMP`,
-      )
-      .run(
-        input.examId,
-        input.packId,
-        input.packVersion,
-        input.questionId,
-        previous?.flagsJson ?? '[]',
-        JSON.stringify(correction),
-        Number(previous?.retired ?? false),
-      );
-  } finally {
-    database.close();
-  }
-  return {
+  const row = await updateFeedback(input, database, (previous) => ({
     correction,
-    examId: input.examId,
-    flags: previous ? parseFlags(previous.flagsJson) : [],
-    packId: input.packId,
-    packVersion: input.packVersion,
-    questionId: input.questionId,
-    retired: previous?.retired ?? false,
-  };
+    flags: previous ? validateStoredFlags(previous.flags) : [],
+    retired: previous?.retired ?? 0,
+  }));
+  return toFeedbackItem(row);
 };
 
-export const retireQuestion = (
-  databasePath: string,
+export const retireQuestion = async (
   key: FeedbackKey,
   retired: boolean,
-): FeedbackItem => {
-  const pack = getImportedPack(key.examId, key.packId, key.packVersion, databasePath);
+  database?: AppDatabase,
+): Promise<FeedbackItem> => {
+  const pack = await getImportedPack(key.examId, key.packId, key.packVersion, database);
   if (pack?.questions.some((question) => question.id === key.questionId) !== true) {
     throw new FeedbackValidationError(['Question is not in this imported pack version.']);
   }
-  const previous = currentFeedback(databasePath, key);
-  const database = openPackDatabase(databasePath);
-  try {
-    database
-      .prepare(
-        `INSERT INTO question_feedback (exam_id, pack_id, pack_version, question_id, flags_json, correction_json, retired)
-      VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(exam_id, pack_id, pack_version, question_id) DO UPDATE SET retired = excluded.retired, updated_at = CURRENT_TIMESTAMP`,
-      )
-      .run(
-        key.examId,
-        key.packId,
-        key.packVersion,
-        key.questionId,
-        previous?.flagsJson ?? '[]',
-        previous?.correctionJson ?? null,
-        Number(retired),
-      );
-  } finally {
-    database.close();
-  }
-  return {
-    ...key,
-    flags: previous ? parseFlags(previous.flagsJson) : [],
-    ...(previous?.correctionJson !== null &&
-    previous?.correctionJson !== undefined &&
-    previous.correctionJson.length > 0
-      ? { correction: parseCorrection(previous.correctionJson) }
-      : {}),
-    retired,
-  };
+  const row = await updateFeedback(key, database, (previous) => ({
+    correction: previous?.correction ?? null,
+    flags: previous ? validateStoredFlags(previous.flags) : [],
+    retired: retired ? 1 : 0,
+  }));
+  return toFeedbackItem(row);
 };
 
-export const listFeedback = (
-  databasePath: string,
+export const listFeedback = async (
   examId: string,
   packId: string,
   packVersion: string,
-): FeedbackItem[] => {
-  const database = openPackDatabase(databasePath);
-  try {
-    return database
-      .prepare(
-        `SELECT question_id AS questionId, flags_json AS flagsJson, correction_json AS correctionJson, retired
-      FROM question_feedback WHERE exam_id = ? AND pack_id = ? AND pack_version = ? ORDER BY question_id`,
-      )
-      .all(examId, packId, packVersion)
-      .map((row) => {
-        const saved = feedbackRow(row);
-        return {
-          ...(saved.correctionJson !== null &&
-          saved.correctionJson !== undefined &&
-          saved.correctionJson.length > 0
-            ? { correction: parseCorrection(saved.correctionJson) }
-            : {}),
-          examId,
-          flags: parseFlags(saved.flagsJson),
-          packId,
-          packVersion,
-          questionId: readText(row, 'questionId'),
-          retired: saved.retired,
-        };
-      });
-  } finally {
-    database.close();
-  }
+  database?: AppDatabase,
+): Promise<FeedbackItem[]> => {
+  const rows = await listFeedbackRows(examId, packId, packVersion, database);
+  return rows.map(toFeedbackItem);
 };
 
-export const exportFeedback = (databasePath: string): string => {
-  const database = openPackDatabase(databasePath);
-  try {
-    const rows = database
-      .prepare(
-        `SELECT exam_id AS examId, pack_id AS packId, pack_version AS packVersion,
-      question_id AS questionId, flags_json AS flagsJson, correction_json AS correctionJson, retired
-      FROM question_feedback ORDER BY exam_id, pack_id, pack_version, question_id`,
-      )
-      .all();
-    const items = rows.map((row) => {
-      const saved = feedbackRow(row);
-      return {
-        ...(saved.correctionJson !== null &&
-        saved.correctionJson !== undefined &&
-        saved.correctionJson.length > 0
-          ? { correction: parseCorrection(saved.correctionJson) }
-          : {}),
-        examId: readText(row, 'examId'),
-        flags: parseFlags(saved.flagsJson),
-        packId: readText(row, 'packId'),
-        packVersion: readText(row, 'packVersion'),
-        questionId: readText(row, 'questionId'),
-        retired: saved.retired,
-      };
-    });
-    return JSON.stringify({ format: 'question-feedback', items, version: 1 });
-  } finally {
-    database.close();
-  }
+export const exportFeedback = async (database?: AppDatabase): Promise<string> => {
+  const rows = await listAllFeedbackRows(database);
+  const items = rows.map(toFeedbackItem);
+  return JSON.stringify({ format: 'question-feedback', items, version: 1 });
 };
 
-export const getEffectivePack = (databasePath: string, pack: ExamPack) => {
-  const feedback = listFeedback(databasePath, pack.exam.id, pack.pack.id, pack.pack.version);
+export const getEffectivePack = async (
+  pack: ExamPack,
+  database?: AppDatabase,
+): Promise<ExamPack> => {
+  const feedback = await listFeedback(pack.exam.id, pack.pack.id, pack.pack.version, database);
   const byId = new Map(feedback.map((item) => [item.questionId, item]));
   const questions = pack.questions.flatMap((question) => {
     const item = byId.get(question.id);
@@ -525,15 +377,15 @@ export const getEffectivePack = (databasePath: string, pack: ExamPack) => {
   return { ...pack, questions };
 };
 
-export const readPackForReview = (
-  databasePath: string,
+export const readPackForReview = async (
   examId: string,
   packId: string,
   packVersion: string,
-): { feedback: FeedbackItem[]; pack: ExamPack } => {
-  const pack = getImportedPack(examId, packId, packVersion, databasePath);
+  database?: AppDatabase,
+): Promise<{ feedback: FeedbackItem[]; pack: ExamPack }> => {
+  const pack = await getImportedPack(examId, packId, packVersion, database);
   if (!pack) {
     httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
   }
-  return { feedback: listFeedback(databasePath, examId, packId, packVersion), pack };
+  return { feedback: await listFeedback(examId, packId, packVersion, database), pack };
 };
