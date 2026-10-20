@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { createDatabase } from '#lib/server/database/connection.js';
 import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import {
@@ -28,7 +29,13 @@ const errorBodyMessage = (value: unknown): string | undefined => {
 
 describe('timed mock attempts', () => {
   const dirs: string[] = [];
+  const databases: Awaited<ReturnType<typeof createDatabase>>[] = [];
   afterEach(async () => {
+    await Promise.all(
+      databases.splice(0).map(async (database) => {
+        await database.close();
+      }),
+    );
     await Promise.all(
       dirs.splice(0).map(async (dir) => {
         await rm(dir, { force: true, recursive: true });
@@ -48,15 +55,22 @@ describe('timed mock attempts', () => {
       throw new Error(validated.errors.join(' '));
     }
     const { pack } = validated;
-    saveImportedPack(databasePath, pack);
-    return { databasePath, pack };
+    const database = await createDatabase(databasePath);
+    databases.push(database);
+    await saveImportedPack(database, pack);
+    return { database, pack };
   };
 
   it('blocks an attempt when weighted domain coverage is insufficient', async () => {
-    const { databasePath, pack } = await setup();
-    expect(
-      getMockCoverage(databasePath, pack.exam.id, pack.pack.id, pack.pack.version, 5).gaps,
-    ).toStrictEqual([
+    const { database, pack } = await setup();
+    const coverage = await getMockCoverage(
+      pack.exam.id,
+      pack.pack.id,
+      pack.pack.version,
+      5,
+      database,
+    );
+    expect(coverage.gaps).toStrictEqual([
       { available: 1, id: 'delta-lake', missing: 2, required: 3, title: 'Delta Lake foundations' },
       {
         available: 1,
@@ -68,8 +82,8 @@ describe('timed mock attempts', () => {
     ]);
     let thrown: unknown;
     try {
-      createMockAttempt({
-        databasePath,
+      await createMockAttempt({
+        database,
         durationMinutes: 30,
         examId: pack.exam.id,
         packId: pack.pack.id,
@@ -83,9 +97,9 @@ describe('timed mock attempts', () => {
   });
 
   it('persists answers and deadline across resume, then reveals scoring only after submit', async () => {
-    const { databasePath, pack } = await setup();
-    const attempt = createMockAttempt({
-      databasePath,
+    const { database, pack } = await setup();
+    const attempt = await createMockAttempt({
+      database,
       durationMinutes: 2,
       examId: pack.exam.id,
       now: 10_000,
@@ -98,11 +112,11 @@ describe('timed mock attempts', () => {
     if (!first) {
       throw new Error('The mock attempt should include a question.');
     }
-    const saved = saveMockAnswer(
-      databasePath,
+    const saved = await saveMockAnswer(
       attempt.id,
       first.id,
       first.id === 'delta-transaction-basics' ? ['a'] : ['a', 'b'],
+      database,
       20_000,
     );
     expect({
@@ -116,7 +130,7 @@ describe('timed mock attempts', () => {
       questionAnswerIds: false,
       questionExplanation: false,
     });
-    const resumed = getMockAttempt(databasePath, attempt.id, 40_000);
+    const resumed = await getMockAttempt(attempt.id, database, 40_000);
     if (!resumed) {
       throw new Error('The mock attempt should remain available.');
     }
@@ -125,7 +139,7 @@ describe('timed mock attempts', () => {
       hasScore: Object.hasOwn(resumed, 'score'),
       remainingMilliseconds: resumed.remainingMilliseconds,
     }).toStrictEqual({ answerCount: 1, hasScore: false, remainingMilliseconds: 90_000 });
-    const completed = submitMockAttempt(databasePath, attempt.id, 50_000);
+    const completed = await submitMockAttempt(attempt.id, database, 50_000);
     expect({
       domains: completed.score?.domains.map(({ id, correct, total }) => ({ correct, id, total })),
       hasExplanations: completed.questions.every((question) => 'explanation' in question),
@@ -153,9 +167,9 @@ describe('timed mock attempts', () => {
   });
 
   it('expires at the persisted deadline and reveals the saved answers', async () => {
-    const { databasePath, pack } = await setup();
-    const attempt = createMockAttempt({
-      databasePath,
+    const { database, pack } = await setup();
+    const attempt = await createMockAttempt({
+      database,
       durationMinutes: 1,
       examId: pack.exam.id,
       now: 5000,
@@ -164,8 +178,8 @@ describe('timed mock attempts', () => {
       questionCount: 2,
       random: () => 0,
     });
-    saveMockAnswer(databasePath, attempt.id, 'delta-transaction-basics', ['a'], 6000);
-    const expired = getMockAttempt(databasePath, attempt.id, 65_000);
+    await saveMockAnswer(attempt.id, 'delta-transaction-basics', ['a'], database, 6000);
+    const expired = await getMockAttempt(attempt.id, database, 65_000);
     if (!expired) {
       throw new Error('The expired mock attempt should remain available.');
     }
@@ -175,13 +189,13 @@ describe('timed mock attempts', () => {
   });
 
   it('does not report pass or fail when the blueprint has no threshold', async () => {
-    const { databasePath, pack } = await setup();
+    const { database, pack } = await setup();
     const packWithoutThreshold = structuredClone(pack);
     packWithoutThreshold.pack.version = '1.0.1';
     delete packWithoutThreshold.passingThreshold;
-    saveImportedPack(databasePath, packWithoutThreshold);
-    const attempt = createMockAttempt({
-      databasePath,
+    await saveImportedPack(database, packWithoutThreshold);
+    const attempt = await createMockAttempt({
+      database,
       durationMinutes: 1,
       examId: pack.exam.id,
       now: 1000,
@@ -191,7 +205,7 @@ describe('timed mock attempts', () => {
       random: () => 0,
     });
 
-    const completed = submitMockAttempt(databasePath, attempt.id, 2000);
+    const completed = await submitMockAttempt(attempt.id, database, 2000);
     expect(completed.score).not.toHaveProperty('passingThreshold');
     expect(completed.score).not.toHaveProperty('passed');
   });
