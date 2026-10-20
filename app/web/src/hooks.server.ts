@@ -7,6 +7,8 @@ import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import * as v from 'valibot';
 
+import { initializeAppDatabase } from '#lib/server/database/app-database.js';
+import { assertSafeDatabasePath, databasePath } from '#lib/server/database/path.js';
 import { HTTP_BAD_REQUEST } from '#lib/server/http-status.js';
 import { LIMITS } from '#lib/ui-feedback/schema.js';
 
@@ -88,3 +90,7 @@ export const handleRequestBoundary = async <TEvent extends RequestBoundaryEvent>
 };
 
 export const handle: Handle = handleRequestBoundary;
+
+export const init = async (): Promise<void> => {
+  await initializeAppDatabase(databasePath, assertSafeDatabasePath);
+};

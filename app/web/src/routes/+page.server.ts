@@ -1,10 +1,11 @@
 import * as Schema from 'effect/Schema';
 
-import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
+import { importPacksFromFolder } from '#lib/server/packs/importer.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = () => ({ packs: getPackIndex() });
+export const load: PageServerLoad = async () => ({ packs: await listImportedPacks() });
 
 export const actions: Actions = {
   import: async ({ request }) => {

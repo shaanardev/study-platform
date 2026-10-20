@@ -5,7 +5,10 @@ import path from 'node:path';
 import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { saveImportedPack } from '#lib/server/db/packs.js';
+import { createDatabase } from '#lib/server/database/connection.js';
+import type { AppDatabase } from '#lib/server/database/connection.js';
+import { createCorrection, retireQuestion } from '#lib/server/feedback/service.js';
+import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { getProgress } from '#lib/server/progress/queries.js';
 import {
   createMockAttempt,
@@ -15,11 +18,14 @@ import {
 import { answerQuestion, createPracticeSession } from '#lib/server/quiz/service.js';
 
 const directories: string[] = [];
+const databases: AppDatabase[] = [];
 
-const fixture = () => {
+const fixture = async () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'orde-progress-'));
   directories.push(directory);
   const databasePath = path.join(directory, 'progress.sqlite');
+  const database = await createDatabase(databasePath);
+  databases.push(database);
 
   const pack: ExamPack = {
     domains: [
@@ -59,23 +65,29 @@ const fixture = () => {
     schemaVersion: 1,
   };
 
-  saveImportedPack(databasePath, pack);
+  await saveImportedPack(database, pack);
 
-  return { databasePath, pack };
+  return { database, pack };
 };
 
 describe('progress queries', () => {
-  afterEach(() => {
+  afterEach(async () => {
+    await Promise.all(
+      databases.splice(0).map(async (database) => {
+        await database.destroy();
+      }),
+    );
+
     directories.splice(0).forEach((directory) => {
       rmSync(directory, { force: true, recursive: true });
     });
   });
 
-  it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', () => {
-    const { databasePath, pack } = fixture();
+  it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', async () => {
+    const { database, pack } = await fixture();
 
-    const session = createPracticeSession({
-      databasePath,
+    const session = await createPracticeSession({
+      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -83,10 +95,10 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    answerQuestion(databasePath, session.id, 'q-storage', ['yes']);
-    answerQuestion(databasePath, session.id, 'q-compute', ['no']);
+    await answerQuestion(session.id, 'q-storage', ['yes'], database);
+    await answerQuestion(session.id, 'q-compute', ['no'], database);
 
-    const progress = getProgress(databasePath);
+    const progress = await getProgress(database);
 
     expect(progress.recentAttempts).toHaveLength(1);
     expect(progress.recentAttempts[0]).toMatchObject({
@@ -140,11 +152,62 @@ describe('progress queries', () => {
     ]);
   });
 
-  it('includes submitted mock exams in recent attempt summaries', () => {
-    const { databasePath, pack } = fixture();
+  it('keeps historical scores and missed questions tied to the attempt snapshot after feedback changes', async () => {
+    const { database, pack } = await fixture();
 
-    const attempt = createMockAttempt({
-      databasePath,
+    const session = await createPracticeSession({
+      database,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    });
+
+    await createCorrection(
+      {
+        correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        questionId: 'q-compute',
+      },
+      database,
+    );
+    await retireQuestion(
+      {
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        questionId: 'q-storage',
+      },
+      true,
+      database,
+    );
+
+    await answerQuestion(session.id, 'q-storage', ['yes'], database);
+    await answerQuestion(session.id, 'q-compute', ['no'], database);
+
+    const progress = await getProgress(database);
+
+    expect(progress.recentAttempts[0]).toMatchObject({ answeredCount: 2, correctCount: 1 });
+    expect(progress.missedQuestions).toContainEqual(
+      expect.objectContaining({
+        missCount: 1,
+        prompt: 'Compute?',
+        questionId: 'q-compute',
+      }),
+    );
+    expect(progress.missedQuestions).not.toContainEqual(
+      expect.objectContaining({ questionId: 'q-storage' }),
+    );
+  });
+
+  it('includes submitted mock exams in recent attempt summaries', async () => {
+    const { database, pack } = await fixture();
+
+    const attempt = await createMockAttempt({
+      database,
       durationMinutes: 30,
       examId: pack.exam.id,
       now: 10_000,
@@ -154,11 +217,11 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    saveMockAnswer(databasePath, attempt.id, 'q-storage', ['yes'], 11_000);
-    saveMockAnswer(databasePath, attempt.id, 'q-compute', ['no'], 12_000);
-    submitMockAttempt(databasePath, attempt.id, 13_000);
+    await saveMockAnswer(attempt.id, 'q-storage', ['yes'], database, 11_000);
+    await saveMockAnswer(attempt.id, 'q-compute', ['no'], database, 12_000);
+    await submitMockAttempt(attempt.id, database, 13_000);
 
-    const progress = getProgress(databasePath);
+    const progress = await getProgress(database);
 
     expect(progress.recentAttempts).toContainEqual(
       expect.objectContaining({

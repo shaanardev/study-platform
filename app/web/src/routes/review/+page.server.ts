@@ -11,15 +11,12 @@ import {
 import { getFormString } from '#lib/server/form-data.js';
 import { HTTP_BAD_REQUEST, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
 import { decodeJsonText, isJsonObject } from '#lib/server/json.js';
-import { getPackIndex } from '#lib/server/packs/importer.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
-const databasePath = workspacePath('.local/exam-packs.sqlite');
-
-export const load: PageServerLoad = ({ url }) => {
-  const packs = getPackIndex(databasePath);
+export const load: PageServerLoad = async ({ url }) => {
+  const packs = await listImportedPacks();
 
   const selected =
     packs.find(
@@ -33,8 +30,7 @@ export const load: PageServerLoad = ({ url }) => {
     return { feedback: [], pack: undefined, packs };
   }
 
-  const { pack, feedback } = readPackForReview(
-    databasePath,
+  const { pack, feedback } = await readPackForReview(
     selected.examId,
     selected.packId,
     selected.packVersion,
@@ -57,7 +53,7 @@ export const actions: Actions = {
   correct: async ({ request }) => {
     const formData = await request.formData();
     const reviewTarget = getReviewTarget(formData);
-    let correction;
+    let correction: unknown;
 
     try {
       correction = decodeJsonText(getFormString(formData, 'correction') || '{}');
@@ -70,7 +66,7 @@ export const actions: Actions = {
     }
 
     try {
-      createCorrection(databasePath, { ...reviewTarget, correction });
+      await createCorrection({ ...reviewTarget, correction });
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(HTTP_BAD_REQUEST, { message: error.message });
@@ -86,7 +82,7 @@ export const actions: Actions = {
     const reviewTarget = getReviewTarget(formData);
 
     try {
-      flagQuestion(databasePath, { ...reviewTarget, reason: getFormString(formData, 'reason') });
+      await flagQuestion({ ...reviewTarget, reason: getFormString(formData, 'reason') });
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(HTTP_BAD_REQUEST, { message: error.message });
@@ -102,7 +98,7 @@ export const actions: Actions = {
     const reviewTarget = getReviewTarget(formData);
 
     try {
-      retireQuestion(databasePath, reviewTarget, formData.get('retired') === 'true');
+      await retireQuestion(reviewTarget, formData.get('retired') === 'true');
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(HTTP_BAD_REQUEST, { message: error.message });

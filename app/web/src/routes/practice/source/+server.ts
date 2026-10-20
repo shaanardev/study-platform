@@ -1,5 +1,4 @@
 import { readQuestionSource } from '#lib/server/quiz/service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
 
 import type { RequestHandler } from './$types';
 
@@ -7,7 +6,6 @@ export const GET: RequestHandler = async ({ url }) => {
   const get = (key: string) => url.searchParams.get(key) ?? '';
 
   const source = await readQuestionSource(
-    workspacePath('.local/exam-packs.sqlite'),
     get('examId'),
     get('packId'),
     get('packVersion'),

@@ -3,25 +3,22 @@ import { error as httpError, fail, isHttpError, redirect } from '@sveltejs/kit';
 
 import { getFormString } from '#lib/server/form-data.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
-import { getPackIndex } from '#lib/server/packs/importer.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 import {
   answerQuestion,
   createPracticeSession,
   getPracticeSession,
   getResumablePracticeSession,
 } from '#lib/server/quiz/service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ url }) => {
-  const packs = getPackIndex();
+export const load: PageServerLoad = async ({ url }) => {
+  const packs = await listImportedPacks();
   const sessionId = url.searchParams.get('session');
 
   const session =
-    sessionId === null
-      ? getResumablePracticeSession(workspacePath('.local/exam-packs.sqlite'))
-      : getPracticeSession(workspacePath('.local/exam-packs.sqlite'), sessionId);
+    sessionId === null ? await getResumablePracticeSession() : await getPracticeSession(sessionId);
 
   if (sessionId !== null && session === undefined) {
     httpError(HTTP_NOT_FOUND, 'Practice session not found.');
@@ -38,12 +35,10 @@ export const actions: Actions = {
     const answerIds = formData.getAll('answerIds').map(String);
 
     try {
-      answerQuestion(workspacePath('.local/exam-packs.sqlite'), sessionId, questionId, answerIds);
+      await answerQuestion(sessionId, questionId, answerIds);
     } catch (error) {
       if (isHttpError(error, HTTP_BAD_REQUEST)) {
-        return fail(HTTP_BAD_REQUEST, {
-          message: 'Select a valid answer before continuing.',
-        });
+        return fail(HTTP_BAD_REQUEST, { message: 'Select a valid answer before continuing.' });
       }
 
       throw error;
@@ -62,7 +57,7 @@ export const actions: Actions = {
     const questionCount = Number(formData.get('questionCount'));
     const domainIds = formData.getAll('domainIds').map(String);
 
-    const session = createPracticeSession({
+    const session = await createPracticeSession({
       domainIds,
       examId,
       packId,

@@ -6,13 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import type { ExamPack, PackSource } from '@learning-platform/exam-pack';
 
-import {
-  listImportedPacks,
-  refreshApprovedLocalSources,
-  saveImportedPack,
-} from '#lib/server/db/packs.js';
-import type { ImportedSourceAsset } from '#lib/server/db/packs.js';
-import { decodeJsonText } from '#lib/server/json.js';
+import type { AppDatabase } from '#lib/server/database/connection.js';
+import { refreshApprovedLocalSources, saveImportedPack } from '#lib/server/packs/repository.js';
+import type { ImportedSourceAsset } from '#lib/server/packs/repository.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
 export interface ImportResult {
@@ -23,12 +19,11 @@ export interface ImportResult {
 
 export interface ImportOptions {
   folder?: string;
-  databasePath?: string;
+  database?: AppDatabase;
   approvedSourceRoot?: string;
 }
 
 const defaultFolder = workspacePath('packs/incoming');
-const defaultDatabase = workspacePath('.local/exam-packs.sqlite');
 
 const isWithin = (parent: string, candidate: string): boolean => {
   const pathFromParent = path.relative(parent, candidate);
@@ -156,7 +151,11 @@ const resolveRequestedSources = async (
     return firstError;
   }
 
-  const sources = resolutions.flatMap((resolution) => ('error' in resolution ? [] : [resolution]));
+  const sources: ResolvedSource[] = [];
+
+  sources.push(
+    ...resolutions.filter((resolution): resolution is ResolvedSource => !('error' in resolution)),
+  );
 
   return { sources };
 };
@@ -188,7 +187,8 @@ const preparePackFile = async (
   let input: unknown;
 
   try {
-    input = decodeJsonText(await readFile(filePath, 'utf-8'));
+    // SAFETY: JSON.parse returns untrusted input; validateExamPack narrows it below.
+    input = JSON.parse(await readFile(filePath, 'utf-8')) as unknown;
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'unknown error';
 
@@ -230,15 +230,15 @@ const preparePackFile = async (
   };
 };
 
-const storePreparedPack = (
+const storePreparedPack = async (
   prepared: PreparedPackImport,
-  databasePath: string,
+  database: AppDatabase | undefined,
   approvedSourceRoot: string | undefined,
-): FileImportResult => {
+): Promise<FileImportResult> => {
   const { entryName, pack, packKey, sourceAssets } = prepared;
 
   try {
-    saveImportedPack(databasePath, pack, sourceAssets, approvedSourceRoot);
+    await saveImportedPack(database, pack, sourceAssets, approvedSourceRoot);
 
     return { kind: 'imported', packKey };
   } catch (error) {
@@ -251,7 +251,7 @@ const storePreparedPack = (
     try {
       const refreshed =
         approvedSourceRoot !== undefined &&
-        refreshApprovedLocalSources(databasePath, pack, sourceAssets, approvedSourceRoot);
+        (await refreshApprovedLocalSources(database, pack, sourceAssets, approvedSourceRoot));
 
       return refreshed
         ? { kind: 'refreshed', packKey }
@@ -297,7 +297,7 @@ const getPackFiles = async (folder: string): Promise<Dirent[]> => {
 const importPackFilesInBatches = async (
   files: Dirent[],
   folder: string,
-  databasePath: string,
+  database: AppDatabase | undefined,
   approvedSourceRoot: string | undefined,
   result: ImportResult,
 ): Promise<void> => {
@@ -313,33 +313,38 @@ const importPackFilesInBatches = async (
       ),
     );
 
-    const batchResults = preparations.map((preparation): FileImportResult =>
-      'error' in preparation
-        ? { error: preparation.error, kind: 'error' }
-        : storePreparedPack(preparation.prepared, databasePath, approvedSourceRoot),
+    // Keep SQLite writes serial so duplicate pack versions refresh in filename order.
+    // oxlint-disable-next-line no-await-in-loop
+    const importResults = await preparations.reduce<Promise<FileImportResult[]>>(
+      async (pending, preparation) => {
+        const results = await pending;
+
+        const importResult: FileImportResult =
+          'error' in preparation
+            ? { error: preparation.error, kind: 'error' }
+            : await storePreparedPack(preparation.prepared, database, approvedSourceRoot);
+
+        results.push(importResult);
+
+        return results;
+      },
+      Promise.resolve([]),
     );
 
-    result.errors.push(
-      ...batchResults.flatMap((importResult) =>
-        importResult.kind === 'error' ? [importResult.error] : [],
-      ),
-    );
-    result.imported.push(
-      ...batchResults.flatMap((importResult) =>
-        importResult.kind === 'imported' ? [importResult.packKey] : [],
-      ),
-    );
-    result.refreshed.push(
-      ...batchResults.flatMap((importResult) =>
-        importResult.kind === 'refreshed' ? [importResult.packKey] : [],
-      ),
-    );
+    importResults.forEach((importResult) => {
+      if (importResult.kind === 'error') {
+        result.errors.push(importResult.error);
+      } else if (importResult.kind === 'imported') {
+        result.imported.push(importResult.packKey);
+      } else {
+        result.refreshed.push(importResult.packKey);
+      }
+    });
   }
 };
 
 export const importPacksFromFolder = async (options: ImportOptions = {}): Promise<ImportResult> => {
   const folder = path.resolve(options.folder ?? defaultFolder);
-  const databasePath = path.resolve(options.databasePath ?? defaultDatabase);
   const imported: string[] = [];
   const refreshed: string[] = [];
   const errors: string[] = [];
@@ -373,7 +378,7 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
     errors.push(`No .json exam packs found in ${folder}.`);
   }
 
-  await importPackFilesInBatches(files, folder, databasePath, approvedSourceRoot, {
+  await importPackFilesInBatches(files, folder, options.database, approvedSourceRoot, {
     errors,
     imported,
     refreshed,
@@ -381,5 +386,3 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
 
   return { errors, imported, refreshed };
 };
-
-export const getPackIndex = (databasePath = defaultDatabase) => listImportedPacks(databasePath);

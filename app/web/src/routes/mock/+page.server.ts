@@ -8,7 +8,7 @@ import {
 } from '#lib/quiz/constants.js';
 import { getFormString } from '#lib/server/form-data.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
-import { getPackIndex } from '#lib/server/packs/importer.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 import {
   createMockAttempt,
   getMockAttempt,
@@ -17,20 +17,15 @@ import {
   saveMockAnswer,
   submitMockAttempt,
 } from '#lib/server/quiz/mock-service.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
-const databasePath = workspacePath('.local/exam-packs.sqlite');
-
-export const load: PageServerLoad = ({ url }) => {
-  const packs = getPackIndex();
+export const load: PageServerLoad = async ({ url }) => {
+  const packs = await listImportedPacks();
   const attemptId = url.searchParams.get('attempt');
 
   const attempt =
-    attemptId === null
-      ? getResumableMockAttempt(databasePath)
-      : getMockAttempt(databasePath, attemptId);
+    attemptId === null ? await getResumableMockAttempt() : await getMockAttempt(attemptId);
 
   if (attemptId !== null && attempt === undefined) {
     httpError(HTTP_NOT_FOUND, 'Mock attempt not found.');
@@ -38,27 +33,22 @@ export const load: PageServerLoad = ({ url }) => {
 
   const questionCount = Number(url.searchParams.get('count') ?? String(DEFAULT_QUESTION_COUNT));
 
-  const coverages: Record<string, ReturnType<typeof getMockCoverage> | undefined> =
-    Object.fromEntries(
-      packs.map((pack): [string, ReturnType<typeof getMockCoverage> | undefined] => {
-        const key = `${pack.examId}|${pack.packId}|${pack.packVersion}`;
+  const coverageEntries = await Promise.all(
+    packs.map(async (pack) => {
+      const key = `${pack.examId}|${pack.packId}|${pack.packVersion}`;
 
-        try {
-          return [
-            key,
-            getMockCoverage(
-              databasePath,
-              pack.examId,
-              pack.packId,
-              pack.packVersion,
-              questionCount,
-            ),
-          ];
-        } catch {
-          return [key, undefined];
-        }
-      }),
-    );
+      try {
+        return [
+          key,
+          await getMockCoverage(pack.examId, pack.packId, pack.packVersion, questionCount),
+        ] as const;
+      } catch {
+        return [key, undefined] as const;
+      }
+    }),
+  );
+
+  const coverages = Object.fromEntries(coverageEntries);
 
   return {
     attempt,
@@ -75,8 +65,7 @@ export const actions: Actions = {
     const attemptId = getFormString(formData, 'attemptId');
 
     try {
-      saveMockAnswer(
-        databasePath,
+      await saveMockAnswer(
         attemptId,
         getFormString(formData, 'questionId'),
         formData.getAll('answerIds').map(String),
@@ -128,8 +117,7 @@ export const actions: Actions = {
     }
 
     try {
-      const attempt = createMockAttempt({
-        databasePath,
+      const attempt = await createMockAttempt({
         durationMinutes,
         examId,
         packId,
@@ -143,7 +131,7 @@ export const actions: Actions = {
       );
     } catch (error) {
       if (isHttpError(error, HTTP_BAD_REQUEST)) {
-        const coverage = getMockCoverage(databasePath, examId, packId, packVersion, questionCount);
+        const coverage = await getMockCoverage(examId, packId, packVersion, questionCount);
 
         return fail(HTTP_BAD_REQUEST, {
           gaps: coverage.gaps,
@@ -157,7 +145,7 @@ export const actions: Actions = {
   submit: async ({ request }) => {
     const formData = await request.formData();
     const attemptId = getFormString(formData, 'attemptId');
-    submitMockAttempt(databasePath, attemptId);
+    await submitMockAttempt(attemptId);
 
     return redirect(
       HTTP_STATUS_REDIRECT,

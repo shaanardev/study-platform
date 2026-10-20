@@ -1,22 +1,25 @@
 import { randomUUID } from 'node:crypto';
-import path from 'node:path';
-import type { SQLOutputValue } from 'node:sqlite';
 
-import { validateExamPack } from '@learning-platform/exam-pack';
-import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
+import type { PackQuestion } from '@learning-platform/exam-pack';
 import { error as httpError } from '@sveltejs/kit';
 
 import { MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
+import type { AppDatabase } from '#lib/server/database/connection.js';
+import { getEffectivePack } from '#lib/server/feedback/service.js';
+import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import {
   getApprovedSourceRoot,
   getImportedPack,
   getImportedSourceAsset,
-  openPackDatabase,
-} from '#lib/server/db/packs.js';
-import { getEffectivePack } from '#lib/server/feedback/service.js';
-import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
-import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';
-import { workspacePath } from '#lib/server/workspace-paths.js';
+} from '#lib/server/packs/repository.js';
+
+import {
+  createPracticeSessionRecord,
+  getPracticeHistory,
+  getPracticeSessionRecord,
+  getResumablePracticeSessionId,
+  savePracticeAnswer,
+} from './repository.js';
 
 export interface QuizAnswer {
   questionId: string;
@@ -45,7 +48,7 @@ export interface PracticeSession {
 }
 
 export interface StartPracticeOptions {
-  databasePath?: string;
+  database?: AppDatabase;
   examId: string;
   packId: string;
   packVersion: string;
@@ -55,171 +58,86 @@ export interface StartPracticeOptions {
   random?: () => number;
 }
 
-type DatabaseRow = Record<string, SQLOutputValue>;
-
-const column = (row: DatabaseRow, name: string): SQLOutputValue | undefined => row[name];
-
-const parseStringArray = (value: SQLOutputValue | undefined): string[] => {
-  try {
-    return decodeJsonStringArray(String(value));
-  } catch {
-    throw new Error('Stored practice session data is invalid.');
-  }
-};
-
-const parsePracticeStatus = (value: SQLOutputValue | undefined): PracticeSession['status'] => {
-  if (value === 'in_progress' || value === 'completed') {
-    return value;
-  }
-
-  throw new Error('Stored practice session status is invalid.');
-};
-
-const parseQuestionSnapshot = (
-  value: SQLOutputValue | undefined,
-  basePack: ExamPack,
-): PackQuestion[] => {
-  const storedQuestions = decodeJsonText(String(value));
-
-  const questions = {
-    ...basePack,
-    questions: storedQuestions,
-  };
-
-  const result = validateExamPack(questions);
-
-  if (!result.valid) {
-    throw new Error('Stored practice session questions are invalid.');
-  }
-
-  return result.pack.questions;
-};
-
 const containsInvalidAnswer = (submitted: string[], options: PackQuestion['options']): boolean =>
   submitted.some((id) => !options.some((option) => option.id === id));
 
 const matchesAnswerSet = (submitted: string[], correct: string[]): boolean =>
   submitted.length === correct.length && correct.every((id) => submitted.includes(id));
 
-const dbPath = (pathInput?: string) =>
-  path.resolve(pathInput ?? workspacePath('.local/exam-packs.sqlite'));
+const toPracticeSession = (
+  stored: NonNullable<Awaited<ReturnType<typeof getPracticeSessionRecord>>>,
+): PracticeSession => {
+  const { session: row, answers: storedAnswers } = stored;
+  const questions = row.question_snapshot;
 
-const readSession = (databasePath: string, id: string): PracticeSession | undefined => {
-  const database = openPackDatabase(databasePath);
-
-  try {
-    const row = database
-      .prepare(
-        `
-      SELECT id, exam_id AS examId, pack_id AS packId, pack_version AS packVersion,
-        domain_ids_json AS domainIds, question_ids_json AS questionIds, status,
-        created_at AS createdAt, updated_at AS updatedAt, question_snapshot_json AS questionSnapshot
-      FROM practice_sessions WHERE id = ?
-    `,
-      )
-      .get(id);
-
-    if (!row) {
-      return undefined;
-    }
-
-    const pack = getImportedPack(
-      String(column(row, 'examId')),
-      String(column(row, 'packId')),
-      String(column(row, 'packVersion')),
-      databasePath,
-    );
-
-    if (!pack) {
-      return undefined;
-    }
-
-    const questionSnapshot = column(row, 'questionSnapshot');
-
-    const sessionQuestions =
-      questionSnapshot !== undefined && questionSnapshot !== null
-        ? parseQuestionSnapshot(questionSnapshot, pack)
-        : pack.questions;
-
-    const answers = database
-      .prepare(
-        `
-      SELECT question_id AS questionId, answer_ids_json AS answerIds, correct,
-        answered_at AS answeredAt
-      FROM practice_answers WHERE session_id = ? ORDER BY answered_at, rowid
-    `,
-      )
-      .all(id)
-      .map((answer) => {
-        const questionId = String(column(answer, 'questionId'));
-        const question = sessionQuestions.find((item) => item.id === questionId);
-
-        return {
-          answerIds: parseStringArray(column(answer, 'answerIds')),
-          answerIdsCorrect: question?.answerIds ?? [],
-          answeredAt: String(column(answer, 'answeredAt')),
-          correct: Boolean(column(answer, 'correct')),
-          explanation: question?.explanation ?? '',
-          questionId,
-          sources: question?.sources ?? [],
-        };
-      });
-
-    const session: Omit<PracticeSession, 'questions'> = {
-      answers,
-      createdAt: String(column(row, 'createdAt')),
-      domainIds: parseStringArray(column(row, 'domainIds')),
-      examId: String(column(row, 'examId')),
-      id: String(column(row, 'id')),
-      packId: String(column(row, 'packId')),
-      packVersion: String(column(row, 'packVersion')),
-      questionIds: parseStringArray(column(row, 'questionIds')),
-      status: parsePracticeStatus(column(row, 'status')),
-      updatedAt: String(column(row, 'updatedAt')),
-    };
+  const answers = storedAnswers.map((answer) => {
+    const question = questions.find((item) => item.id === answer.question_id);
 
     return {
-      ...session,
-      questions: session.questionIds.flatMap((questionId) => {
-        const question = sessionQuestions.find((item) => item.id === questionId);
-
-        if (!question) {
-          return [];
-        }
-
-        const safeQuestion: PracticeQuestion = {
-          domainId: question.domainId,
-          explanation: question.explanation,
-          id: question.id,
-          options: question.options,
-          prompt: question.prompt,
-          sources: question.sources,
-          type: question.type,
-        };
-
-        return [safeQuestion];
-      }),
+      answerIds: answer.answer_ids,
+      answerIdsCorrect: question?.answerIds ?? [],
+      answeredAt: answer.answered_at,
+      correct: Boolean(answer.correct),
+      explanation: question?.explanation ?? '',
+      questionId: answer.question_id,
+      sources: question?.sources ?? [],
     };
-  } finally {
-    database.close();
-  }
+  });
+
+  return {
+    answers,
+    createdAt: row.created_at,
+    domainIds: row.domain_ids,
+    examId: row.exam_id,
+    id: row.id,
+    packId: row.pack_id,
+    packVersion: row.pack_version,
+    questionIds: row.question_ids,
+    questions: row.question_ids.flatMap((questionId) => {
+      const question = questions.find((item) => item.id === questionId);
+
+      if (!question) {
+        return [];
+      }
+
+      const safe: PracticeQuestion = {
+        domainId: question.domainId,
+        explanation: question.explanation,
+        id: question.id,
+        options: question.options,
+        prompt: question.prompt,
+        sources: question.sources,
+        type: question.type,
+      };
+
+      return [safe];
+    }),
+    status: row.status,
+    updatedAt: row.updated_at,
+  };
 };
 
-export const createPracticeSession = (options: StartPracticeOptions): PracticeSession => {
-  const databasePath = dbPath(options.databasePath);
+const readSession = async (id: string, database?: AppDatabase) => {
+  const stored = await getPracticeSessionRecord(id, database);
 
-  const importedPack = getImportedPack(
+  return stored ? toPracticeSession(stored) : undefined;
+};
+
+export const createPracticeSession = async (
+  options: StartPracticeOptions,
+): Promise<PracticeSession> => {
+  const importedPack = await getImportedPack(
     options.examId,
     options.packId,
     options.packVersion,
-    databasePath,
+    options.database,
   );
 
   if (!importedPack) {
     httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
   }
 
-  const pack = getEffectivePack(databasePath, importedPack);
+  const pack = await getEffectivePack(importedPack, options.database);
   const domainIds = [...new Set(options.domainIds)];
 
   if (domainIds.some((id) => !pack.domains.some((domain) => domain.id === id))) {
@@ -234,19 +152,20 @@ export const createPracticeSession = (options: StartPracticeOptions): PracticeSe
     httpError(HTTP_BAD_REQUEST, `Question count must be between 1 and ${MAX_QUESTION_COUNT}.`);
   }
 
-  const selectedQuestionIds = options.questionIds ? [...new Set(options.questionIds)] : undefined;
+  const selectedQuestionIds =
+    options.questionIds === undefined ? undefined : [...new Set(options.questionIds)];
 
   if (
-    selectedQuestionIds?.some((id) => !pack.questions.some((question) => question.id === id)) ===
-    true
+    selectedQuestionIds !== undefined &&
+    selectedQuestionIds.some((id) => !pack.questions.some((question) => question.id === id))
   ) {
     httpError(HTTP_BAD_REQUEST, 'Choose questions from this exam pack version.');
   }
 
   const candidates = pack.questions.filter((question) =>
-    selectedQuestionIds
-      ? selectedQuestionIds.includes(question.id)
-      : domainIds.length === 0 || domainIds.includes(question.domainId),
+    selectedQuestionIds === undefined
+      ? domainIds.length === 0 || domainIds.includes(question.domainId)
+      : selectedQuestionIds.includes(question.id),
   );
 
   if (
@@ -256,121 +175,83 @@ export const createPracticeSession = (options: StartPracticeOptions): PracticeSe
     httpError(HTTP_BAD_REQUEST, 'There are not that many questions in the selected domains.');
   }
 
-  const database = openPackDatabase(databasePath);
+  const states = await getPracticeHistory(
+    options.examId,
+    options.packId,
+    options.packVersion,
+    options.database,
+  );
 
-  try {
-    const history = database
-      .prepare(
-        `
-      SELECT a.question_id AS questionId, MAX(CASE WHEN a.correct = 0 THEN 1 ELSE 0 END) AS missed,
-        COUNT(a.question_id) AS seen
-      FROM practice_answers a JOIN practice_sessions s ON s.id = a.session_id
-      WHERE s.exam_id = ? AND s.pack_id = ? AND s.pack_version = ?
-      GROUP BY a.question_id
-    `,
-      )
-      .all(options.examId, options.packId, options.packVersion);
+  const random = options.random ?? Math.random;
 
-    const states = new Map(
-      history.map((row) => [
-        String(column(row, 'questionId')),
-        { missed: Boolean(column(row, 'missed')), seen: Number(column(row, 'seen')) > 0 },
-      ]),
-    );
+  const shuffle = (items: PackQuestion[]) => {
+    const shuffled = [...items];
 
-    const random = options.random ?? Math.random;
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const other = Math.floor(random() * (index + 1));
+      const current = shuffled[index];
+      const target = shuffled[other];
 
-    const shuffle = (items: PackQuestion[]) => {
-      const shuffled = [...items];
-
-      for (let index = shuffled.length - 1; index > 0; index -= 1) {
-        const other = Math.floor(random() * (index + 1));
-        const current = shuffled[index];
-        const alternative = shuffled[other];
-
-        if (!current || !alternative) {
-          continue;
-        }
-
-        shuffled[index] = alternative;
+      if (current !== undefined && target !== undefined) {
+        shuffled[index] = target;
         shuffled[other] = current;
       }
-
-      return shuffled;
-    };
-
-    const unseen = shuffle(candidates.filter((question) => states.get(question.id)?.seen !== true));
-
-    const missed = shuffle(
-      candidates.filter((question) => states.get(question.id)?.missed === true),
-    );
-
-    const otherSeen = shuffle(
-      candidates.filter(
-        (question) =>
-          states.get(question.id)?.seen === true && states.get(question.id)?.missed !== true,
-      ),
-    );
-
-    const questionIds = [...unseen, ...missed, ...otherSeen]
-      .slice(0, options.questionCount)
-      .map((question) => question.id);
-
-    const id = randomUUID();
-    database
-      .prepare(
-        `
-      INSERT INTO practice_sessions (id, exam_id, pack_id, pack_version, domain_ids_json,
-        question_ids_json, status, question_snapshot_json) VALUES (?, ?, ?, ?, ?, ?, 'in_progress', ?)
-    `,
-      )
-      .run(
-        id,
-        options.examId,
-        options.packId,
-        options.packVersion,
-        JSON.stringify(domainIds),
-        JSON.stringify(questionIds),
-        JSON.stringify(pack.questions),
-      );
-    const created = readSession(databasePath, id);
-
-    if (!created) {
-      throw new Error('Could not load the new practice session.');
     }
 
-    return created;
-  } finally {
-    database.close();
+    return shuffled;
+  };
+
+  const unseen = shuffle(candidates.filter((q) => states.get(q.id)?.seen !== true));
+  const missed = shuffle(candidates.filter((q) => states.get(q.id)?.missed === true));
+
+  const otherSeen = shuffle(
+    candidates.filter((q) => states.get(q.id)?.seen === true && states.get(q.id)?.missed !== true),
+  );
+
+  const questionIds = [...unseen, ...missed, ...otherSeen]
+    .slice(0, options.questionCount)
+    .map((q) => q.id);
+
+  const id = randomUUID();
+  await createPracticeSessionRecord(
+    {
+      domain_ids: domainIds,
+      exam_id: options.examId,
+      id,
+      pack_id: options.packId,
+      pack_version: options.packVersion,
+      question_ids: questionIds,
+      question_snapshot: pack.questions,
+      status: 'in_progress',
+    },
+    options.database,
+  );
+  const created = await readSession(id, options.database);
+
+  if (!created) {
+    throw new Error('Could not load the new practice session.');
   }
+
+  return created;
 };
 
-export const getPracticeSession = (databasePath: string, id: string): PracticeSession | undefined =>
-  readSession(dbPath(databasePath), id);
+export const getPracticeSession = async (sessionId: string, database?: AppDatabase) =>
+  await readSession(sessionId, database);
 
-export const getResumablePracticeSession = (databasePath: string): PracticeSession | undefined => {
-  const database = openPackDatabase(dbPath(databasePath));
+export const getResumablePracticeSession = async (database?: AppDatabase) => {
+  const id = await getResumablePracticeSessionId(database);
 
-  try {
-    const row = database
-      .prepare(
-        `SELECT id FROM practice_sessions WHERE status = 'in_progress' ORDER BY updated_at DESC, rowid DESC LIMIT 1`,
-      )
-      .get();
-
-    return row ? readSession(dbPath(databasePath), String(column(row, 'id'))) : undefined;
-  } finally {
-    database.close();
-  }
+  return id === undefined ? undefined : await readSession(id, database);
 };
 
-export const answerQuestion = (
-  databasePath: string,
+export const answerQuestion = async (
   sessionId: string,
   questionId: string,
   answerIds: string[],
-): QuizAnswer => {
-  const session = getPracticeSession(databasePath, sessionId);
+  database?: AppDatabase,
+): Promise<QuizAnswer> => {
+  const stored = await getPracticeSessionRecord(sessionId, database);
+  const session = stored ? toPracticeSession(stored) : undefined;
 
   if (session?.status !== 'in_progress') {
     httpError(HTTP_NOT_FOUND, 'This practice session is no longer in progress.');
@@ -382,33 +263,7 @@ export const answerQuestion = (
     httpError(HTTP_BAD_REQUEST, 'That question cannot be answered in this session.');
   }
 
-  const importedPack = getImportedPack(
-    session.examId,
-    session.packId,
-    session.packVersion,
-    dbPath(databasePath),
-  );
-
-  const database = openPackDatabase(dbPath(databasePath));
-  let questionSnapshot = importedPack?.questions ?? [];
-
-  try {
-    const row = database
-      .prepare('SELECT question_snapshot_json AS snapshot FROM practice_sessions WHERE id = ?')
-      .get(sessionId);
-
-    const snapshot = row ? column(row, 'snapshot') : undefined;
-
-    if (snapshot !== undefined && snapshot !== null && importedPack !== undefined) {
-      questionSnapshot = parseQuestionSnapshot(snapshot, importedPack);
-    }
-  } finally {
-    database.close();
-  }
-
-  const correctQuestion =
-    questionSnapshot.find((item) => item.id === questionId) ??
-    importedPack?.questions.find((item) => item.id === questionId);
+  const correctQuestion = stored?.session.question_snapshot.find((item) => item.id === questionId);
 
   if (!correctQuestion) {
     httpError(HTTP_NOT_FOUND, 'Question not found in the imported pack version.');
@@ -416,48 +271,27 @@ export const answerQuestion = (
 
   const submitted = [...new Set(answerIds)];
 
-  if (submitted.length === 0 || containsInvalidAnswer(submitted, question.options)) {
+  if (!submitted.length || containsInvalidAnswer(submitted, question.options)) {
     httpError(HTTP_BAD_REQUEST, 'Select a valid answer before continuing.');
   }
 
   const correct = matchesAnswerSet(submitted, correctQuestion.answerIds);
-  const answerDatabase = openPackDatabase(dbPath(databasePath));
-
-  try {
-    answerDatabase.exec('BEGIN');
-    answerDatabase
-      .prepare(
-        `INSERT INTO practice_answers (session_id, question_id, answer_ids_json, correct) VALUES (?, ?, ?, ?) `,
-      )
-      .run(sessionId, questionId, JSON.stringify(submitted), Number(correct));
-
-    const answerCountRow = answerDatabase
-      .prepare('SELECT COUNT(*) AS count FROM practice_answers WHERE session_id = ?')
-      .get(sessionId);
-
-    const answerCount = Number(answerCountRow ? column(answerCountRow, 'count') : 0);
-    answerDatabase
-      .prepare(
-        `UPDATE practice_sessions SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      )
-      .run(answerCount >= session.questionIds.length ? 'completed' : 'in_progress', sessionId);
-    answerDatabase.exec('COMMIT');
-  } catch (error) {
-    try {
-      answerDatabase.exec('ROLLBACK');
-    } catch {
-      /* preserve the original error */
-    }
-
-    throw error;
-  } finally {
-    answerDatabase.close();
-  }
+  const answeredAt = new Date().toISOString();
+  await savePracticeAnswer(
+    {
+      answerIds: submitted,
+      answeredAt,
+      correct,
+      questionId,
+      sessionId,
+    },
+    database,
+  );
 
   return {
     answerIds: submitted,
     answerIdsCorrect: correctQuestion.answerIds,
-    answeredAt: new Date().toISOString(),
+    answeredAt,
     correct,
     explanation: correctQuestion.explanation,
     questionId,
@@ -466,14 +300,14 @@ export const answerQuestion = (
 };
 
 export const readQuestionSource = async (
-  databasePath: string,
   examId: string,
   packId: string,
   packVersion: string,
   questionId: string,
   sourcePath: string,
+  database?: AppDatabase,
 ) => {
-  const pack = getImportedPack(examId, packId, packVersion, dbPath(databasePath));
+  const pack = await getImportedPack(examId, packId, packVersion, database);
 
   const source = pack?.questions
     .find((question) => question.id === questionId)
@@ -489,7 +323,7 @@ export const readQuestionSource = async (
 
   if (
     source.path.startsWith('file:') &&
-    getApprovedSourceRoot(dbPath(databasePath), examId, packId, packVersion) === undefined
+    (await getApprovedSourceRoot(database, examId, packId, packVersion)) === undefined
   ) {
     httpError(
       HTTP_NOT_FOUND,
@@ -497,8 +331,8 @@ export const readQuestionSource = async (
     );
   }
 
-  const asset = getImportedSourceAsset(
-    dbPath(databasePath),
+  const asset = await getImportedSourceAsset(
+    database,
     examId,
     packId,
     packVersion,
@@ -510,5 +344,5 @@ export const readQuestionSource = async (
     httpError(HTTP_NOT_FOUND, 'Saved source excerpt is unavailable.');
   }
 
-  return await Promise.resolve({ label: asset.label, text: asset.excerpt });
+  return { label: asset.label, text: asset.excerpt };
 };
