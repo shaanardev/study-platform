@@ -13,6 +13,7 @@ export const variables = defineEnvVars({
       if (value !== undefined && (value.length === 0 || !path.isAbsolute(value))) {
         throw new Error(`${databasePathVariable} must be a non-empty absolute SQLite path.`);
       }
+
       return value;
     },
   },

@@ -1,6 +1,7 @@
+import type { ExamPack } from '@learning-platform/exam-pack';
+
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import type { ExamPack } from '@learning-platform/exam-pack';
 
 export interface PackIndexItem {
   examId: string;
@@ -73,6 +74,7 @@ export const refreshApprovedLocalSources = async (
   approvedSourceRoot: string,
 ): Promise<boolean> => {
   const localSourceAssets = sourceAssets.filter(({ source }) => source.path.startsWith('file:'));
+
   if (localSourceAssets.length === 0) {
     return false;
   }
@@ -87,6 +89,7 @@ export const refreshApprovedLocalSources = async (
         .where('pack_id', '=', pack.pack.id)
         .where('pack_version', '=', pack.pack.version)
         .executeTakeFirst();
+
       if (!existing || JSON.stringify(existing.content) !== JSON.stringify(pack)) {
         return false;
       }
@@ -122,6 +125,7 @@ export const refreshApprovedLocalSources = async (
           )
           .execute();
       }
+
       return true;
     });
 };
@@ -140,6 +144,7 @@ export const getApprovedSourceRoot = async (
     .where('pack_id', '=', packId)
     .where('pack_version', '=', packVersion)
     .executeTakeFirst();
+
   return row?.approved_source_root ?? undefined;
 };
 
@@ -194,6 +199,7 @@ export const getImportedPack = async (
     .where('pack_id', '=', packId)
     .where('pack_version', '=', packVersion)
     .executeTakeFirst();
+
   return row?.content;
 };
 
@@ -215,5 +221,6 @@ export const getImportedSourceAsset = async (
     .where('question_id', '=', questionId)
     .where('source_path', '=', sourcePath)
     .executeTakeFirst();
+
   return row;
 };

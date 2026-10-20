@@ -8,6 +8,7 @@ import type { AppDatabaseSchema } from '#lib/server/database/types.js';
 const dbOrApp = (database?: AppDatabase): AppDatabase => database ?? getAppDatabase();
 
 type PracticeSessionRow = Selectable<AppDatabaseSchema['practice_sessions']>;
+
 type MockAttemptRow = Selectable<AppDatabaseSchema['mock_attempts']>;
 
 export const getPracticeHistory = async (
@@ -28,6 +29,7 @@ export const getPracticeHistory = async (
     .where('s.pack_version', '=', packVersion)
     .groupBy('a.question_id')
     .execute();
+
   return new Map(rows.map((row) => [row.question_id, { missed: row.missed > 0, seen: true }]));
 };
 
@@ -50,14 +52,17 @@ export const createPracticeSessionRecord = async (
 
 export const getPracticeSessionRecord = async (id: string, database?: AppDatabase) => {
   const db = dbOrApp(database);
+
   const session = await db
     .selectFrom('practice_sessions')
     .selectAll()
     .where('id', '=', id)
     .executeTakeFirst();
+
   if (!session) {
     return null;
   }
+
   const answers = await db
     .selectFrom('practice_answers')
     .select(['question_id', 'answer_ids', 'correct', 'answered_at'])
@@ -65,6 +70,7 @@ export const getPracticeSessionRecord = async (id: string, database?: AppDatabas
     .orderBy('answered_at')
     .orderBy(sql.ref('rowid'))
     .execute();
+
   return { answers, session };
 };
 
@@ -76,6 +82,7 @@ export const getResumablePracticeSessionId = async (database?: AppDatabase) => {
     .orderBy('updated_at', 'desc')
     .orderBy(sql.ref('rowid'), 'desc')
     .executeTakeFirst();
+
   return row?.id;
 };
 
@@ -102,16 +109,19 @@ export const savePracticeAnswer = async (
           session_id: input.sessionId,
         })
         .execute();
+
       const session = await trx
         .selectFrom('practice_sessions')
         .select('question_ids')
         .where('id', '=', input.sessionId)
         .executeTakeFirstOrThrow();
+
       const { count } = await trx
         .selectFrom('practice_answers')
         .select((eb) => eb.fn.countAll().as('count'))
         .where('session_id', '=', input.sessionId)
         .executeTakeFirstOrThrow();
+
       await trx
         .updateTable('practice_sessions')
         .set({
@@ -140,14 +150,17 @@ export const createMockAttemptRecord = async (
 
 export const getMockAttemptRecord = async (id: string, database?: AppDatabase) => {
   const db = dbOrApp(database);
+
   const attempt = await db
     .selectFrom('mock_attempts')
     .selectAll()
     .where('id', '=', id)
     .executeTakeFirst();
+
   if (!attempt) {
     return null;
   }
+
   const answers = await db
     .selectFrom('mock_answers')
     .select(['question_id', 'answer_ids', 'answered_at'])
@@ -155,6 +168,7 @@ export const getMockAttemptRecord = async (id: string, database?: AppDatabase) =
     .orderBy('answered_at')
     .orderBy(sql.ref('rowid'))
     .execute();
+
   return { answers, attempt };
 };
 
@@ -166,6 +180,7 @@ export const getResumableMockAttemptId = async (database?: AppDatabase) => {
     .orderBy('created_at', 'desc')
     .orderBy(sql.ref('rowid'), 'desc')
     .executeTakeFirst();
+
   return row?.id;
 };
 

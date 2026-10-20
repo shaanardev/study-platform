@@ -4,6 +4,7 @@ import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url }) => {
   const get = (key: string) => url.searchParams.get(key) ?? '';
+
   const source = await readQuestionSource(
     get('examId'),
     get('packId'),
@@ -11,6 +12,7 @@ export const GET: RequestHandler = async ({ url }) => {
     get('questionId'),
     get('path'),
   );
+
   return new Response(`${source.label}\n\n${source.text}`, {
     headers: {
       'cache-control': 'private, max-age=3600',

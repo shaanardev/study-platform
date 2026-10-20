@@ -17,6 +17,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
   const packs = await listImportedPacks();
+
   const selected =
     packs.find(
       (pack) =>
@@ -24,14 +25,17 @@ export const load: PageServerLoad = async ({ url }) => {
         pack.packId === url.searchParams.get('packId') &&
         pack.packVersion === url.searchParams.get('packVersion'),
     ) ?? packs[0];
+
   if (!selected) {
     return { feedback: [], pack: undefined, packs };
   }
+
   const { pack, feedback } = await readPackForReview(
     selected.examId,
     selected.packId,
     selected.packVersion,
   );
+
   return { feedback, pack, packs };
 };
 
@@ -50,48 +54,59 @@ export const actions: Actions = {
     const formData = await request.formData();
     const reviewTarget = getReviewTarget(formData);
     let correction: unknown;
+
     try {
       correction = decodeJsonText(getFormString(formData, 'correction') || '{}');
     } catch {
       return fail(HTTP_BAD_REQUEST, { message: 'Correction must be valid JSON.' });
     }
+
     if (!isJsonObject(correction)) {
       return fail(HTTP_BAD_REQUEST, { message: 'Correction must be a JSON object.' });
     }
+
     try {
       await createCorrection({ ...reviewTarget, correction });
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(HTTP_BAD_REQUEST, { message: error.message });
       }
+
       throw error instanceof Error ? error : new Error('Could not save question correction.');
     }
+
     return redirect(HTTP_STATUS_REDIRECT, selectedUrl(reviewTarget));
   },
   flag: async ({ request }) => {
     const formData = await request.formData();
     const reviewTarget = getReviewTarget(formData);
+
     try {
       await flagQuestion({ ...reviewTarget, reason: getFormString(formData, 'reason') });
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(HTTP_BAD_REQUEST, { message: error.message });
       }
+
       throw error instanceof Error ? error : new Error('Could not save question flag.');
     }
+
     return redirect(HTTP_STATUS_REDIRECT, selectedUrl(reviewTarget));
   },
   retire: async ({ request }) => {
     const formData = await request.formData();
     const reviewTarget = getReviewTarget(formData);
+
     try {
       await retireQuestion(reviewTarget, formData.get('retired') === 'true');
     } catch (error) {
       if (error instanceof FeedbackValidationError) {
         return fail(HTTP_BAD_REQUEST, { message: error.message });
       }
+
       throw error instanceof Error ? error : new Error('Could not update question retirement.');
     }
+
     return redirect(HTTP_STATUS_REDIRECT, selectedUrl(reviewTarget));
   },
 };

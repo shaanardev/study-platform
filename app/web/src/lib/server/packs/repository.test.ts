@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '#lib/server/database/connection.js';
@@ -10,7 +11,6 @@ import {
   listImportedPacks,
   saveImportedPack,
 } from '#lib/server/packs/repository.js';
-import type { ExamPack } from '@learning-platform/exam-pack';
 
 const temporaryDirectories: string[] = [];
 const databases: Awaited<ReturnType<typeof createDatabase>>[] = [];
@@ -34,6 +34,7 @@ describe('pack persistence', () => {
     temporaryDirectories.push(directory);
     const database = await createDatabase(path.join(directory, 'packs.sqlite'));
     databases.push(database);
+
     const pack: ExamPack = {
       domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
       exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
@@ -61,10 +62,12 @@ describe('pack persistence', () => {
     await expect(
       getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, database),
     ).resolves.toStrictEqual(pack);
+
     const stored = await database
       .selectFrom('imported_packs')
       .select('content as content')
       .executeTakeFirstOrThrow();
+
     expect(stored.content).toStrictEqual(pack);
     expect(stored.content).toBeTypeOf('object');
     await expect(listImportedPacks(database)).resolves.toStrictEqual([

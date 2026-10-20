@@ -1,9 +1,9 @@
+import type { PackQuestion } from '@learning-platform/exam-pack';
 import { sql } from 'kysely';
 
 import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import type { PackQuestion } from '@learning-platform/exam-pack';
 
 export interface ProgressAttempt {
   id: string;
@@ -153,7 +153,8 @@ export const getProgress = async (
   ]);
 
   const attempts = new Map<string, ProgressAttempt>();
-  for (const row of practiceRows) {
+
+  practiceRows.forEach((row) => {
     const attempt = attempts.get(attemptKey('practice', row.id)) ?? {
       answeredCount: 0,
       completedAt: row.updatedAt,
@@ -169,14 +170,16 @@ export const getProgress = async (
       questionCount: row.question_ids.length,
       status: row.status,
     };
+
     if (row.questionId !== null) {
       attempt.answeredCount += 1;
       attempt.correctCount += row.correct ?? 0;
     }
-    attempts.set(attemptKey('practice', row.id), attempt);
-  }
 
-  for (const row of mockRows) {
+    attempts.set(attemptKey('practice', row.id), attempt);
+  });
+
+  mockRows.forEach((row) => {
     const attempt = attempts.get(attemptKey('mock', row.id)) ?? {
       answeredCount: 0,
       completedAt: row.createdAt,
@@ -192,31 +195,37 @@ export const getProgress = async (
       questionCount: row.question_ids.length,
       status: row.status,
     };
+
     if (row.questionId !== null && row.answer_ids !== null) {
       attempt.answeredCount += 1;
       const question = row.question_snapshot.find((item) => item.id === row.questionId);
+
       if (answerIsCorrect(question, row.answer_ids)) {
         attempt.correctCount += 1;
       }
     }
+
     attempts.set(attemptKey('mock', row.id), attempt);
-  }
+  });
 
   const orderedAttempts = [...attempts.values()].toSorted((a, b) =>
     b.completedAt.localeCompare(a.completedAt),
   );
+
   const domainTotals = new Map<string, DomainScore>();
   const missedTotals = new Map<string, MissedQuestion>();
 
-  for (const row of answerRows) {
+  answerRows.forEach((row) => {
     const snapshot = row.question_snapshot;
     const question = snapshot.find((item) => item.id === row.questionId);
     const domain = question && row.content.domains.find((item) => item.id === question.domainId);
+
     if (!question || !domain) {
-      continue;
+      return;
     }
 
     const scoreId = scoreKey(row.examId, row.packId, row.packVersion, domain.id);
+
     const score = domainTotals.get(scoreId) ?? {
       answeredCount: 0,
       correctCount: 0,
@@ -229,6 +238,7 @@ export const getProgress = async (
       packVersion: row.packVersion,
       percent: 0,
     };
+
     score.answeredCount += 1;
     score.correctCount += row.correct;
     score.percent = Math.round((score.correctCount / score.answeredCount) * PERCENTAGE_SCALE);
@@ -236,6 +246,7 @@ export const getProgress = async (
 
     if (row.correct === 0) {
       const missedId = missedKey(row.examId, row.packId, row.packVersion, question.id);
+
       const missed = missedTotals.get(missedId) ?? {
         domainId: domain.id,
         domainTitle: domain.title,
@@ -248,10 +259,11 @@ export const getProgress = async (
         prompt: question.prompt,
         questionId: question.id,
       };
+
       missed.missCount += 1;
       missedTotals.set(missedId, missed);
     }
-  }
+  });
 
   return {
     domainScores: [...domainTotals.values()].toSorted(

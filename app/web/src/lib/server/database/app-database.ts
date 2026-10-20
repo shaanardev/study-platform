@@ -1,12 +1,15 @@
 import { createDatabase } from '#lib/server/database/connection.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
-import { databasePath } from '#lib/server/database/path.js';
+import type { AppDatabase, DatabasePathGuard } from '#lib/server/database/connection.js';
 
 let appDatabase: AppDatabase | undefined;
 
 /** Called once from SvelteKit's server init hook before requests are served. */
-export const initializeAppDatabase = async (): Promise<AppDatabase> => {
-  appDatabase ??= await createDatabase(databasePath);
+export const initializeAppDatabase = async (
+  selectedPath: string,
+  assertSafePath?: DatabasePathGuard,
+): Promise<AppDatabase> => {
+  appDatabase ??= await createDatabase(selectedPath, assertSafePath);
+
   return appDatabase;
 };
 
@@ -15,6 +18,7 @@ export const getAppDatabase = (): AppDatabase => {
   if (appDatabase === undefined) {
     throw new Error('The app database has not been initialized by the server init hook.');
   }
+
   return appDatabase;
 };
 

@@ -12,8 +12,10 @@ export const actions: Actions = {
     const formData = await request.formData();
     const approved = formData.get('approveLocalSourceRoot') === 'on';
     const rootValue = formData.get('approvedSourceRoot');
+
     const approvedSourceRoot =
       approved && Schema.is(Schema.String)(rootValue) ? rootValue.trim() : undefined;
+
     const result =
       approved && approvedSourceRoot !== undefined && approvedSourceRoot.length === 0
         ? {
@@ -26,6 +28,7 @@ export const actions: Actions = {
               ? { approvedSourceRoot }
               : {},
           );
+
     return { importResult: result };
   },
 };

@@ -23,15 +23,20 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ url }) => {
   const packs = await listImportedPacks();
   const attemptId = url.searchParams.get('attempt');
+
   const attempt =
     attemptId === null ? await getResumableMockAttempt() : await getMockAttempt(attemptId);
+
   if (attemptId !== null && attempt === undefined) {
     httpError(HTTP_NOT_FOUND, 'Mock attempt not found.');
   }
+
   const questionCount = Number(url.searchParams.get('count') ?? String(DEFAULT_QUESTION_COUNT));
+
   const coverageEntries = await Promise.all(
     packs.map(async (pack) => {
       const key = `${pack.examId}|${pack.packId}|${pack.packVersion}`;
+
       try {
         return [
           key,
@@ -42,7 +47,9 @@ export const load: PageServerLoad = async ({ url }) => {
       }
     }),
   );
+
   const coverages = Object.fromEntries(coverageEntries);
+
   return {
     attempt,
     coverages,
@@ -56,6 +63,7 @@ export const actions: Actions = {
   answer: async ({ request }) => {
     const formData = await request.formData();
     const attemptId = getFormString(formData, 'attemptId');
+
     try {
       await saveMockAnswer(
         attemptId,
@@ -64,10 +72,15 @@ export const actions: Actions = {
       );
     } catch (error) {
       if (isHttpError(error, HTTP_BAD_REQUEST)) {
-        return fail(HTTP_BAD_REQUEST, { gaps: [], message: 'Select a valid answer before saving.' });
+        return fail(HTTP_BAD_REQUEST, {
+          gaps: [],
+          message: 'Select a valid answer before saving.',
+        });
       }
+
       throw error;
     }
+
     return redirect(
       HTTP_STATUS_REDIRECT,
       `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`,
@@ -80,12 +93,18 @@ export const actions: Actions = {
     const packVersion = getFormString(formData, 'packVersion');
     const questionCount = Number(formData.get('questionCount'));
     const durationMinutes = Number(formData.get('durationMinutes'));
-    if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > MAX_QUESTION_COUNT) {
+
+    if (
+      !Number.isInteger(questionCount) ||
+      questionCount < 1 ||
+      questionCount > MAX_QUESTION_COUNT
+    ) {
       return fail(HTTP_BAD_REQUEST, {
         gaps: [],
         message: `Mock question count must be between 1 and ${MAX_QUESTION_COUNT}.`,
       });
     }
+
     if (
       !Number.isInteger(durationMinutes) ||
       durationMinutes < 1 ||
@@ -96,6 +115,7 @@ export const actions: Actions = {
         message: `Duration must be between 1 and ${MAX_MOCK_DURATION_MINUTES} minutes.`,
       });
     }
+
     try {
       const attempt = await createMockAttempt({
         durationMinutes,
@@ -104,6 +124,7 @@ export const actions: Actions = {
         packVersion,
         questionCount,
       });
+
       return redirect(
         HTTP_STATUS_REDIRECT,
         `${resolve('/mock')}?attempt=${encodeURIComponent(attempt.id)}`,
@@ -111,11 +132,13 @@ export const actions: Actions = {
     } catch (error) {
       if (isHttpError(error, HTTP_BAD_REQUEST)) {
         const coverage = await getMockCoverage(examId, packId, packVersion, questionCount);
+
         return fail(HTTP_BAD_REQUEST, {
           gaps: coverage.gaps,
           message: 'This pack does not have enough questions for the requested weighted mock.',
         });
       }
+
       throw error;
     }
   },
@@ -123,6 +146,7 @@ export const actions: Actions = {
     const formData = await request.formData();
     const attemptId = getFormString(formData, 'attemptId');
     await submitMockAttempt(attemptId);
+
     return redirect(
       HTTP_STATUS_REDIRECT,
       `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`,

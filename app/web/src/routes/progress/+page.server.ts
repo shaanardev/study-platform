@@ -14,9 +14,11 @@ export const actions: Actions = {
   practiceMissed: async ({ request }) => {
     const formData = await request.formData();
     const questionIds = formData.getAll('questionIds').map(String);
+
     if (questionIds.length === 0) {
       return { error: 'Select at least one missed question.' };
     }
+
     const session = await createPracticeSession({
       examId: getFormString(formData, 'examId'),
       packId: getFormString(formData, 'packId'),
@@ -24,6 +26,7 @@ export const actions: Actions = {
       questionCount: questionIds.length,
       questionIds,
     });
+
     return redirect(
       HTTP_STATUS_REDIRECT,
       `${resolve('/practice')}?session=${encodeURIComponent(session.id)}`,

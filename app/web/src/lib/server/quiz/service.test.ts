@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '#lib/server/database/connection.js';
@@ -13,7 +14,6 @@ import {
   saveImportedPack,
 } from '#lib/server/packs/repository.js';
 import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
-import { validateExamPack } from '@learning-platform/exam-pack';
 import {
   answerQuestion,
   createPracticeSession,
@@ -43,22 +43,25 @@ describe('practice sessions', () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'practice-quiz-'));
     directories.push(directory);
     const databasePath = path.join(directory, 'practice.sqlite');
+
     const pack = validateExamPack(
       JSON.parse(
         await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
       ),
     );
-    if (!pack.valid) {
-      throw new Error(pack.errors.join(' '));
-    }
+
+    expect.assert(pack.valid, pack.errors.join(' '));
+
     const database = await createDatabase(databasePath);
     databases.push(database);
     await saveImportedPack(database, pack.pack);
+
     return { database, pack: pack.pack };
   };
 
   it('grades multiple choice by exact answer set and persists the answer for resume', async () => {
     const { database, pack } = await setup();
+
     const session = await createPracticeSession({
       database,
       domainIds: ['pipelines'],
@@ -68,6 +71,11 @@ describe('practice sessions', () => {
       questionCount: 1,
       random: () => 0,
     });
+
+    const [sessionQuestion] = session.questions;
+
+    expect.assert(sessionQuestion, 'The practice session should include a question.');
+
     const result = await answerQuestion(session.id, 'pipeline-validation-basics', ['a'], database);
     const saved = await getPracticeSession(session.id, database);
 
@@ -75,7 +83,7 @@ describe('practice sessions', () => {
       correct: result.correct,
       correctAnswerIds: result.answerIdsCorrect,
       explanationContainsExpectedText: result.explanation.includes('Quality checks'),
-      hiddenAnswerIds: Object.hasOwn(session.questions[0] ?? {}, 'answerIds'),
+      hiddenAnswerIds: Object.hasOwn(sessionQuestion, 'answerIds'),
       persistedAnswerCount: saved?.answers.length,
       persistedAnswerIds: saved?.answers[0]?.answerIds,
       submittedAnswerIds: result.answerIds,
@@ -93,6 +101,7 @@ describe('practice sessions', () => {
   it('completes a session when concurrent answers fill the stored question set', async () => {
     const { database, pack } = await setup();
     const questionIds = ['pipeline-validation-basics', 'delta-transaction-basics'];
+
     const session = await createPracticeSession({
       database,
       examId: pack.exam.id,
@@ -120,6 +129,7 @@ describe('practice sessions', () => {
 
   it('favours unseen questions first and offers missed questions again within the chosen domain', async () => {
     const { database, pack } = await setup();
+
     const first = await createPracticeSession({
       database,
       domainIds: ['pipelines'],
@@ -129,6 +139,7 @@ describe('practice sessions', () => {
       questionCount: 1,
       random: () => 0,
     });
+
     await answerQuestion(first.id, 'pipeline-validation-basics', ['c'], database);
 
     const broad = await createPracticeSession({
@@ -139,6 +150,7 @@ describe('practice sessions', () => {
       questionCount: 1,
       random: () => 0,
     });
+
     const retry = await createPracticeSession({
       database,
       domainIds: ['pipelines'],
@@ -155,6 +167,7 @@ describe('practice sessions', () => {
 
   it('starts a practice session with the exact missed questions selected from progress', async () => {
     const { database, pack } = await setup();
+
     const selected = await createPracticeSession({
       database,
       examId: pack.exam.id,
@@ -175,14 +188,15 @@ describe('practice sessions', () => {
     const database = await createDatabase(databasePath);
     databases.push(database);
     await createSamplePackFolder(incoming);
+
     const pack = validateExamPack(
       JSON.parse(
         await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
       ),
     );
-    if (!pack.valid) {
-      throw new Error(pack.errors.join(' '));
-    }
+
+    expect.assert(pack.valid, pack.errors.join(' '));
+
     const result = await importPacksFromFolder({ database, folder: incoming });
     await rm(incoming, { force: true, recursive: true });
 
@@ -212,15 +226,16 @@ describe('practice sessions', () => {
     await writeFile(notePath, 'Local citation content.\n');
     const packPath = path.join(incoming, 'sample-learning-pack.json');
     const parsed = validateExamPack(JSON.parse(await readFile(packPath, 'utf-8')));
-    if (!parsed.valid) {
-      throw new Error(parsed.errors.join(' '));
-    }
+
+    expect.assert(parsed.valid, parsed.errors.join(' '));
+
     const authored = parsed.pack;
     const [firstQuestion] = authored.questions;
     const bundledCitation = firstQuestion?.sources[0];
-    if (!firstQuestion || !bundledCitation) {
-      throw new Error('Missing representative question source.');
-    }
+
+    expect.assert(firstQuestion, 'Missing representative question.');
+    expect.assert(bundledCitation, 'Missing representative question source.');
+
     const noteCitation = { label: 'Local notes', path: pathToFileURL(notePath).href };
     firstQuestion.sources.push(noteCitation);
     await writeFile(packPath, JSON.stringify(authored));
@@ -230,7 +245,9 @@ describe('practice sessions', () => {
       database,
       folder: incoming,
     });
+
     await rm(incoming, { force: true, recursive: true });
+
     const bundled = await readQuestionSource(
       authored.exam.id,
       'synthetic-foundations',
@@ -239,6 +256,7 @@ describe('practice sessions', () => {
       bundledCitation.path,
       database,
     );
+
     const note = await readQuestionSource(
       authored.exam.id,
       'synthetic-foundations',
@@ -327,22 +345,24 @@ describe('practice sessions', () => {
     await writeFile(notePath, 'Reapproved local notes.\n');
     const packPath = path.join(incoming, 'sample-learning-pack.json');
     const parsed = validateExamPack(JSON.parse(await readFile(packPath, 'utf-8')));
-    if (!parsed.valid) {
-      throw new Error(parsed.errors.join(' '));
-    }
+
+    expect.assert(parsed.valid, parsed.errors.join(' '));
+
     const authored = parsed.pack;
     const [question] = authored.questions;
     const citation = question?.sources[0];
-    if (!question || !citation) {
-      throw new Error('Missing representative question citation.');
-    }
+
+    expect.assert(question, 'Missing representative question.');
+    expect.assert(citation, 'Missing representative question citation.');
+
     citation.path = pathToFileURL(notePath).href;
     await writeFile(packPath, JSON.stringify(authored));
     const validated = validateExamPack(authored);
-    if (!validated.valid) {
-      throw new Error(validated.errors.join(' '));
-    }
+
+    expect.assert(validated.valid, validated.errors.join(' '));
+
     await saveImportedPack(database, validated.pack);
+
     const session = await createPracticeSession({
       database,
       examId: authored.exam.id,
@@ -354,17 +374,21 @@ describe('practice sessions', () => {
 
     const changedPack = { ...authored, pack: { ...authored.pack, title: 'Changed title' } };
     await writeFile(packPath, JSON.stringify(changedPack));
+
     const changedImport = await importPacksFromFolder({
       approvedSourceRoot: notes,
       database,
       folder: incoming,
     });
+
     await writeFile(packPath, JSON.stringify(authored));
+
     const reauthorized = await importPacksFromFolder({
       approvedSourceRoot: notes,
       database,
       folder: incoming,
     });
+
     const retainedPack = await getImportedPack(
       authored.exam.id,
       authored.pack.id,

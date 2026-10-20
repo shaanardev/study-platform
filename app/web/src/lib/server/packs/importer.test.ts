@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { ExamPack, PackQuestion, PackSource } from '@learning-platform/exam-pack';
 import { sql } from 'kysely';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -18,45 +20,46 @@ import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 
 const temporaryDirectories: string[] = [];
 const databases: AppDatabase[] = [];
+
 const createTestDatabase = async (databasePath: string): Promise<AppDatabase> => {
   const database = await createDatabase(databasePath);
   databases.push(database);
+
   return database;
 };
+
 const { join } = path;
-type PackDocument = {
-  questions: { id: string; sources: { label: string; path: string }[] }[];
-} & Record<string, unknown>;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-const isUnknownArray = (value: unknown): value is unknown[] => Array.isArray(value);
-
-const isPackDocument = (value: unknown): value is PackDocument =>
-  isRecord(value) &&
-  isUnknownArray(value['questions']) &&
-  value['questions'].every(
-    (question) =>
-      isRecord(question) &&
-      'id' in question &&
-      typeof question['id'] === 'string' &&
-      isUnknownArray(question['sources']) &&
-      question['sources'].every(
-        (source) =>
-          isRecord(source) &&
-          'label' in source &&
-          typeof source['label'] === 'string' &&
-          'path' in source &&
-          typeof source['path'] === 'string',
-      ),
-  );
-
-const readPackDocument = async (filePath: string): Promise<PackDocument> => {
+const readPackDocument = async (filePath: string): Promise<ExamPack> => {
+  // SAFETY: JSON.parse returns untrusted data; validateExamPack narrows it below.
   const parsed: unknown = JSON.parse(await readFile(filePath, 'utf-8')) as unknown;
-  if (!isPackDocument(parsed)) {
-    throw new Error('Expected the sample pack to contain source references.');
+  const validation = validateExamPack(parsed);
+
+  if (!validation.valid) {
+    throw new Error(`Expected a valid sample pack: ${validation.errors.join(' ')}`);
   }
-  return parsed;
+
+  return validation.pack;
+};
+
+const requireFirstQuestion = (pack: ExamPack): PackQuestion => {
+  const question = pack.questions.at(0);
+
+  if (question === undefined) {
+    throw new Error('Expected the sample pack to contain a question.');
+  }
+
+  return question;
+};
+
+const requireFirstSource = (question: PackQuestion): PackSource => {
+  const source = question.sources.at(0);
+
+  if (source === undefined) {
+    throw new Error('Expected the sample pack to contain a source reference.');
+  }
+
+  return source;
 };
 
 describe(importPacksFromFolder, () => {
@@ -124,14 +127,13 @@ describe(importPacksFromFolder, () => {
     await createSamplePackFolder(incoming);
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
-    const source = content.questions[0]?.sources[0];
-    if (!source) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    const source = requireFirstSource(requireFirstQuestion(content));
+
     source.path = 'assets/not-present.md';
     await writeFile(packFile, JSON.stringify(content));
 
     const database = await createTestDatabase(join(directory, 'state', 'packs.sqlite'));
+
     const result = await importPacksFromFolder({
       database,
       folder: incoming,
@@ -153,11 +155,9 @@ describe(importPacksFromFolder, () => {
     await createSamplePackFolder(incoming);
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
-    const [question] = content.questions;
-    const citation = question?.sources[0];
-    if (!question || !citation) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    const question = requireFirstQuestion(content);
+    const citation = requireFirstSource(question);
+
     citation.path = pathToFileURL(packFile).href;
     const database = await createTestDatabase(join(directory, 'state', 'packs.sqlite'));
     await writeFile(packFile, JSON.stringify(content));
@@ -167,6 +167,7 @@ describe(importPacksFromFolder, () => {
       database,
       folder: incoming,
     });
+
     const assets = await database.selectFrom('saved_source_assets').selectAll().execute();
     expect(result.errors).toStrictEqual([]);
     expect(result.imported).toHaveLength(1);
@@ -187,11 +188,9 @@ describe(importPacksFromFolder, () => {
     await createSamplePackFolder(incoming);
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
-    const [question] = content.questions;
-    const citation = question?.sources[0];
-    if (!question || !citation) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    const question = requireFirstQuestion(content);
+    const citation = requireFirstSource(question);
+
     citation.path = pathToFileURL(notePath).href;
     await writeFile(packFile, JSON.stringify(content));
     await writeFile(notePath, 'First approved excerpt.');
@@ -201,7 +200,9 @@ describe(importPacksFromFolder, () => {
       database,
       folder: incoming,
     });
+
     await writeFile(notePath, 'Updated approved excerpt.');
+
     const refresh = await importPacksFromFolder({
       approvedSourceRoot: directory,
       database,
@@ -238,15 +239,14 @@ describe(importPacksFromFolder, () => {
     await writeFile(outside, 'outside notes');
     const packFile = join(incoming, 'sample-learning-pack.json');
     const content = await readPackDocument(packFile);
-    const citation = content.questions[0]?.sources[0];
-    if (!citation) {
-      throw new Error('Expected the sample pack to contain a source reference.');
-    }
+    const citation = requireFirstSource(requireFirstQuestion(content));
+
     citation.path = pathToFileURL(outside).href;
     await writeFile(packFile, JSON.stringify(content));
     const database = await createTestDatabase(join(directory, 'state', 'packs.sqlite'));
 
     const unapproved = await importPacksFromFolder({ database, folder: incoming });
+
     const outsideRoot = await importPacksFromFolder({
       approvedSourceRoot: incoming,
       database,

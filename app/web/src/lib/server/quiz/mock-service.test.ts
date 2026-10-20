@@ -2,11 +2,12 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+import { validateExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '#lib/server/database/connection.js';
+import { HTTP_BAD_REQUEST } from '#lib/server/http-status.js';
 import { saveImportedPack } from '#lib/server/packs/repository.js';
-import { validateExamPack } from '@learning-platform/exam-pack';
 import {
   createMockAttempt,
   getMockAttempt,
@@ -16,20 +17,10 @@ import {
 } from '#lib/server/quiz/mock-service.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
-const errorBodyMessage = (value: unknown): string | undefined => {
-  if (typeof value !== 'object' || value === null || !('body' in value)) {
-    return undefined;
-  }
-  const { body } = value;
-  if (typeof body !== 'object' || body === null || !('message' in body)) {
-    return undefined;
-  }
-  return typeof body.message === 'string' ? body.message : undefined;
-};
-
 describe('timed mock attempts', () => {
   const dirs: string[] = [];
   const databases: Awaited<ReturnType<typeof createDatabase>>[] = [];
+
   afterEach(async () => {
     await Promise.all(
       databases.splice(0).map(async (database) => {
@@ -42,27 +33,31 @@ describe('timed mock attempts', () => {
       }),
     );
   });
+
   const setup = async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'mock-exam-'));
     dirs.push(directory);
     const databasePath = path.join(directory, 'packs.sqlite');
+
     const validated = validateExamPack(
       JSON.parse(
         await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8'),
       ),
     );
-    if (!validated.valid) {
-      throw new Error(validated.errors.join(' '));
-    }
+
+    expect.assert(validated.valid, validated.errors.join(' '));
+
     const { pack } = validated;
     const database = await createDatabase(databasePath);
     databases.push(database);
     await saveImportedPack(database, pack);
+
     return { database, pack };
   };
 
   it('blocks an attempt when weighted domain coverage is insufficient', async () => {
     const { database, pack } = await setup();
+
     const coverage = await getMockCoverage(
       pack.exam.id,
       pack.pack.id,
@@ -70,6 +65,7 @@ describe('timed mock attempts', () => {
       5,
       database,
     );
+
     expect(coverage.gaps).toStrictEqual([
       { available: 1, id: 'delta-lake', missing: 2, required: 3, title: 'Delta Lake foundations' },
       {
@@ -80,24 +76,27 @@ describe('timed mock attempts', () => {
         title: 'Data pipeline foundations',
       },
     ]);
-    let thrown: unknown;
-    try {
-      await createMockAttempt({
+    await expect(
+      createMockAttempt({
         database,
         durationMinutes: 30,
         examId: pack.exam.id,
         packId: pack.pack.id,
         packVersion: pack.pack.version,
         questionCount: 5,
-      });
-    } catch (error) {
-      thrown = error;
-    }
-    expect(errorBodyMessage(thrown)).toContain('Insufficient weighted mock coverage');
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        message:
+          'Insufficient weighted mock coverage: Delta Lake foundations requires 3, has 1; Data pipeline foundations requires 2, has 1.',
+      },
+      status: HTTP_BAD_REQUEST,
+    });
   });
 
   it('persists answers and deadline across resume, then reveals scoring only after submit', async () => {
     const { database, pack } = await setup();
+
     const attempt = await createMockAttempt({
       database,
       durationMinutes: 2,
@@ -108,22 +107,25 @@ describe('timed mock attempts', () => {
       questionCount: 2,
       random: () => 0,
     });
+
     const [first] = attempt.questions;
-    if (!first) {
-      throw new Error('The mock attempt should include a question.');
-    }
-    const saved = await saveMockAnswer(
-      attempt.id,
-      first.id,
-      first.id === 'delta-transaction-basics' ? ['a'] : ['a', 'b'],
-      database,
-      20_000,
-    );
+
+    expect.assert(first, 'The mock attempt should include a question.');
+    expect(first.id).toBe('delta-transaction-basics');
+
+    const saved = await saveMockAnswer(attempt.id, first.id, ['a'], database, 20_000);
+
+    const [savedAnswer] = saved.answers;
+    const [savedQuestion] = saved.questions;
+
+    expect.assert(savedAnswer, 'The saved mock should include an answer.');
+    expect.assert(savedQuestion, 'The saved mock should include a question.');
+
     expect({
-      answerCorrect: Object.hasOwn(saved.answers[0] ?? {}, 'correct'),
-      answerExplanation: Object.hasOwn(saved.answers[0] ?? {}, 'explanation'),
-      questionAnswerIds: Object.hasOwn(saved.questions[0] ?? {}, 'answerIds'),
-      questionExplanation: Object.hasOwn(saved.questions[0] ?? {}, 'explanation'),
+      answerCorrect: Object.hasOwn(savedAnswer, 'correct'),
+      answerExplanation: Object.hasOwn(savedAnswer, 'explanation'),
+      questionAnswerIds: Object.hasOwn(savedQuestion, 'answerIds'),
+      questionExplanation: Object.hasOwn(savedQuestion, 'explanation'),
     }).toStrictEqual({
       answerCorrect: false,
       answerExplanation: false,
@@ -131,9 +133,9 @@ describe('timed mock attempts', () => {
       questionExplanation: false,
     });
     const resumed = await getMockAttempt(attempt.id, database, 40_000);
-    if (!resumed) {
-      throw new Error('The mock attempt should remain available.');
-    }
+
+    expect.assert(resumed, 'The mock attempt should remain available.');
+
     expect({
       answerCount: resumed.answers.length,
       hasScore: Object.hasOwn(resumed, 'score'),
@@ -168,6 +170,7 @@ describe('timed mock attempts', () => {
 
   it('expires at the persisted deadline and reveals the saved answers', async () => {
     const { database, pack } = await setup();
+
     const attempt = await createMockAttempt({
       database,
       durationMinutes: 1,
@@ -178,11 +181,12 @@ describe('timed mock attempts', () => {
       questionCount: 2,
       random: () => 0,
     });
+
     await saveMockAnswer(attempt.id, 'delta-transaction-basics', ['a'], database, 6000);
     const expired = await getMockAttempt(attempt.id, database, 65_000);
-    if (!expired) {
-      throw new Error('The expired mock attempt should remain available.');
-    }
+
+    expect.assert(expired, 'The expired mock attempt should remain available.');
+
     expect(expired.status).toBe('expired');
     expect(expired.score?.correct).toBe(1);
     expect(expired.questions[0]).toHaveProperty('explanation');
@@ -194,6 +198,7 @@ describe('timed mock attempts', () => {
     packWithoutThreshold.pack.version = '1.0.1';
     delete packWithoutThreshold.passingThreshold;
     await saveImportedPack(database, packWithoutThreshold);
+
     const attempt = await createMockAttempt({
       database,
       durationMinutes: 1,

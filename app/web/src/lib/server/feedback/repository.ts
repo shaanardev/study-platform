@@ -1,6 +1,7 @@
+import type { PackQuestion } from '@learning-platform/exam-pack';
+
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import type { PackQuestion } from '@learning-platform/exam-pack';
 
 export type QuestionCorrection = Partial<
   Pick<
@@ -75,6 +76,7 @@ export const updateFeedback = async (
           ]),
         key,
       ).executeTakeFirst();
+
       const current = currentRow ? toStoredFeedback(currentRow) : undefined;
       const next = { ...key, ...update(current) };
       await trx
@@ -98,6 +100,7 @@ export const updateFeedback = async (
           }),
         )
         .execute();
+
       return { ...next, correction: next.correction, flags: next.flags };
     });
 
@@ -116,6 +119,7 @@ export const listFeedbackRows = async (
     .where('pack_version', '=', packVersion)
     .orderBy('question_id')
     .execute();
+
   return rows.map(toStoredFeedback);
 };
 
@@ -129,5 +133,6 @@ export const listAllFeedbackRows = async (database?: AppDatabase): Promise<Store
     .orderBy('pack_version')
     .orderBy('question_id')
     .execute();
+
   return rows.map(toStoredFeedback);
 };

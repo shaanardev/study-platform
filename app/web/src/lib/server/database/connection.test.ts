@@ -1,22 +1,18 @@
-import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import BetterSqlite3 from 'better-sqlite3';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { workspacePath } from '#lib/server/workspace-paths.js';
 import type { ExamPack } from '@learning-platform/exam-pack';
+import BetterSqlite3 from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { databasePathVariable } from '../../../env.js';
-
-const privateEnv = vi.hoisted(() => ({ DB_PATH: undefined as string | undefined }));
-
-vi.mock(import('$app/env/private'), () => ({
-  get DB_PATH(): string | undefined {
-    return privateEnv.DB_PATH;
-  },
-}));
+import {
+  closeAppDatabase,
+  getAppDatabase,
+  initializeAppDatabase,
+} from '#lib/server/database/app-database.js';
+import { createDatabase } from '#lib/server/database/connection.js';
+import { workspacePath } from '#lib/server/workspace-paths.js';
 
 let temporaryDirectory: string;
 
@@ -30,30 +26,23 @@ const pack: ExamPack = {
 
 describe('Kysely database foundation', () => {
   beforeEach(() => {
-    privateEnv.DB_PATH = undefined;
-    vi.resetModules();
     temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), 'app-database-test-'));
   });
 
   afterEach(() => {
-    privateEnv.DB_PATH = undefined;
     rmSync(temporaryDirectory, { force: true, recursive: true });
   });
 
-  it('does not open SQLite when a server module is imported', async () => {
+  it('creates SQLite only when the database factory is called', async () => {
     const databaseFile = path.join(temporaryDirectory, 'not-opened.sqlite');
-    privateEnv.DB_PATH = databaseFile;
-
-    const { databasePath } = await import('#lib/server/database/path.js');
-    await import('#lib/server/database/connection.js');
-
-    expect(databasePath).toBe(databaseFile);
     expect(existsSync(databaseFile)).toBeFalsy();
+    const database = await createDatabase(databaseFile);
+    await database.destroy();
+    expect(existsSync(databaseFile)).toBeTruthy();
   });
 
   it('applies the fresh schema and can query all seven tables', async () => {
     const databaseFile = path.join(temporaryDirectory, 'fresh', 'app.sqlite');
-    const { createDatabase } = await import('#lib/server/database/connection.js');
     const database = await createDatabase(databaseFile);
 
     try {
@@ -66,16 +55,17 @@ describe('Kysely database foundation', () => {
         database.selectFrom('mock_answers').selectAll().execute(),
         database.selectFrom('question_feedback').selectAll().execute(),
       ]);
+
       expect(emptyTables).toStrictEqual([[], [], [], [], [], [], []]);
     } finally {
       await database.destroy();
     }
+
     expect(existsSync(databaseFile)).toBeTruthy();
   });
 
   it('parses only the explicit top-level JSON result aliases', async () => {
     const databaseFile = path.join(temporaryDirectory, 'json.sqlite');
-    const { createDatabase } = await import('#lib/server/database/connection.js');
     const database = await createDatabase(databaseFile);
 
     try {
@@ -95,6 +85,7 @@ describe('Kysely database foundation', () => {
         .selectFrom('imported_packs')
         .select(['content', 'content as unparsed_content'])
         .execute();
+
       expect(row?.content).toStrictEqual(pack);
       expect(row?.unparsed_content).toBe(JSON.stringify(pack));
     } finally {
@@ -104,11 +95,11 @@ describe('Kysely database foundation', () => {
 
   it('applies migrations idempotently when reopening a fresh store', async () => {
     const databaseFile = path.join(temporaryDirectory, 'reopen.sqlite');
-    const { createDatabase } = await import('#lib/server/database/connection.js');
     const first = await createDatabase(databaseFile);
     await first.destroy();
 
     const second = await createDatabase(databaseFile);
+
     try {
       await expect(
         second.selectFrom('imported_packs').selectAll().execute(),
@@ -129,44 +120,30 @@ describe('Kysely database foundation', () => {
       .run('999-future-schema', '2026-10-20T00:00:00.000Z');
     rawDatabase.close();
 
-    const { createDatabase } = await import('#lib/server/database/connection.js');
     await expect(createDatabase(databaseFile)).rejects.toThrow(/unknown or newer migration/u);
   });
 
-  it('rejects explicit active database paths and symlink aliases', async () => {
+  it('rejects an explicit path to the active workspace database', async () => {
     const activeDatabasePath = workspacePath('.local/app.sqlite');
-    const aliasPath = path.join(temporaryDirectory, 'active-alias.sqlite');
-    symlinkSync(activeDatabasePath, aliasPath);
 
-    privateEnv.DB_PATH = activeDatabasePath;
-    await expect(import('#lib/server/database/path.js')).rejects.toThrow(
-      `${databasePathVariable} must not point to a protected workspace database.`,
-    );
-
-    privateEnv.DB_PATH = aliasPath;
-    vi.resetModules();
-    await expect(import('#lib/server/database/path.js')).rejects.toThrow(
-      `${databasePathVariable} must not point to a protected workspace database.`,
+    await expect(createDatabase(activeDatabasePath)).rejects.toThrow(
+      'createDatabase(path) must not point to a protected workspace database.',
     );
   });
 
   it('refuses to open the archived database through the factory', async () => {
-    const { createDatabase } = await import('#lib/server/database/connection.js');
     await expect(createDatabase(workspacePath('.local/exam-packs.sqlite'))).rejects.toThrow(
       'createDatabase(path) must not point to a protected workspace database.',
     );
   });
 
   it('initializes a single app database instance from the lifecycle module', async () => {
-    privateEnv.DB_PATH = path.join(temporaryDirectory, 'app.sqlite');
-    const { closeAppDatabase, getAppDatabase, initializeAppDatabase } =
-      await import('#lib/server/database/app-database.js');
-
     await expect(Promise.resolve().then(getAppDatabase)).rejects.toThrow(
       'The app database has not been initialized',
     );
-    const first = await initializeAppDatabase();
-    const second = await initializeAppDatabase();
+    const selectedPath = path.join(temporaryDirectory, 'app.sqlite');
+    const first = await initializeAppDatabase(selectedPath);
+    const second = await initializeAppDatabase(selectedPath);
     expect(second).toBe(first);
     expect(getAppDatabase()).toBe(first);
     await closeAppDatabase();

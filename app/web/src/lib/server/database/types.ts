@@ -1,7 +1,7 @@
+import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 import type { JSONColumnType } from 'kysely';
 
 import type { QuestionCorrection } from '#lib/server/feedback/repository.js';
-import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 
 export interface ImportedPacksTable {
   exam_id: string;
