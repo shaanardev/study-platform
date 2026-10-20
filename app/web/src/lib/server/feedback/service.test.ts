@@ -296,8 +296,8 @@ describe('question feedback', () => {
     );
 
     await createCorrection({ ...key, correction: { answerIds: ['c'] } }, database);
-    await saveMockAnswer(attempt.id, question.id, ['b'], 2000, database);
-    const submittedAttempt = await submitMockAttempt(attempt.id, 3000, database);
+    await saveMockAnswer(attempt.id, question.id, ['b'], database, 2000);
+    const submittedAttempt = await submitMockAttempt(attempt.id, database, 3000);
     expect(
       submittedAttempt.answers.find((answer) => answer.questionId === question.id)?.correct,
     ).toBeTruthy();
