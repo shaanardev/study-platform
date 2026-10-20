@@ -6,7 +6,7 @@ import { Kysely, ParseJSONResultsPlugin, SqliteDialect } from 'kysely';
 import { Migrator } from 'kysely/migration';
 
 import { migrationProvider } from '#lib/server/database/migrations.js';
-import { assertPathNotProtected } from '#lib/server/database/path-policy.js';
+import { assertPathNotProtected } from '#lib/server/database/path.js';
 import type { AppDatabaseSchema } from '#lib/server/database/types.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 

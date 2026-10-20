@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createDatabasePathPolicy } from './path-policy.js';
+import { createDatabasePathPolicy } from './path.js';
 
 let workspaceRoot = '';
 

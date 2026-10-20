@@ -56,7 +56,7 @@ DB_PATH=/tmp/learning-platform-review/app.sqlite pnpm db:up
 DB_PATH=/tmp/learning-platform-review/app.sqlite pnpm dev
 ```
 
-Explicit paths must be distinct from the personal database, including symlink and hard-link aliases. Tests create isolated temporary stores. Importing modules or building the app does not open SQLite.
+An explicit `DB_PATH` must not normalize to one of the known workspace database paths. Tests create isolated temporary stores. Importing modules or building the app does not open SQLite.
 
 ## Workspace commands
 
