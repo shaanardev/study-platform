@@ -66,7 +66,7 @@ describe('question feedback', () => {
   afterEach(async () => {
     await Promise.all(
       databases.splice(0).map(async (database) => {
-        await database.close();
+        await database.destroy();
       }),
     );
     await Promise.all(

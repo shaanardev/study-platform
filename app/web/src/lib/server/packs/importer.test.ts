@@ -8,8 +8,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { AppDatabase } from '#lib/server/database/connection.js';
 import { createDatabase } from '#lib/server/database/connection.js';
-import { getPackIndex, importPacksFromFolder } from '#lib/server/packs/importer.js';
-import { getApprovedSourceRoot, getImportedSourceAsset } from '#lib/server/packs/repository.js';
+import { importPacksFromFolder } from '#lib/server/packs/importer.js';
+import {
+  getApprovedSourceRoot,
+  getImportedSourceAsset,
+  listImportedPacks,
+} from '#lib/server/packs/repository.js';
 import { createSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
 
 const temporaryDirectories: string[] = [];
@@ -59,7 +63,7 @@ describe(importPacksFromFolder, () => {
   afterEach(async () => {
     await Promise.all(
       databases.splice(0).map(async (database) => {
-        await database.close();
+        await database.destroy();
       }),
     );
     await Promise.all(
@@ -83,7 +87,7 @@ describe(importPacksFromFolder, () => {
       imported: ['sample-engineer-exam/synthetic-foundations@1.0.0'],
       refreshed: [],
     });
-    await expect(getPackIndex(database)).resolves.toStrictEqual([
+    await expect(listImportedPacks(database)).resolves.toStrictEqual([
       expect.objectContaining({
         examId: 'sample-engineer-exam',
         packId: 'synthetic-foundations',
@@ -276,6 +280,6 @@ describe(importPacksFromFolder, () => {
     expect(result.errors).toContain(
       'sample-learning-pack.json: could not store this pack (source asset write failed).',
     );
-    await expect(getPackIndex(database)).resolves.toStrictEqual([]);
+    await expect(listImportedPacks(database)).resolves.toStrictEqual([]);
   });
 });

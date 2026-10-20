@@ -6,19 +6,17 @@ import {
   listFeedbackRows,
   updateFeedback,
 } from '#lib/server/feedback/repository.js';
-import type { FeedbackKey, StoredFeedback } from '#lib/server/feedback/repository.js';
+import type {
+  FeedbackKey,
+  QuestionCorrection,
+  StoredFeedback,
+} from '#lib/server/feedback/repository.js';
 import { HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { getImportedPack } from '#lib/server/packs/repository.js';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 
-export type { FeedbackKey } from '#lib/server/feedback/repository.js';
-export type QuestionCorrection = Partial<
-  Pick<
-    PackQuestion,
-    'type' | 'domainId' | 'prompt' | 'options' | 'answerIds' | 'explanation' | 'sources'
-  >
->;
+export type { FeedbackKey, QuestionCorrection } from '#lib/server/feedback/repository.js';
 export type FeedbackItem = FeedbackKey & {
   flags: { reason: string }[];
   correction?: QuestionCorrection;

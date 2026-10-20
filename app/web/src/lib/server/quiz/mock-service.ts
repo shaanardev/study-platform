@@ -13,7 +13,7 @@ import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { getImportedPack } from '#lib/server/packs/repository.js';
 import { allocateWeightedQuestions, findCoverageGaps } from '#lib/server/quiz/mock-selection.js';
 import { createDeadline, isExpired, remainingMilliseconds } from '#lib/server/quiz/timing.js';
-import type { PackQuestion } from '@learning-platform/exam-pack';
+import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 
 import {
   createMockAttemptRecord,
@@ -56,18 +56,7 @@ export interface MockAttempt {
   };
 }
 
-export const getMockCoverage = async (
-  examId: string,
-  packId: string,
-  packVersion: string,
-  questionCount: number,
-  database?: AppDatabase,
-) => {
-  const importedPack = await getImportedPack(examId, packId, packVersion, database);
-  if (!importedPack) {
-    httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
-  }
-  const pack = await getEffectivePack(importedPack, database);
+const getMockCoverageForPack = (pack: ExamPack, questionCount: number) => {
   if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > MAX_QUESTION_COUNT) {
     httpError(HTTP_BAD_REQUEST, `Mock question count must be between 1 and ${MAX_QUESTION_COUNT}.`);
   }
@@ -82,6 +71,20 @@ export const getMockCoverage = async (
     gaps: findCoverageGaps(pack.domains, counts, questionCount),
     questionCount,
   };
+};
+
+export const getMockCoverage = async (
+  examId: string,
+  packId: string,
+  packVersion: string,
+  questionCount: number,
+  database?: AppDatabase,
+) => {
+  const importedPack = await getImportedPack(examId, packId, packVersion, database);
+  if (!importedPack) {
+    httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
+  }
+  return getMockCoverageForPack(await getEffectivePack(importedPack, database), questionCount);
 };
 
 const readMockAttempt = async (
@@ -218,13 +221,7 @@ export const createMockAttempt = async (options: {
       `Duration must be between 1 and ${MAX_MOCK_DURATION_MINUTES} minutes.`,
     );
   }
-  const coverage = await getMockCoverage(
-    options.examId,
-    options.packId,
-    options.packVersion,
-    options.questionCount,
-    options.database,
-  );
+  const coverage = getMockCoverageForPack(pack, options.questionCount);
   if (coverage.gaps.length) {
     httpError(
       400,

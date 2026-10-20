@@ -22,5 +22,5 @@ export const getAppDatabase = (): AppDatabase => {
 export const closeAppDatabase = async (): Promise<void> => {
   const database = appDatabase;
   appDatabase = undefined;
-  await database?.close();
+  await database?.destroy();
 };

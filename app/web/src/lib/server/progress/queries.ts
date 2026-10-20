@@ -1,5 +1,6 @@
-import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
+import { sql } from 'kysely';
 
+import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
 import type { PackQuestion } from '@learning-platform/exam-pack';
@@ -100,6 +101,7 @@ export const getProgress = async (
         'a.correct as correct',
       ])
       .orderBy('s.updated_at', 'desc')
+      .orderBy(sql.ref('s.rowid'), 'desc')
       .execute(),
     database
       .selectFrom('mock_attempts as m')
@@ -124,6 +126,8 @@ export const getProgress = async (
         'a.answer_ids as answer_ids',
       ])
       .orderBy('m.created_at', 'desc')
+      .orderBy(sql.ref('m.rowid'), 'desc')
+      .orderBy(sql.ref('a.rowid'))
       .execute(),
     database
       .selectFrom('practice_answers as a')
@@ -144,6 +148,7 @@ export const getProgress = async (
         'a.correct as correct',
       ])
       .orderBy('a.answered_at')
+      .orderBy(sql.ref('a.rowid'))
       .execute(),
   ]);
 

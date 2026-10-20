@@ -8,7 +8,7 @@ import {
 } from '#lib/quiz/constants.js';
 import { getFormString } from '#lib/server/form-data.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
-import { getPackIndex } from '#lib/server/packs/importer.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 import {
   createMockAttempt,
   getMockAttempt,
@@ -21,7 +21,7 @@ import {
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
-  const packs = await getPackIndex();
+  const packs = await listImportedPacks();
   const attemptId = url.searchParams.get('attempt');
   const attempt =
     attemptId === null ? await getResumableMockAttempt() : await getMockAttempt(attemptId);

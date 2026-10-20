@@ -1,47 +1,14 @@
+import { sql } from 'kysely';
+import type { Selectable } from 'kysely';
+
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import type { PackQuestion } from '@learning-platform/exam-pack';
+import type { AppDatabaseSchema } from '#lib/server/database/types.js';
 
 const dbOrApp = (database?: AppDatabase): AppDatabase => database ?? getAppDatabase();
 
-export interface PracticeSessionRow {
-  id: string;
-  exam_id: string;
-  pack_id: string;
-  pack_version: string;
-  domain_ids: string[];
-  question_ids: string[];
-  question_snapshot: PackQuestion[];
-  status: 'in_progress' | 'completed';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PracticeAnswerRow {
-  question_id: string;
-  answer_ids: string[];
-  correct: 0 | 1;
-  answered_at: string;
-}
-
-export interface MockAttemptRow {
-  id: string;
-  exam_id: string;
-  pack_id: string;
-  pack_version: string;
-  question_ids: string[];
-  question_snapshot: PackQuestion[];
-  duration_minutes: number;
-  deadline: number;
-  status: 'in_progress' | 'submitted' | 'expired';
-  created_at: string;
-}
-
-export interface MockAnswerRow {
-  question_id: string;
-  answer_ids: string[];
-  answered_at: string;
-}
+type PracticeSessionRow = Selectable<AppDatabaseSchema['practice_sessions']>;
+type MockAttemptRow = Selectable<AppDatabaseSchema['mock_attempts']>;
 
 export const getPracticeHistory = async (
   examId: string,
@@ -55,7 +22,6 @@ export const getPracticeHistory = async (
     .select([
       'a.question_id as question_id',
       (eb) => eb.fn.max(eb.case().when('a.correct', '=', 0).then(1).else(0).end()).as('missed'),
-      (eb) => eb.fn.count('a.question_id').as('seen'),
     ])
     .where('s.exam_id', '=', examId)
     .where('s.pack_id', '=', packId)
@@ -97,6 +63,7 @@ export const getPracticeSessionRecord = async (id: string, database?: AppDatabas
     .select(['question_id', 'answer_ids', 'correct', 'answered_at'])
     .where('session_id', '=', id)
     .orderBy('answered_at')
+    .orderBy(sql.ref('rowid'))
     .execute();
   return { answers, session };
 };
@@ -107,6 +74,7 @@ export const getResumablePracticeSessionId = async (database?: AppDatabase) => {
     .select('id')
     .where('status', '=', 'in_progress')
     .orderBy('updated_at', 'desc')
+    .orderBy(sql.ref('rowid'), 'desc')
     .executeTakeFirst();
   return row?.id;
 };
@@ -185,6 +153,7 @@ export const getMockAttemptRecord = async (id: string, database?: AppDatabase) =
     .select(['question_id', 'answer_ids', 'answered_at'])
     .where('attempt_id', '=', id)
     .orderBy('answered_at')
+    .orderBy(sql.ref('rowid'))
     .execute();
   return { answers, attempt };
 };
@@ -195,6 +164,7 @@ export const getResumableMockAttemptId = async (database?: AppDatabase) => {
     .select('id')
     .where('status', '=', 'in_progress')
     .orderBy('created_at', 'desc')
+    .orderBy(sql.ref('rowid'), 'desc')
     .executeTakeFirst();
   return row?.id;
 };

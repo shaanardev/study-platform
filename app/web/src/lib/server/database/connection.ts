@@ -20,9 +20,7 @@ const jsonResultAliases = new Set([
   'correction',
 ]);
 
-export type AppDatabase = Kysely<AppDatabaseSchema> & {
-  close: () => Promise<void>;
-};
+export type AppDatabase = Kysely<AppDatabaseSchema>;
 
 const hasMigrationTable = (sqlite: BetterSqlite3.Database): boolean =>
   sqlite
@@ -85,9 +83,5 @@ export const createDatabase = async (databasePath: string): Promise<AppDatabase>
     throw error;
   }
 
-  return Object.assign(db, {
-    close: async () => {
-      await db.destroy();
-    },
-  });
+  return db;
 };

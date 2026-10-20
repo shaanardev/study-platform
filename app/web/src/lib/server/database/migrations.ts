@@ -7,5 +7,6 @@ const migrationRegistry: Record<string, Migration> = {
 };
 
 export const migrationProvider: MigrationProvider = {
-  getMigrations: async () => await Promise.resolve(migrationRegistry),
+  // oxlint-disable-next-line require-await -- Kysely requires a promise from this static provider.
+  getMigrations: async () => migrationRegistry,
 };

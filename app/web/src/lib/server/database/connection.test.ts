@@ -10,13 +10,14 @@ import type { ExamPack } from '@learning-platform/exam-pack';
 
 import { databasePathVariable } from '../../../env.js';
 
+const privateEnv = vi.hoisted(() => ({ DB_PATH: undefined as string | undefined }));
+
 vi.mock(import('$app/env/private'), () => ({
   get DB_PATH(): string | undefined {
-    return process.env[databasePathVariable];
+    return privateEnv.DB_PATH;
   },
 }));
 
-const originalValue = process.env[databasePathVariable];
 let temporaryDirectory: string;
 
 const pack: ExamPack = {
@@ -29,24 +30,19 @@ const pack: ExamPack = {
 
 describe('Kysely database foundation', () => {
   beforeEach(() => {
-    Reflect.deleteProperty(process.env, databasePathVariable);
+    privateEnv.DB_PATH = undefined;
     vi.resetModules();
     temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), 'app-database-test-'));
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
-    if (originalValue === undefined) {
-      Reflect.deleteProperty(process.env, databasePathVariable);
-    } else {
-      process.env[databasePathVariable] = originalValue;
-    }
+    privateEnv.DB_PATH = undefined;
     rmSync(temporaryDirectory, { force: true, recursive: true });
   });
 
   it('does not open SQLite when a server module is imported', async () => {
     const databaseFile = path.join(temporaryDirectory, 'not-opened.sqlite');
-    vi.stubEnv(databasePathVariable, databaseFile);
+    privateEnv.DB_PATH = databaseFile;
 
     const { databasePath } = await import('#lib/server/database/path.js');
     await import('#lib/server/database/connection.js');
@@ -72,7 +68,7 @@ describe('Kysely database foundation', () => {
       ]);
       expect(emptyTables).toStrictEqual([[], [], [], [], [], [], []]);
     } finally {
-      await database.close();
+      await database.destroy();
     }
     expect(existsSync(databaseFile)).toBeTruthy();
   });
@@ -102,7 +98,7 @@ describe('Kysely database foundation', () => {
       expect(row?.content).toStrictEqual(pack);
       expect(row?.unparsed_content).toBe(JSON.stringify(pack));
     } finally {
-      await database.close();
+      await database.destroy();
     }
   });
 
@@ -110,7 +106,7 @@ describe('Kysely database foundation', () => {
     const databaseFile = path.join(temporaryDirectory, 'reopen.sqlite');
     const { createDatabase } = await import('#lib/server/database/connection.js');
     const first = await createDatabase(databaseFile);
-    await first.close();
+    await first.destroy();
 
     const second = await createDatabase(databaseFile);
     try {
@@ -118,7 +114,7 @@ describe('Kysely database foundation', () => {
         second.selectFrom('imported_packs').selectAll().execute(),
       ).resolves.toStrictEqual([]);
     } finally {
-      await second.close();
+      await second.destroy();
     }
   });
 
@@ -142,12 +138,12 @@ describe('Kysely database foundation', () => {
     const aliasPath = path.join(temporaryDirectory, 'active-alias.sqlite');
     symlinkSync(activeDatabasePath, aliasPath);
 
-    vi.stubEnv(databasePathVariable, activeDatabasePath);
+    privateEnv.DB_PATH = activeDatabasePath;
     await expect(import('#lib/server/database/path.js')).rejects.toThrow(
       `${databasePathVariable} must not point to a protected workspace database.`,
     );
 
-    vi.stubEnv(databasePathVariable, aliasPath);
+    privateEnv.DB_PATH = aliasPath;
     vi.resetModules();
     await expect(import('#lib/server/database/path.js')).rejects.toThrow(
       `${databasePathVariable} must not point to a protected workspace database.`,
@@ -162,7 +158,7 @@ describe('Kysely database foundation', () => {
   });
 
   it('initializes a single app database instance from the lifecycle module', async () => {
-    vi.stubEnv(databasePathVariable, path.join(temporaryDirectory, 'app.sqlite'));
+    privateEnv.DB_PATH = path.join(temporaryDirectory, 'app.sqlite');
     const { closeAppDatabase, getAppDatabase, initializeAppDatabase } =
       await import('#lib/server/database/app-database.js');
 

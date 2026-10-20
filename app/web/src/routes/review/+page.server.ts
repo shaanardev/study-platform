@@ -11,12 +11,12 @@ import {
 import { getFormString } from '#lib/server/form-data.js';
 import { HTTP_BAD_REQUEST, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
 import { decodeJsonText, isJsonObject } from '#lib/server/json.js';
-import { getPackIndex } from '#lib/server/packs/importer.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
-  const packs = await getPackIndex();
+  const packs = await listImportedPacks();
   const selected =
     packs.find(
       (pack) =>

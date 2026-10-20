@@ -4,11 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import {
-  listImportedPacks,
-  refreshApprovedLocalSources,
-  saveImportedPack,
-} from '#lib/server/packs/repository.js';
+import { refreshApprovedLocalSources, saveImportedPack } from '#lib/server/packs/repository.js';
 import type { ImportedSourceAsset } from '#lib/server/packs/repository.js';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import { workspacePath } from '#lib/server/workspace-paths.js';
@@ -236,41 +232,6 @@ const storePreparedPack = async (
   }
 };
 
-const storePreparedBatch = async (
-  preparations: PackPreparationResult[],
-  index: number,
-  database: AppDatabase | undefined,
-  approvedSourceRoot: string | undefined,
-  result: ImportResult,
-): Promise<void> => {
-  const preparation = preparations[index];
-  if (preparation === undefined) {
-    return;
-  }
-  const importResult: FileImportResult =
-    'error' in preparation
-      ? { error: preparation.error, kind: 'error' }
-      : await storePreparedPack(preparation.prepared, database, approvedSourceRoot);
-  switch (importResult.kind) {
-    case 'error': {
-      result.errors.push(importResult.error);
-      break;
-    }
-    case 'imported': {
-      result.imported.push(importResult.packKey);
-      break;
-    }
-    case 'refreshed': {
-      result.refreshed.push(importResult.packKey);
-      break;
-    }
-    default: {
-      throw new Error(`Unexpected file import result: ${JSON.stringify(importResult)}`);
-    }
-  }
-  await storePreparedBatch(preparations, index + 1, database, approvedSourceRoot, result);
-};
-
 const getApprovedSourceRoot = async (value: string | undefined): Promise<string | undefined> => {
   if (value === undefined || value.trim().length === 0) {
     return undefined;
@@ -307,8 +268,21 @@ const importPackFilesInBatches = async (
           await preparePackFile(entry.name, path.join(folder, entry.name), approvedSourceRoot),
       ),
     );
-    // oxlint-disable-next-line no-await-in-loop -- bound source preparation memory by batch.
-    await storePreparedBatch(preparations, 0, database, approvedSourceRoot, result);
+    for (const preparation of preparations) {
+      // oxlint-disable no-await-in-loop -- preserve prepared pack filename order.
+      const importResult: FileImportResult =
+        'error' in preparation
+          ? { error: preparation.error, kind: 'error' }
+          : await storePreparedPack(preparation.prepared, database, approvedSourceRoot);
+      // oxlint-enable no-await-in-loop
+      if (importResult.kind === 'error') {
+        result.errors.push(importResult.error);
+      } else if (importResult.kind === 'imported') {
+        result.imported.push(importResult.packKey);
+      } else {
+        result.refreshed.push(importResult.packKey);
+      }
+    }
   }
 };
 
@@ -349,5 +323,3 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
   });
   return { errors, imported, refreshed };
 };
-
-export const getPackIndex = async (database?: AppDatabase) => await listImportedPacks(database);

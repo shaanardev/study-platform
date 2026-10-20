@@ -2,7 +2,7 @@ import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
 import type { PackQuestion } from '@learning-platform/exam-pack';
 
-type QuestionCorrection = Partial<
+export type QuestionCorrection = Partial<
   Pick<
     PackQuestion,
     'type' | 'domainId' | 'prompt' | 'options' | 'answerIds' | 'explanation' | 'sources'
@@ -51,28 +51,6 @@ const toStoredFeedback = (row: {
   questionId: row.question_id,
   retired: row.retired,
 });
-
-/** Read feedback for one question. */
-export const getFeedback = async (
-  key: FeedbackKey,
-  database?: AppDatabase,
-): Promise<StoredFeedback | undefined> => {
-  const row = await whereKey(
-    dbOrApp(database)
-      .selectFrom('question_feedback')
-      .select([
-        'exam_id',
-        'pack_id',
-        'pack_version',
-        'question_id',
-        'flags',
-        'correction',
-        'retired',
-      ]),
-    key,
-  ).executeTakeFirst();
-  return row && toStoredFeedback(row);
-};
 
 /** Atomically merge and save one feedback row. */
 export const updateFeedback = async (

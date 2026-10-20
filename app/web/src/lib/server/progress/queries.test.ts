@@ -71,7 +71,7 @@ describe('progress queries', () => {
   afterEach(async () => {
     await Promise.all(
       databases.splice(0).map(async (database) => {
-        await database.close();
+        await database.destroy();
       }),
     );
     for (const directory of directories.splice(0)) {

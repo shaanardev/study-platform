@@ -3,7 +3,7 @@ import { error as httpError, fail, isHttpError, redirect } from '@sveltejs/kit';
 
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
 import { getFormString } from '#lib/server/form-data.js';
-import { getPackIndex } from '#lib/server/packs/importer.js';
+import { listImportedPacks } from '#lib/server/packs/repository.js';
 import {
   answerQuestion,
   createPracticeSession,
@@ -14,7 +14,7 @@ import {
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
-  const packs = await getPackIndex();
+  const packs = await listImportedPacks();
   const sessionId = url.searchParams.get('session');
   const session =
     sessionId === null ? await getResumablePracticeSession() : await getPracticeSession(sessionId);

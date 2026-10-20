@@ -2,6 +2,8 @@ import path from 'node:path';
 
 import { createServer } from 'vite';
 
+import type { AppDatabase } from '../src/lib/server/database/connection.js';
+
 const repositoryRoot = process.cwd();
 const webRoot = path.join(repositoryRoot, 'app/web');
 
@@ -21,10 +23,10 @@ const run = async (): Promise<void> => {
     const { databasePath } = pathsModule as unknown as { databasePath: string };
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Vite SSR module exports have no generic type.
     const { createDatabase } = connectionModule as unknown as {
-      createDatabase: (databasePath: string) => Promise<{ close: () => Promise<void> }>;
+      createDatabase: (databasePath: string) => Promise<AppDatabase>;
     };
     const database = await createDatabase(databasePath);
-    await database.close();
+    await database.destroy();
     console.log(`Database is up: ${databasePath}`);
   } finally {
     await server?.close();
