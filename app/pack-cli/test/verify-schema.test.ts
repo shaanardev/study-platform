@@ -119,7 +119,6 @@ describe(verifyPack, () => {
           { ...validPack, passingThreshold: 100 },
         ];
 
-        // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
         yield* Effect.forEach(cases, (scenario) =>
           Effect.gen(function* verifyInvalidCase() {
             yield* writeJson(packPath, scenario.value);
@@ -128,7 +127,6 @@ describe(verifyPack, () => {
             expect(result.failure.message).toContain(scenario.message);
           }),
         );
-        // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
         yield* Effect.forEach(validBoundaryCases, (value) =>
           Effect.gen(function* verifyValidBoundaryCase() {
             yield* writeJson(packPath, value);

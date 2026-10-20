@@ -172,12 +172,18 @@ importers:
       '@effect/tsgo':
         specifier: 0.51.1
         version: 0.51.1
+      '@types/estree':
+        specifier: 1.0.9
+        version: 1.0.9
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.5
       '@vitest/coverage-v8':
         specifier: ^5.0.5
         version: 5.0.5(vitest@5.0.5)
+      eslint:
+        specifier: 10.12.0
+        version: 10.12.0(jiti@2.7.0)(supports-color@7.2.0)
       oxfmt:
         specifier: 0.72.0
         version: 0.72.0(svelte@5.57.2(@typescript-eslint/types@8.71.1))

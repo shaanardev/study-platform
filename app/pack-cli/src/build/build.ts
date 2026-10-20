@@ -41,7 +41,6 @@ const rejectSymlinks = Effect.fn('rejectSymlinks')(function* rejectSymlinksEffec
   let ancestorMissing = false;
 
   yield* Effect.forEach(
-    // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
     parts,
     (part) =>
       Effect.gen(function* verifyPathPart() {
@@ -107,7 +106,6 @@ export const buildPack = Effect.fn('buildPack')(
       const sourceRoot = path.dirname(authoringFile);
 
       const questionFileDrafts = yield* Effect.forEach(
-        // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
         input.questionFiles ?? [],
         (reference) =>
           Effect.gen(function* readQuestionFile() {
@@ -253,7 +251,6 @@ export const buildPack = Effect.fn('buildPack')(
       const packPath = path.join(outputRoot, input.outputFile);
       yield* rejectSymlinks(packPath);
       yield* Effect.forEach(
-        // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
         artifacts,
         (artifact) => rejectSymlinks(artifact.destination),
       );

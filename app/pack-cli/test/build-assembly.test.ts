@@ -136,7 +136,6 @@ describe('build command', () => {
           })),
         ];
 
-        // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
         yield* Effect.forEach(cases, (scenario) =>
           Effect.gen(function* verifyScenario() {
             yield* writeJson(fixture.authoringPath, scenario.input);

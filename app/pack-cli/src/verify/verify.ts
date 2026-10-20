@@ -62,8 +62,6 @@ const validateBuiltPack = (contents: string) =>
 
 const verifyCliQuality = Effect.fn(function* verifyCliQuality(pack: PackForVerification) {
   const prompts = new Set<string>();
-
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach receives an iterable, not a thisArg.
   yield* Effect.forEach(pack.questions, (question) =>
     Effect.gen(function* verifyQuestion() {
       const prompt = normalized(question.prompt);

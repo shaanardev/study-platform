@@ -254,7 +254,6 @@ describe(verifyPack, () => {
           },
         ];
 
-        // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
         yield* Effect.forEach(malformedAudits, (scenario) =>
           Effect.gen(function* verifyMalformedAudit() {
             yield* writeJson(path.join(directory, 'assets', 'baseline.json'), scenario.audit);

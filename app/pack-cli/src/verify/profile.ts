@@ -273,7 +273,6 @@ const verifyObjectives = Effect.fn('verifyObjectives')(function* verifyObjective
     return yield* new ProfileError({ message: 'Objective list does not match profile' });
   }
 
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
   const mappedObjectives = yield* Effect.forEach(pack.questions, (question) =>
     Effect.gen(function* verifyQuestionObjectives() {
       const mapped = coverageQuestionObjectives[question.id];
@@ -323,8 +322,6 @@ const verifyQuestionRules = Effect.fn('verifyQuestionRules')(function* verifyQue
   rules: NonNullable<Profile['questionRules']>,
 ) {
   const { requiredSourcePathFragment } = rules;
-
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
   yield* Effect.forEach(pack.questions, (question) =>
     Effect.gen(function* verifyQuestionRule() {
       if (rules.type !== undefined && question.type !== rules.type) {
@@ -364,7 +361,6 @@ const verifyAnswerPositions = Effect.fn('verifyAnswerPositions')(function* verif
   pack: PackForVerification,
   expectedPositions: NonNullable<Profile['answerPositions']>,
 ) {
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
   const questionPositions = yield* Effect.forEach(pack.questions, (question) =>
     Effect.gen(function* getQuestionPosition() {
       const [answer] = question.answerIds;
@@ -474,8 +470,6 @@ const verifyBaselineAudit = Effect.fn('verifyBaselineAudit')(function* verifyBas
   }
 
   const byId = new Map(pack.questions.map((question) => [question.id, question]));
-
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
   yield* Effect.forEach(included, (item) =>
     Effect.gen(function* verifyBaselineQuestion() {
       const question = byId.get(item.packQuestionId);
@@ -533,8 +527,6 @@ const verifySourceIntegrity = Effect.fn('verifySourceIntegrity')(function* verif
 
   const provenance = yield* readJson(provenancePath, ProvenanceSchema, 'Source provenance');
   const materialsDirectory = path.resolve(path.dirname(provenancePath), 'materials');
-
-  // oxlint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach's iterable is not a thisArg.
   yield* Effect.forEach(provenance.materialInventory, (item) =>
     Effect.gen(function* verifyMaterial() {
       const materialPath = yield* resolveWithin(materialsDirectory, item.path, 'Material snapshot');
