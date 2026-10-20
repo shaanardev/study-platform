@@ -1,33 +1,27 @@
-export interface ForOfNode {
-  type: 'ForOfStatement';
-}
-
-export interface RuleContext {
-  report: (diagnostic: { messageId: string; node: ForOfNode }) => void;
-}
-
-const noForOf = {
-  create(context: RuleContext) {
-    return {
-      ForOfStatement(node: ForOfNode) {
-        context.report({ messageId: 'useFunctionalIteration', node });
-      },
-    };
-  },
-  meta: {
-    docs: {
-      description:
-        'Disallow for...of statements in favor of functional array and iterator methods.',
-    },
-    messages: {
-      useFunctionalIteration: 'Replace for...of with an array or iterator transformation.',
-    },
-    schema: [],
-    type: 'problem',
-  },
-};
+import type { Plugin } from '@oxlint/plugins';
 
 export default {
-  meta: { name: 'project', version: '1.0.0' },
-  rules: { 'no-for-of': noForOf },
-};
+  meta: { name: 'project' },
+  rules: {
+    'no-for-of': {
+      create(context) {
+        return {
+          ForOfStatement(node) {
+            context.report({ messageId: 'useFunctionalIteration', node });
+          },
+        };
+      },
+      meta: {
+        docs: {
+          description:
+            'Disallow for...of statements in favor of functional array and iterator methods.',
+        },
+        messages: {
+          useFunctionalIteration: 'Replace for...of with an array or iterator transformation.',
+        },
+        schema: [],
+        type: 'problem',
+      },
+    },
+  },
+} satisfies Plugin;

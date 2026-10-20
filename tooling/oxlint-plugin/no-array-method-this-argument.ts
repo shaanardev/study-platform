@@ -1,5 +1,4 @@
-import type { Rule } from 'eslint';
-import type * as ESTree from 'estree';
+import type { Context, ESTree, Rule } from '@oxlint/plugins';
 
 const arrayMethodArgumentCount = 2;
 const arrayStaticMethodArgumentCount = 3;
@@ -99,13 +98,14 @@ const likelyNonFunctionNodeTypes = new Set([
   'ThisExpression',
 ]);
 
-const isIdentifier = (node: ESTree.Node | undefined): node is ESTree.Identifier =>
-  node?.type === 'Identifier';
+const isIdentifier = (
+  node: ESTree.Expression | ESTree.IdentifierName | ESTree.PrivateIdentifier | undefined,
+): node is ESTree.IdentifierReference | ESTree.IdentifierName => node?.type === 'Identifier';
 
-const isMemberExpression = (node: ESTree.Node | undefined): node is ESTree.MemberExpression =>
+const isMemberExpression = (node: ESTree.Expression | undefined): node is ESTree.MemberExpression =>
   node?.type === 'MemberExpression';
 
-const isNewExpression = (node: ESTree.Node | undefined): node is ESTree.NewExpression =>
+const isNewExpression = (node: ESTree.Expression | undefined): node is ESTree.NewExpression =>
   node?.type === 'NewExpression';
 
 const getMemberPropertyName = (node: ESTree.MemberExpression): string | undefined => {
@@ -120,7 +120,7 @@ const getMemberPropertyName = (node: ESTree.MemberExpression): string | undefine
   return undefined;
 };
 
-const getStaticMemberPath = (node: ESTree.Node): string | undefined => {
+const getStaticMemberPath = (node: ESTree.Expression): string | undefined => {
   if (isIdentifier(node)) {
     return node.name;
   }
@@ -137,12 +137,12 @@ const getStaticMemberPath = (node: ESTree.Node): string | undefined => {
     : `${parentPath}.${propertyName}`;
 };
 
-const getEffectNamespaceNames = (program: Rule.RuleContext['sourceCode']['ast']): Set<string> =>
+const getEffectNamespaceNames = (program: ESTree.Program): Set<string> =>
   new Set(
     program.body.flatMap((statement) => {
       if (
         statement.type !== 'ImportDeclaration' ||
-        !effectModuleNames.has(String(statement.source.value))
+        !effectModuleNames.has(statement.source.value)
       ) {
         return [];
       }
@@ -193,21 +193,21 @@ const hasKnownNonArrayReceiver = (node: ESTree.MemberExpression): boolean => {
   );
 };
 
-const isBoundMethodCall = (node: ESTree.Node): boolean =>
+const isBoundMethodCall = (node: ESTree.Argument): boolean =>
   node.type === 'CallExpression' &&
   !node.optional &&
   isMemberExpression(node.callee) &&
   !node.callee.optional &&
   getMemberPropertyName(node.callee) === 'bind';
 
-const isDefinitelyNotFunction = (node: ESTree.Node): boolean =>
+const isDefinitelyNotFunction = (node: ESTree.Argument): boolean =>
   definitelyNonFunctionNodeTypes.has(node.type) ||
   likelyNonFunctionNodeTypes.has(node.type) ||
   (node.type === 'Identifier' && node.name === 'undefined') ||
   (node.type === 'CallExpression' && !isBoundMethodCall(node));
 
 const reportArrayMethodThisArgument = (
-  context: Rule.RuleContext,
+  context: Context,
   call: ESTree.CallExpression,
   member: ESTree.MemberExpression,
   method: string,
@@ -234,7 +234,7 @@ const reportArrayMethodThisArgument = (
 };
 
 const reportArrayStaticMethodThisArgument = (
-  context: Rule.RuleContext,
+  context: Context,
   call: ESTree.CallExpression,
   member: ESTree.MemberExpression,
   method: string,
@@ -256,7 +256,7 @@ const reportArrayStaticMethodThisArgument = (
   }
 };
 
-const arrayMethodThisArgument: Rule.RuleModule = {
+export default {
   create(context) {
     const effectNamespaceNames = getEffectNamespaceNames(context.sourceCode.ast);
 
@@ -294,6 +294,4 @@ const arrayMethodThisArgument: Rule.RuleModule = {
     schema: [],
     type: 'suggestion',
   },
-};
-
-export default arrayMethodThisArgument;
+} satisfies Rule;

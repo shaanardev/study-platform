@@ -23,10 +23,9 @@
   },
   "devDependencies": {
     "@effect/tsgo": "0.51.1",
-    "@types/estree": "1.0.9",
+    "@oxlint/plugins": "1.87.0",
     "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^5.0.5",
-    "eslint": "10.12.0",
     "oxfmt": "0.72.0",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
