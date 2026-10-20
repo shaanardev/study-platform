@@ -11,5 +11,5 @@
     "rootDir": "..",
     "noEmit": true
   },
-  "include": ["./ultracite-hook.ts"]
+  "include": ["./ultracite-hook.ts", "../app/web/scripts/db-up.ts"]
 }

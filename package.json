@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "db:up": "tsx app/web/scripts/db-up.ts",
     "build": "pnpm --filter web build",
     "preview": "pnpm --filter web preview",
     "typecheck": "pnpm --filter web typecheck && pnpm --dir app/pack-cli typecheck",
