@@ -1,10 +1,8 @@
-import type { SQLOutputValue } from 'node:sqlite';
+import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
 
-import { PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
-import { openPackDatabase } from '#lib/server/packs/repository.js';
-import { decodeJsonStringArray, decodeJsonText } from '#lib/server/json.js';
-import { validateExamPack } from '@learning-platform/exam-pack';
-import { databasePath as selectedDatabasePath } from '#lib/server/database/path.js';
+import { getAppDatabase } from '#lib/server/database/app-database.js';
+import type { AppDatabase } from '#lib/server/database/connection.js';
+import type { PackQuestion } from '@learning-platform/exam-pack';
 
 export interface ProgressAttempt {
   id: string;
@@ -54,243 +52,210 @@ export interface ProgressData {
   missedQuestions: MissedQuestion[];
 }
 
-type DatabaseRow = Record<string, SQLOutputValue>;
-
-const textColumn = (row: DatabaseRow, column: string): string => {
-  const value = row[column];
-  if (typeof value !== 'string') {
-    throw new TypeError(`Database column "${column}" is not text.`);
-  }
-  return value;
-};
-
-const numberColumn = (row: DatabaseRow, column: string): number => {
-  const value = row[column];
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new TypeError(`Database column "${column}" is not a finite number.`);
-  }
-  return value;
-};
-
-const nullableTextColumn = (row: DatabaseRow, column: string): string | null => {
-  const value = row[column];
-  if (value === null) {
-    return null;
-  }
-  if (typeof value !== 'string') {
-    throw new TypeError(`Database column "${column}" is not text.`);
-  }
-  return value;
-};
-
-const stringArray = (json: string): string[] => {
-  try {
-    return decodeJsonStringArray(json);
-  } catch {
-    throw new Error('Stored question identifiers are invalid.');
-  }
-};
-
-const parsePack = (json: string) => {
-  const parsed = decodeJsonText(json);
-  const result = validateExamPack(parsed);
-  if (!result.valid) {
-    throw new Error('Stored exam pack is invalid.');
-  }
-  return result.pack;
-};
-
 const sameAnswerSet = (first: string[], second: string[]): boolean =>
   first.length === second.length && first.every((id) => second.includes(id));
 
-export const getProgress = (databasePath = selectedDatabasePath): ProgressData => {
-  const database = openPackDatabase(databasePath);
-  try {
-    const sessionRows = database
-      .prepare(
-        `
-      SELECT s.id, s.exam_id AS examId, p.exam_title AS examTitle, p.exam_version AS examVersion,
-        s.pack_id AS packId, p.pack_title AS packTitle, s.pack_version AS packVersion,
-        s.status, s.updated_at AS updatedAt, s.question_ids_json AS questionIds,
-        COUNT(a.question_id) AS answeredCount,
-        COALESCE(SUM(a.correct), 0) AS correctCount
-      FROM practice_sessions s
-      JOIN imported_packs p ON p.exam_id = s.exam_id AND p.pack_id = s.pack_id AND p.pack_version = s.pack_version
-      LEFT JOIN practice_answers a ON a.session_id = s.id
-      GROUP BY s.id
-      ORDER BY s.updated_at DESC, s.rowid DESC
-    `,
+const answerIsCorrect = (question: PackQuestion | undefined, answerIds: string[]): boolean =>
+  question !== undefined && sameAnswerSet(question.answerIds, answerIds);
+
+const versionKey = (examId: string, packId: string, packVersion: string): string =>
+  [examId, packId, packVersion].join('\0');
+
+const scoreKey = (examId: string, packId: string, packVersion: string, domainId: string): string =>
+  [versionKey(examId, packId, packVersion), domainId].join('\0');
+
+const missedKey = (examId: string, packId: string, packVersion: string, questionId: string): string =>
+  [versionKey(examId, packId, packVersion), questionId].join('\0');
+
+const attemptKey = (kind: ProgressAttempt['kind'], id: string): string => `${kind}\0${id}`;
+
+export const getProgress = async (database: AppDatabase = getAppDatabase()): Promise<ProgressData> => {
+  const [practiceRows, mockRows, answerRows] = await Promise.all([
+    database
+      .selectFrom('practice_sessions as s')
+      .innerJoin('imported_packs as p', (join) =>
+        join
+          .onRef('p.exam_id', '=', 's.exam_id')
+          .onRef('p.pack_id', '=', 's.pack_id')
+          .onRef('p.pack_version', '=', 's.pack_version'),
       )
-      .all();
-    const recentAttempts: ProgressAttempt[] = sessionRows.map((row) => ({
-      answeredCount: numberColumn(row, 'answeredCount'),
-      completedAt: textColumn(row, 'updatedAt'),
-      correctCount: numberColumn(row, 'correctCount'),
-      examId: textColumn(row, 'examId'),
-      examTitle: textColumn(row, 'examTitle'),
-      examVersion: textColumn(row, 'examVersion'),
-      id: textColumn(row, 'id'),
-      kind: 'practice',
-      packId: textColumn(row, 'packId'),
-      packTitle: textColumn(row, 'packTitle'),
-      packVersion: textColumn(row, 'packVersion'),
-      questionCount: stringArray(textColumn(row, 'questionIds')).length,
-      status: textColumn(row, 'status'),
-    }));
-
-    const mockAttempts = new Map<string, ProgressAttempt>();
-    const packs = new Map<string, ReturnType<typeof parsePack>>();
-    const mockRows = database
-      .prepare(
-        `
-      SELECT m.id, m.exam_id AS examId, p.exam_title AS examTitle, p.exam_version AS examVersion,
-        m.pack_id AS packId, p.pack_title AS packTitle, m.pack_version AS packVersion,
-        m.status, m.created_at AS createdAt, m.question_ids_json AS questionIds,
-        p.content_json AS contentJson, a.question_id AS questionId, a.answer_ids_json AS answerIds
-      FROM mock_attempts m
-      JOIN imported_packs p ON p.exam_id = m.exam_id AND p.pack_id = m.pack_id AND p.pack_version = m.pack_version
-      LEFT JOIN mock_answers a ON a.attempt_id = m.id
-      ORDER BY m.created_at DESC, m.rowid DESC, a.rowid
-    `,
+      .leftJoin('practice_answers as a', 'a.session_id', 's.id')
+      .select([
+        's.id as id',
+        's.exam_id as examId',
+        'p.content as content',
+        'p.pack_id as packId',
+        'p.pack_version as packVersion',
+        's.status as status',
+        's.updated_at as updatedAt',
+        's.question_ids as question_ids',
+        's.question_snapshot as question_snapshot',
+        'a.question_id as questionId',
+        'a.correct as correct',
+      ])
+      .orderBy('s.updated_at', 'desc')
+      .execute(),
+    database
+      .selectFrom('mock_attempts as m')
+      .innerJoin('imported_packs as p', (join) =>
+        join
+          .onRef('p.exam_id', '=', 'm.exam_id')
+          .onRef('p.pack_id', '=', 'm.pack_id')
+          .onRef('p.pack_version', '=', 'm.pack_version'),
       )
-      .all();
+      .leftJoin('mock_answers as a', 'a.attempt_id', 'm.id')
+      .select([
+        'm.id as id',
+        'm.exam_id as examId',
+        'm.pack_id as packId',
+        'm.pack_version as packVersion',
+        'p.content as content',
+        'm.status as status',
+        'm.created_at as createdAt',
+        'm.question_ids as question_ids',
+        'm.question_snapshot as question_snapshot',
+        'a.question_id as questionId',
+        'a.answer_ids as answer_ids',
+      ])
+      .orderBy('m.created_at', 'desc')
+      .execute(),
+    database
+      .selectFrom('practice_answers as a')
+      .innerJoin('practice_sessions as s', 's.id', 'a.session_id')
+      .innerJoin('imported_packs as p', (join) =>
+        join
+          .onRef('p.exam_id', '=', 's.exam_id')
+          .onRef('p.pack_id', '=', 's.pack_id')
+          .onRef('p.pack_version', '=', 's.pack_version'),
+      )
+      .select([
+        's.exam_id as examId',
+        's.pack_id as packId',
+        's.pack_version as packVersion',
+        'p.content as content',
+        's.question_snapshot as question_snapshot',
+        'a.question_id as questionId',
+        'a.correct as correct',
+      ])
+      .orderBy('a.answered_at')
+      .execute(),
+  ]);
 
-    for (const row of mockRows) {
-      const id = textColumn(row, 'id');
-      let attempt = mockAttempts.get(id);
-      if (!attempt) {
-        const versionKey = [
-          textColumn(row, 'examId'),
-          textColumn(row, 'packId'),
-          textColumn(row, 'packVersion'),
-        ].join('\0');
-        let pack = packs.get(versionKey);
-        if (!pack) {
-          pack = parsePack(textColumn(row, 'contentJson'));
-          packs.set(versionKey, pack);
-        }
-        attempt = {
-          answeredCount: 0,
-          completedAt: textColumn(row, 'createdAt'),
-          correctCount: 0,
-          examId: textColumn(row, 'examId'),
-          examTitle: textColumn(row, 'examTitle'),
-          examVersion: textColumn(row, 'examVersion'),
-          id,
-          kind: 'mock',
-          packId: textColumn(row, 'packId'),
-          packTitle: textColumn(row, 'packTitle'),
-          packVersion: textColumn(row, 'packVersion'),
-          questionCount: stringArray(textColumn(row, 'questionIds')).length,
-          status: textColumn(row, 'status'),
-        };
-        mockAttempts.set(id, attempt);
-      }
-
-      const questionId = nullableTextColumn(row, 'questionId');
-      const answerIds = nullableTextColumn(row, 'answerIds');
-      if (questionId === null || answerIds === null) {
-        continue;
-      }
+  const attempts = new Map<string, ProgressAttempt>();
+  for (const row of practiceRows) {
+    const attempt = attempts.get(attemptKey('practice', row.id)) ?? {
+      answeredCount: 0,
+      completedAt: row.updatedAt,
+      correctCount: 0,
+      examId: row.examId,
+      examTitle: row.content.exam.title,
+      examVersion: row.content.exam.version,
+      id: row.id,
+      kind: 'practice' as const,
+      packId: row.packId,
+      packTitle: row.content.pack.title,
+      packVersion: row.packVersion,
+      questionCount: row.question_ids.length,
+      status: row.status,
+    };
+    if (row.questionId !== null) {
       attempt.answeredCount += 1;
+      attempt.correctCount += row.correct ?? 0;
+    }
+    attempts.set(attemptKey('practice', row.id), attempt);
+  }
 
-      const versionKey = [attempt.examId, attempt.packId, attempt.packVersion].join('\0');
-      const question = packs.get(versionKey)?.questions.find((item) => item.id === questionId);
-      if (!question) {
-        continue;
-      }
-      const submitted = stringArray(answerIds);
-      if (sameAnswerSet(question.answerIds, submitted)) {
+  for (const row of mockRows) {
+    const attempt = attempts.get(attemptKey('mock', row.id)) ?? {
+      answeredCount: 0,
+      completedAt: row.createdAt,
+      correctCount: 0,
+      examId: row.examId,
+      examTitle: row.content.exam.title,
+      examVersion: row.content.exam.version,
+      id: row.id,
+      kind: 'mock' as const,
+      packId: row.packId,
+      packTitle: row.content.pack.title,
+      packVersion: row.packVersion,
+      questionCount: row.question_ids.length,
+      status: row.status,
+    };
+    if (row.questionId !== null && row.answer_ids !== null) {
+      attempt.answeredCount += 1;
+      const question = row.question_snapshot.find((item) => item.id === row.questionId);
+      if (answerIsCorrect(question, row.answer_ids)) {
         attempt.correctCount += 1;
       }
     }
-    recentAttempts.push(...mockAttempts.values());
-    const orderedAttempts = recentAttempts.toSorted((a, b) =>
-      b.completedAt.localeCompare(a.completedAt),
-    );
+    attempts.set(attemptKey('mock', row.id), attempt);
+  }
 
-    const answerRows = database
-      .prepare(
-        `
-      SELECT a.session_id AS sessionId, s.exam_id AS examId, p.exam_title AS examTitle,
-        s.pack_id AS packId, p.pack_title AS packTitle, s.pack_version AS packVersion,
-        p.content_json AS contentJson, a.question_id AS questionId, a.correct
-      FROM practice_answers a
-      JOIN practice_sessions s ON s.id = a.session_id
-      JOIN imported_packs p ON p.exam_id = s.exam_id AND p.pack_id = s.pack_id AND p.pack_version = s.pack_version
-      ORDER BY a.answered_at, a.rowid
-    `,
-      )
-      .all();
+  const orderedAttempts = [...attempts.values()].toSorted((a, b) =>
+    b.completedAt.localeCompare(a.completedAt),
+  );
+  const domainTotals = new Map<string, DomainScore>();
+  const missedTotals = new Map<string, MissedQuestion>();
 
-    const domainTotals = new Map<string, DomainScore>();
-    const missedTotals = new Map<string, MissedQuestion>();
-    for (const row of answerRows) {
-      const pack = parsePack(textColumn(row, 'contentJson'));
-      const questionId = textColumn(row, 'questionId');
-      const question = pack.questions.find((item) => item.id === questionId);
-      const domain = question && pack.domains.find((item) => item.id === question.domainId);
-      if (!question || !domain) {
-        continue;
-      }
-      const examId = textColumn(row, 'examId');
-      const packId = textColumn(row, 'packId');
-      const packVersion = textColumn(row, 'packVersion');
-      const versionKey = [examId, packId, packVersion].join('\0');
-      const scoreKey = [versionKey, domain.id].join('\0');
-      const score = domainTotals.get(scoreKey) ?? {
-        answeredCount: 0,
-        correctCount: 0,
-        domainId: domain.id,
-        domainTitle: domain.title,
-        examId,
-        examTitle: textColumn(row, 'examTitle'),
-        packId,
-        packTitle: textColumn(row, 'packTitle'),
-        packVersion,
-        percent: 0,
-      };
-      score.answeredCount += 1;
-      score.correctCount += numberColumn(row, 'correct');
-      score.percent = Math.round((score.correctCount / score.answeredCount) * PERCENTAGE_SCALE);
-      domainTotals.set(scoreKey, score);
-
-      if (numberColumn(row, 'correct') === 0) {
-        const missKey = [versionKey, question.id].join('\0');
-        const missed = missedTotals.get(missKey) ?? {
-          domainId: domain.id,
-          domainTitle: domain.title,
-          examId,
-          examTitle: textColumn(row, 'examTitle'),
-          missCount: 0,
-          packId,
-          packTitle: textColumn(row, 'packTitle'),
-          packVersion,
-          prompt: question.prompt,
-          questionId: question.id,
-        };
-        missed.missCount += 1;
-        missedTotals.set(missKey, missed);
-      }
+  for (const row of answerRows) {
+    const snapshot = row.question_snapshot;
+    const question = snapshot.find((item) => item.id === row.questionId);
+    const domain = question && row.content.domains.find((item) => item.id === question.domainId);
+    if (!question || !domain) {
+      continue;
     }
 
-    return {
-      domainScores: [...domainTotals.values()].toSorted(
-        (a, b) =>
-          a.examTitle.localeCompare(b.examTitle) ||
-          a.packTitle.localeCompare(b.packTitle) ||
-          a.packVersion.localeCompare(b.packVersion) ||
-          a.domainTitle.localeCompare(b.domainTitle),
-      ),
-      missedQuestions: [...missedTotals.values()].toSorted(
-        (a, b) =>
-          b.missCount - a.missCount ||
-          a.examTitle.localeCompare(b.examTitle) ||
-          a.questionId.localeCompare(b.questionId),
-      ),
-      recentAttempts: orderedAttempts.slice(0, 20),
+    const scoreId = scoreKey(row.examId, row.packId, row.packVersion, domain.id);
+    const score = domainTotals.get(scoreId) ?? {
+      answeredCount: 0,
+      correctCount: 0,
+      domainId: domain.id,
+      domainTitle: domain.title,
+      examId: row.examId,
+      examTitle: row.content.exam.title,
+      packId: row.packId,
+      packTitle: row.content.pack.title,
+      packVersion: row.packVersion,
+      percent: 0,
     };
-  } finally {
-    database.close();
+    score.answeredCount += 1;
+    score.correctCount += row.correct;
+    score.percent = Math.round((score.correctCount / score.answeredCount) * PERCENTAGE_SCALE);
+    domainTotals.set(scoreId, score);
+
+    if (row.correct === 0) {
+      const missedId = missedKey(row.examId, row.packId, row.packVersion, question.id);
+      const missed = missedTotals.get(missedId) ?? {
+        domainId: domain.id,
+        domainTitle: domain.title,
+        examId: row.examId,
+        examTitle: row.content.exam.title,
+        missCount: 0,
+        packId: row.packId,
+        packTitle: row.content.pack.title,
+        packVersion: row.packVersion,
+        prompt: question.prompt,
+        questionId: question.id,
+      };
+      missed.missCount += 1;
+      missedTotals.set(missedId, missed);
+    }
   }
+
+  return {
+    domainScores: [...domainTotals.values()].toSorted(
+      (a, b) =>
+        a.examTitle.localeCompare(b.examTitle) ||
+        a.packTitle.localeCompare(b.packTitle) ||
+        a.packVersion.localeCompare(b.packVersion) ||
+        a.domainTitle.localeCompare(b.domainTitle),
+    ),
+    missedQuestions: [...missedTotals.values()].toSorted(
+      (a, b) =>
+        b.missCount - a.missCount ||
+        a.examTitle.localeCompare(b.examTitle) ||
+        a.questionId.localeCompare(b.questionId),
+    ),
+    recentAttempts: orderedAttempts.slice(0, MAX_RECENT_ATTEMPTS),
+  };
 };
