@@ -1,8 +1,11 @@
 # Complete dependency setup before `wt switch --create` returns.
 pre-start = "pnpm install --frozen-lockfile"
 
-# Run the full project verification before Worktrunk creates a commit.
-pre-commit = "pnpm verify"
+# Run fast static checks before each Worktrunk commit.
+pre-commit = "pnpm lint"
+
+# Run the coverage gate after rebase and before Worktrunk merges the branch.
+pre-merge = "pnpm coverage:check"
 
 # Match the Conventional Commit format used in this repository's history.
 [commit.generation]

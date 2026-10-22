@@ -6,7 +6,7 @@ Use the official [Worktrunk merge docs](https://worktrunk.dev/merge/) for the fu
 
 wt merge merges the current worktree's branch into the local target branch. The default target is the detected default branch. By default, Worktrunk squashes the branch, rebases it as needed, fast-forwards the target, then removes the source worktree.
 
-The project pre-commit hook runs pnpm verify before Worktrunk creates a commit or squash commit. Review the changes and worktree state before merging; this hook does not run for ordinary git commit.
+The project pre-commit hook runs `pnpm lint` before Worktrunk creates a commit or squash commit. After rebasing, the `pre-merge` hook runs `pnpm coverage:check` and blocks the merge if the 70% line coverage threshold fails. These hooks do not run for ordinary `git commit`.
 
 ~~~bash
 wt list

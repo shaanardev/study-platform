@@ -9,15 +9,10 @@
   "type": "module",
   "scripts": {
     "packs": "tsx src/index.ts",
-    "check": "pnpm --dir ../.. check",
     "typecheck": "tsc --noEmit",
     "lint": "ultracite check",
     "lint:fix": "ultracite fix",
-    "test": "pnpm --dir ../.. test",
-    "prepare": "effect-tsgo patch --typescript --oxlint",
-    "verify": "pnpm --dir ../.. verify",
-    "generate:schema": "pnpm packs schema generate",
-    "check:schema": "pnpm packs schema check"
+    "prepare": "effect-tsgo patch --typescript --oxlint"
   },
   "dependencies": {
     "@effect/platform-node": "4.0.2",

@@ -17,7 +17,7 @@ See `requirements.md`
 ## Code Verification
 
 - For any code changes, run `pnpm verify` from the repository root before completing the task. It fixes lint issues, checks both apps, runs every Vitest project with coverage, and enforces at least 70% line coverage.
-- Run `pnpm test` to run all Vitest projects and inspect the coverage report; no extra coverage flag is needed.
+- Run `pnpm test` to run all Vitest projects without coverage. Use `pnpm coverage:check` to collect coverage and enforce the 70% line threshold.
 - `pnpm verify` may rewrite files through `lint:fix`. Review the resulting diff and include only changes that belong to the task. Report any failed or blocked verification in the task handoff.
 - Do not repeat Ultracite's optional Stylelint-missing notice in final reports unless the task changes CSS or the notice materially limits verification.
 

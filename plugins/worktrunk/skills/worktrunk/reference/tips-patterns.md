@@ -14,9 +14,9 @@ New worktrees run `pnpm install --frozen-lockfile` in `pre-start`, as declared i
 
 Worktrunk's `wt step copy-ignored` copies ignored files from one worktree into another. It is not needed for `node_modules` by default: the shared virtual store already avoids recreating package content, while the install hook creates the current worktree's links. Keep the install hook; consider copying only if measured install time remains a problem and there is a specific cache or generated file worth sharing. See the official [copy-ignored documentation](https://worktrunk.dev/step/#wt-step-copy-ignored).
 
-## Verification before Worktrunk commits
+## Checks before Worktrunk commits and merges
 
-`.config/wt.toml` uses `pre-commit = "pnpm verify"`. Keep this exact project verification entry. Worktrunk runs it for Worktrunk commit operations; a plain `git commit` does not invoke the hook.
+`.config/wt.toml` uses `pre-commit = "pnpm lint"` and `pre-merge = "pnpm coverage:check"`. Worktrunk runs lint before its commit or squash operations, then runs the coverage gate after rebase and before merge. A plain `git commit` does not invoke these hooks.
 
 ## Ordewell worktrees
 

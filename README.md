@@ -64,15 +64,15 @@ An explicit `DB_PATH` must not normalize to one of the known workspace database 
 | --- | --- | --- |
 | Run web app | `pnpm dev` | `pnpm --dir app/web dev` |
 | Build web app | `pnpm build` | `pnpm --dir app/web build` |
-| Check the workspace | `pnpm check` | — |
 | Verify the workspace | `pnpm verify` | — |
-| Run all tests and coverage | `pnpm test` | — |
+| Run all tests | `pnpm test` | — |
+| Check line coverage (70% minimum) | `pnpm coverage:check` | — |
 | Generate the pack JSON Schema | `pnpm pack:schema:generate` | `pnpm --dir app/pack-cli packs schema generate` |
 | Check the generated pack JSON Schema | `pnpm pack:schema:check` | `pnpm --dir app/pack-cli packs schema check` |
 | Build a pack | `pnpm pack:build <authoring-file> <output-dir>` | `pnpm --dir app/pack-cli packs build <authoring-file> <output-dir>` |
 | Verify a pack | `pnpm pack:verify <pack-file>` | `pnpm --dir app/pack-cli packs verify <pack-file>` |
 
-`pnpm test` runs all Vitest projects and writes `coverage/index.html`. The run fails if repository-wide line coverage falls below 70%.
+`pnpm test` runs all Vitest projects without collecting coverage. `pnpm coverage:check` runs the same projects with coverage and fails if repository-wide line coverage falls below 70%.
 
 ## Local UI feedback
 

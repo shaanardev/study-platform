@@ -10,7 +10,7 @@ Worktrunk manages Git worktrees. For this repository, use the checked-in project
 ## Repository setup
 
 - The repository's .worktrees/ directory holds one worktree directory per sanitized branch. The path template is in `~/.config/worktrunk/config.toml`; `.worktrees/` is ignored by Git.
-- .config/wt.toml runs pnpm install --frozen-lockfile in pre-start and pnpm verify in pre-commit. Use these declared commands; do not make up substitutes.
+- .config/wt.toml runs pnpm install --frozen-lockfile in pre-start, pnpm lint in pre-commit, and pnpm coverage:check in pre-merge. Use these declared commands; do not make up substitutes.
 - pnpm 12.6 is configured with virtualStoreType: global. The shared store contains package content; each worktree still gets its own install links. Keep the pre-start install and do not add a copy-ignored hook for node_modules by default. See reference/tips-patterns.md and the [pnpm docs](https://pnpm.io/global-virtual-store).
 - Ordewell owns its task worktrees and setup. Do not manage .ordewell/worktrees with Worktrunk. For Ordewell recovery, follow .codex/skills/ordewell-worktree-handoff/SKILL.md.
 
@@ -29,7 +29,7 @@ The new branch defaults to the detected default branch. Use `--base=@` only when
 
 ## Hooks and approvals
 
-`pre-start` completes before worktree creation returns. Here it installs dependencies. `pre-commit` runs before Worktrunk commits, including commit and squash steps used by `wt merge`; it does not run for an ordinary `git commit`.
+`pre-start` completes before worktree creation returns. Here it installs dependencies. `pre-commit` runs lint before Worktrunk commits, including commit and squash steps used by `wt merge`. `pre-merge` runs the coverage gate after rebase and before merge. Neither hook runs for an ordinary `git commit`.
 
 Worktrunk prompts the user before running project hook commands. If a non-interactive Codex session cannot proceed because approval is missing, ask the user to review and approve the commands with Worktrunk. Do not bypass the prompt with `--yes` or approve commands on the user's behalf.
 

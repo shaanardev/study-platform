@@ -19,7 +19,8 @@ The checked-in .config/wt.toml contains:
 
 ~~~toml
 pre-start = "pnpm install --frozen-lockfile"
-pre-commit = "pnpm verify"
+pre-commit = "pnpm lint"
+pre-merge = "pnpm coverage:check"
 
 [commit.generation]
 template-append = """
@@ -27,7 +28,7 @@ template-append = """
 """
 ~~~
 
-`pre-start` prepares dependencies before a new worktree is ready. `pre-commit` gates Worktrunk commit operations. Preserve the repository's declared `pnpm verify` command when editing this hook.
+`pre-start` prepares dependencies before a new worktree is ready. `pre-commit` runs lint before Worktrunk commit operations; `pre-merge` runs the coverage threshold after rebase and before merge.
 
 pnpm 12.6 reads `virtualStoreType: global` from `pnpm-workspace.yaml`. Its global virtual store holds shared package content, while each worktree still needs its own `node_modules` links and install state. Keep the `pre-start` install hook. Do not add `wt step copy-ignored` for `node_modules` by default. See the [pnpm global virtual store docs](https://pnpm.io/global-virtual-store), [Worktrunk configuration docs](https://worktrunk.dev/config/), [hook docs](https://worktrunk.dev/hook/), and [copy-ignored docs](https://worktrunk.dev/step/#wt-step-copy-ignored).
 
