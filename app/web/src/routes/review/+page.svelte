@@ -8,6 +8,20 @@
   let selectedPack = $derived(data.pack);
   let feedbackByQuestion = $derived(new Map(data.feedback.map((item) => [item.questionId, item])));
 
+  const reviewAction = (action: 'correct' | 'flag' | 'retire') => {
+    if (!selectedPack) {
+      return resolve('/review');
+    }
+
+    const searchParams = new URLSearchParams({
+      examId: selectedPack.exam.id,
+      packId: selectedPack.pack.id,
+      packVersion: selectedPack.pack.version,
+    });
+
+    return `${resolve('/review')}?${searchParams.toString()}&/${action}`;
+  };
+
   const correctionJson = (questionId: string) => {
     const question = selectedPack?.questions.find((item) => item.id === questionId);
     const existing = feedbackByQuestion.get(questionId)?.correction;
@@ -191,7 +205,7 @@
                 </ul>
               {/if}
               <div class="lg:grid-cols-review-question-grid mt-5 grid items-start gap-5">
-                <form class="grid gap-3" action={resolve('/review?/flag')} method="POST">
+                <form class="grid gap-3" action={reviewAction('flag')} method="POST">
                   <input name="examId" type="hidden" value={selectedPack.exam.id} />
                   <input name="packId" type="hidden" value={selectedPack.pack.id} />
                   <input name="packVersion" type="hidden" value={selectedPack.pack.version} />
@@ -211,7 +225,7 @@
                     Save flag
                   </button>
                 </form>
-                <form class="grid gap-3" action={resolve('/review?/correct')} method="POST">
+                <form class="grid gap-3" action={reviewAction('correct')} method="POST">
                   <input name="examId" type="hidden" value={selectedPack.exam.id} />
                   <input name="packId" type="hidden" value={selectedPack.pack.id} />
                   <input name="packVersion" type="hidden" value={selectedPack.pack.version} />
@@ -236,7 +250,7 @@
                     Save correction
                   </button>
                 </form>
-                <form class="grid gap-3 lg:pt-8" action={resolve('/review?/retire')} method="POST">
+                <form class="grid gap-3 lg:pt-8" action={reviewAction('retire')} method="POST">
                   <input name="examId" type="hidden" value={selectedPack.exam.id} />
                   <input name="packId" type="hidden" value={selectedPack.pack.id} />
                   <input name="packVersion" type="hidden" value={selectedPack.pack.version} />

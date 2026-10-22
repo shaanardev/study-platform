@@ -25,6 +25,7 @@
     "kysely": "^0.29.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@skeletonlabs/skeleton": "^5.0.1",
     "@skeletonlabs/skeleton-svelte": "^5.0.1",
     "@sveltejs/adapter-auto": "^8.0.0",

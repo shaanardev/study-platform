@@ -7,5 +7,12 @@
     "sourceMap": true
   },
   "exclude": ["node_modules", "pnpm-store", ".svelte-kit", "build", "dist", "coverage", "static"],
-  "include": ["src", "eslint.config.ts", "prettier.config.ts", "vite.config.ts"]
+  "include": [
+    "src",
+    "eslint.config.ts",
+    "prettier.config.ts",
+    "vite.config.ts",
+    "tests",
+    "playwright.config.ts"
+  ]
 }

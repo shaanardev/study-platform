@@ -7,6 +7,7 @@
     "dev": "pnpm --filter web dev",
     "db:up": "tsx app/web/scripts/db-up.ts",
     "build": "pnpm --filter web build",
+    "e2e": "pnpm --filter web exec playwright test --config playwright.config.ts",
     "preview": "pnpm --filter web preview",
     "typecheck": "pnpm --filter web typecheck && pnpm --dir app/pack-cli typecheck",
     "check:watch": "pnpm --filter web check:watch",

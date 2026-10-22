@@ -21,6 +21,8 @@ node_modules
 **/dist/
 **/coverage/
 **/.eslintcache
+/app/web/test-results/
+/app/web/playwright-report/
 
 # OS
 .DS_Store
@@ -40,6 +42,7 @@ vite.config.ts.timestamp-*
 !/packs/incoming/assets/
 /packs/incoming/assets/*
 !/packs/incoming/sample-learning-pack.json
+!/packs/incoming/assets/synthetic-notes.md
 !/packs/incoming/databricks-dea-may-2026-v1.2.0.json
 !/packs/incoming/databricks-dea-may-2026-v1.2.1.json
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.0/
