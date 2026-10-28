@@ -257,6 +257,26 @@ export const listFeedback = async (
   return rows.map(toFeedbackItem);
 };
 
+/** Apply a preloaded feedback set to its imported pack. */
+export const applyFeedbackToPack = (
+  pack: ExamPack,
+  feedback: readonly StoredFeedback[],
+): ExamPack => {
+  const byId = new Map(feedback.map((item) => [item.questionId, item]));
+
+  const questions = pack.questions.flatMap((question) => {
+    const item = byId.get(question.id);
+
+    if (item?.retired === 1) {
+      return [];
+    }
+
+    return [{ ...question, ...item?.correction }];
+  });
+
+  return { ...pack, questions };
+};
+
 export const exportFeedback = async (database?: AppDatabase): Promise<string> => {
   const rows = await listAllFeedbackRows(database);
   const items = rows.map(toFeedbackItem);
@@ -268,20 +288,9 @@ export const getEffectivePack = async (
   pack: ExamPack,
   database?: AppDatabase,
 ): Promise<ExamPack> => {
-  const feedback = await listFeedback(pack.exam.id, pack.pack.id, pack.pack.version, database);
-  const byId = new Map(feedback.map((item) => [item.questionId, item]));
+  const feedback = await listFeedbackRows(pack.exam.id, pack.pack.id, pack.pack.version, database);
 
-  const questions = pack.questions.flatMap((question) => {
-    const item = byId.get(question.id);
-
-    if (item?.retired === true) {
-      return [];
-    }
-
-    return [{ ...question, ...item?.correction }];
-  });
-
-  return { ...pack, questions };
+  return applyFeedbackToPack(pack, feedback);
 };
 
 export const readPackForReview = async (

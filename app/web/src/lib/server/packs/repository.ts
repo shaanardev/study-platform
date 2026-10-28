@@ -23,7 +23,11 @@ export interface ImportedSourceAsset {
   excerpt: string;
 }
 
-const dbOrApp = (database?: AppDatabase): AppDatabase => database ?? getAppDatabase();
+interface ImportedSourceContext {
+  pack: ExamPack;
+  approvedSourceRoot: string | null;
+  asset: { label: string; excerpt: string } | undefined;
+}
 
 /** Save a pack and its bundled/local source snapshots in one transaction. */
 export const saveImportedPack = async (
@@ -32,8 +36,7 @@ export const saveImportedPack = async (
   sourceAssets: ImportedSourceAsset[] = [],
   approvedSourceRoot?: string,
 ): Promise<void> => {
-  const db = dbOrApp(database);
-  await db.transaction().execute(async (trx) => {
+  await (database ?? getAppDatabase()).transaction().execute(async (trx) => {
     await trx
       .insertInto('imported_packs')
       .values({
@@ -79,55 +82,53 @@ export const refreshApprovedLocalSources = async (
     return false;
   }
 
-  return await dbOrApp(database)
-    .transaction()
-    .execute(async (trx) => {
-      const existing = await trx
-        .selectFrom('imported_packs')
-        .select('content as content')
-        .where('exam_id', '=', pack.exam.id)
-        .where('pack_id', '=', pack.pack.id)
-        .where('pack_version', '=', pack.pack.version)
-        .executeTakeFirst();
+  return await (database ?? getAppDatabase()).transaction().execute(async (trx) => {
+    const existing = await trx
+      .selectFrom('imported_packs')
+      .select('content as content')
+      .where('exam_id', '=', pack.exam.id)
+      .where('pack_id', '=', pack.pack.id)
+      .where('pack_version', '=', pack.pack.version)
+      .executeTakeFirst();
 
-      if (!existing || JSON.stringify(existing.content) !== JSON.stringify(pack)) {
-        return false;
-      }
+    if (!existing || JSON.stringify(existing.content) !== JSON.stringify(pack)) {
+      return false;
+    }
 
+    await trx
+      .updateTable('imported_packs')
+      .set({ approved_source_root: approvedSourceRoot })
+      .where('exam_id', '=', pack.exam.id)
+      .where('pack_id', '=', pack.pack.id)
+      .where('pack_version', '=', pack.pack.version)
+      .execute();
+    await trx
+      .deleteFrom('saved_source_assets')
+      .where('exam_id', '=', pack.exam.id)
+      .where('pack_id', '=', pack.pack.id)
+      .where('pack_version', '=', pack.pack.version)
+      .where('source_path', 'like', 'file:%')
+      .execute();
+
+    if (localSourceAssets.length > 0) {
       await trx
-        .updateTable('imported_packs')
-        .set({ approved_source_root: approvedSourceRoot })
-        .where('exam_id', '=', pack.exam.id)
-        .where('pack_id', '=', pack.pack.id)
-        .where('pack_version', '=', pack.pack.version)
+        .insertInto('saved_source_assets')
+        .values(
+          localSourceAssets.map(({ questionId, source, excerpt }) => ({
+            exam_id: pack.exam.id,
+            excerpt,
+            label: source.label,
+            pack_id: pack.pack.id,
+            pack_version: pack.pack.version,
+            question_id: questionId,
+            source_path: source.path,
+          })),
+        )
         .execute();
-      await trx
-        .deleteFrom('saved_source_assets')
-        .where('exam_id', '=', pack.exam.id)
-        .where('pack_id', '=', pack.pack.id)
-        .where('pack_version', '=', pack.pack.version)
-        .where('source_path', 'like', 'file:%')
-        .execute();
+    }
 
-      if (localSourceAssets.length > 0) {
-        await trx
-          .insertInto('saved_source_assets')
-          .values(
-            localSourceAssets.map(({ questionId, source, excerpt }) => ({
-              exam_id: pack.exam.id,
-              excerpt,
-              label: source.label,
-              pack_id: pack.pack.id,
-              pack_version: pack.pack.version,
-              question_id: questionId,
-              source_path: source.path,
-            })),
-          )
-          .execute();
-      }
-
-      return true;
-    });
+    return true;
+  });
 };
 
 /** Read the explicitly approved local source root for an imported pack. */
@@ -137,7 +138,7 @@ export const getApprovedSourceRoot = async (
   packId: string,
   packVersion: string,
 ): Promise<string | undefined> => {
-  const row = await dbOrApp(database)
+  const row = await (database ?? getAppDatabase())
     .selectFrom('imported_packs')
     .select('approved_source_root')
     .where('exam_id', '=', examId)
@@ -149,18 +150,17 @@ export const getApprovedSourceRoot = async (
 };
 
 /** List imported packs with display metadata and counts derived from ExamPack JSON. */
-export const listImportedPacks = async (database?: AppDatabase): Promise<PackIndexItem[]> => {
-  const rows = await dbOrApp(database)
+export const listImportedPacks = async (
+  database: AppDatabase = getAppDatabase(),
+): Promise<PackIndexItem[]> => {
+  const rows = await database
     .selectFrom('imported_packs')
-    .select(['content as content', 'imported_at'])
+    .select(['content', 'imported_at'])
     .orderBy('imported_at', 'desc')
     .execute();
 
   return rows
-    .map(({ content, imported_at }) => ({
-      importedAt: imported_at,
-      pack: content,
-    }))
+    .map(({ content, imported_at }) => ({ importedAt: imported_at, pack: content }))
     .toSorted(
       (a, b) =>
         a.pack.exam.title.localeCompare(b.pack.exam.title) ||
@@ -190,9 +190,9 @@ export const getImportedPack = async (
   examId: string,
   packId: string,
   packVersion: string,
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<ExamPack | undefined> => {
-  const row = await dbOrApp(database)
+  const row = await database
     .selectFrom('imported_packs')
     .select('content as content')
     .where('exam_id', '=', examId)
@@ -212,7 +212,7 @@ export const getImportedSourceAsset = async (
   questionId: string,
   sourcePath: string,
 ): Promise<{ label: string; excerpt: string } | undefined> => {
-  const row = await dbOrApp(database)
+  const row = await (database ?? getAppDatabase())
     .selectFrom('saved_source_assets')
     .select(['label', 'excerpt'])
     .where('exam_id', '=', examId)
@@ -223,4 +223,48 @@ export const getImportedSourceAsset = async (
     .executeTakeFirst();
 
   return row;
+};
+
+/** Read a cited source, its pack, and local approval state in one query. */
+export const getImportedSourceContext = async (
+  database: AppDatabase | undefined,
+  examId: string,
+  packId: string,
+  packVersion: string,
+  questionId: string,
+  sourcePath: string,
+): Promise<ImportedSourceContext | undefined> => {
+  const row = await (database ?? getAppDatabase())
+    .selectFrom('imported_packs as p')
+    .leftJoin('saved_source_assets as a', (join) =>
+      join
+        .onRef('a.exam_id', '=', 'p.exam_id')
+        .onRef('a.pack_id', '=', 'p.pack_id')
+        .onRef('a.pack_version', '=', 'p.pack_version')
+        .on('a.question_id', '=', questionId)
+        .on('a.source_path', '=', sourcePath),
+    )
+    .select([
+      'p.content as content',
+      'p.approved_source_root as approved_source_root',
+      'a.label as label',
+      'a.excerpt as excerpt',
+    ])
+    .where('p.exam_id', '=', examId)
+    .where('p.pack_id', '=', packId)
+    .where('p.pack_version', '=', packVersion)
+    .executeTakeFirst();
+
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    approvedSourceRoot: row.approved_source_root,
+    asset:
+      row.label === null || row.excerpt === null
+        ? undefined
+        : { excerpt: row.excerpt, label: row.label },
+    pack: row.content,
+  };
 };

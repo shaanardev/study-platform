@@ -13,6 +13,7 @@ import { workspacePath } from '#lib/server/workspace-paths.js';
 const migrationTableName = 'kysely_migration';
 
 const jsonResultAliases = new Set([
+  'answers',
   'content',
   'domain_ids',
   'question_ids',
@@ -87,7 +88,10 @@ export const createDatabase = async (
         shouldParse: (_value, jsonPath) => {
           const match = /^\$\[\d+\]\."(?<alias>[^"]+)"$/u.exec(jsonPath);
 
-          return match !== null && jsonResultAliases.has(match.groups?.['alias'] ?? '');
+          return (
+            (match !== null && jsonResultAliases.has(match.groups?.['alias'] ?? '')) ||
+            /^\$\[\d+\]\."answers"\[\d+\]\."answer_ids"$/u.test(jsonPath)
+          );
         },
       }),
     ],

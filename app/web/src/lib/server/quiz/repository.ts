@@ -1,11 +1,10 @@
 import { sql } from 'kysely';
 import type { Selectable } from 'kysely';
+import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
 import type { AppDatabaseSchema } from '#lib/server/database/types.js';
-
-const dbOrApp = (database?: AppDatabase): AppDatabase => database ?? getAppDatabase();
 
 type PracticeSessionRow = Selectable<AppDatabaseSchema['practice_sessions']>;
 
@@ -15,9 +14,9 @@ export const getPracticeHistory = async (
   examId: string,
   packId: string,
   packVersion: string,
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<Map<string, { missed: boolean; seen: boolean }>> => {
-  const rows = await dbOrApp(database)
+  const rows = await database
     .selectFrom('practice_answers as a')
     .innerJoin('practice_sessions as s', 's.id', 'a.session_id')
     .select([
@@ -35,9 +34,9 @@ export const getPracticeHistory = async (
 
 export const createPracticeSessionRecord = async (
   session: Omit<PracticeSessionRow, 'created_at' | 'updated_at'>,
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await dbOrApp(database)
+  await database
     .insertInto('practice_sessions')
     .values({
       ...session,
@@ -50,40 +49,52 @@ export const createPracticeSessionRecord = async (
     .execute();
 };
 
-export const getPracticeSessionRecord = async (id: string, database?: AppDatabase) => {
-  const db = dbOrApp(database);
-
-  const session = await db
+export const getPracticeSessionRecord = async (
+  id: string | undefined,
+  database: AppDatabase = getAppDatabase(),
+) => {
+  const row = await database
     .selectFrom('practice_sessions')
     .selectAll()
-    .where('id', '=', id)
+    .select((eb) => [
+      jsonArrayFrom(
+        eb
+          .selectFrom('practice_answers')
+          .select([
+            'question_id',
+            sql<string[]>`json(answer_ids)`.as('answer_ids'),
+            'correct',
+            'answered_at',
+          ])
+          .whereRef('practice_answers.session_id', '=', 'practice_sessions.id')
+          .orderBy('answered_at')
+          .orderBy(sql.ref('practice_answers.rowid')),
+      ).as('answers'),
+    ])
+    .where((eb) =>
+      id === undefined
+        ? eb(
+            'practice_sessions.id',
+            '=',
+            eb
+              .selectFrom('practice_sessions as resumable')
+              .select('resumable.id')
+              .where('resumable.status', '=', 'in_progress')
+              .orderBy('resumable.updated_at', 'desc')
+              .orderBy(sql.ref('resumable.rowid'), 'desc')
+              .limit(1),
+          )
+        : eb('practice_sessions.id', '=', id),
+    )
     .executeTakeFirst();
 
-  if (!session) {
+  if (!row) {
     return null;
   }
 
-  const answers = await db
-    .selectFrom('practice_answers')
-    .select(['question_id', 'answer_ids', 'correct', 'answered_at'])
-    .where('session_id', '=', id)
-    .orderBy('answered_at')
-    .orderBy(sql.ref('rowid'))
-    .execute();
+  const { answers, ...session } = row;
 
   return { answers, session };
-};
-
-export const getResumablePracticeSessionId = async (database?: AppDatabase) => {
-  const row = await dbOrApp(database)
-    .selectFrom('practice_sessions')
-    .select('id')
-    .where('status', '=', 'in_progress')
-    .orderBy('updated_at', 'desc')
-    .orderBy(sql.ref('rowid'), 'desc')
-    .executeTakeFirst();
-
-  return row?.id;
 };
 
 export const savePracticeAnswer = async (
@@ -94,50 +105,44 @@ export const savePracticeAnswer = async (
     correct: boolean;
     answeredAt: string;
   },
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await dbOrApp(database)
-    .transaction()
-    .execute(async (trx) => {
-      await trx
-        .insertInto('practice_answers')
-        .values({
-          answer_ids: JSON.stringify(input.answerIds),
-          answered_at: input.answeredAt,
-          correct: input.correct ? 1 : 0,
-          question_id: input.questionId,
-          session_id: input.sessionId,
-        })
-        .execute();
+  await database.transaction().execute(async (trx) => {
+    await trx
+      .insertInto('practice_answers')
+      .values({
+        answer_ids: JSON.stringify(input.answerIds),
+        answered_at: input.answeredAt,
+        correct: input.correct ? 1 : 0,
+        question_id: input.questionId,
+        session_id: input.sessionId,
+      })
+      .execute();
 
-      const session = await trx
-        .selectFrom('practice_sessions')
-        .select('question_ids')
-        .where('id', '=', input.sessionId)
-        .executeTakeFirstOrThrow();
-
-      const { count } = await trx
-        .selectFrom('practice_answers')
-        .select((eb) => eb.fn.countAll().as('count'))
-        .where('session_id', '=', input.sessionId)
-        .executeTakeFirstOrThrow();
-
-      await trx
-        .updateTable('practice_sessions')
-        .set({
-          status: Number(count) >= session.question_ids.length ? 'completed' : 'in_progress',
-          updated_at: input.answeredAt,
-        })
-        .where('id', '=', input.sessionId)
-        .execute();
-    });
+    await trx
+      .updateTable('practice_sessions')
+      .set({
+        status: sql<PracticeSessionRow['status']>`CASE
+            WHEN (
+              SELECT COUNT(*)
+              FROM practice_answers
+              WHERE practice_answers.session_id = practice_sessions.id
+            ) >= json_array_length(practice_sessions.question_ids)
+            THEN 'completed'
+            ELSE 'in_progress'
+          END`,
+        updated_at: input.answeredAt,
+      })
+      .where('id', '=', input.sessionId)
+      .execute();
+  });
 };
 
 export const createMockAttemptRecord = async (
   attempt: Omit<MockAttemptRow, 'created_at'>,
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await dbOrApp(database)
+  await database
     .insertInto('mock_attempts')
     .values({
       ...attempt,
@@ -148,44 +153,54 @@ export const createMockAttemptRecord = async (
     .execute();
 };
 
-export const getMockAttemptRecord = async (id: string, database?: AppDatabase) => {
-  const db = dbOrApp(database);
-
-  const attempt = await db
+export const getMockAttemptRecord = async (
+  id: string | undefined,
+  database: AppDatabase = getAppDatabase(),
+) => {
+  const row = await database
     .selectFrom('mock_attempts')
     .selectAll()
-    .where('id', '=', id)
+    .select((eb) => [
+      jsonArrayFrom(
+        eb
+          .selectFrom('mock_answers')
+          .select(['question_id', sql<string[]>`json(answer_ids)`.as('answer_ids'), 'answered_at'])
+          .whereRef('mock_answers.attempt_id', '=', 'mock_attempts.id')
+          .orderBy('answered_at')
+          .orderBy(sql.ref('mock_answers.rowid')),
+      ).as('answers'),
+    ])
+    .where((eb) =>
+      id === undefined
+        ? eb(
+            'mock_attempts.id',
+            '=',
+            eb
+              .selectFrom('mock_attempts as resumable')
+              .select('resumable.id')
+              .where('resumable.status', '=', 'in_progress')
+              .orderBy('resumable.created_at', 'desc')
+              .orderBy(sql.ref('resumable.rowid'), 'desc')
+              .limit(1),
+          )
+        : eb('mock_attempts.id', '=', id),
+    )
     .executeTakeFirst();
 
-  if (!attempt) {
+  if (!row) {
     return null;
   }
 
-  const answers = await db
-    .selectFrom('mock_answers')
-    .select(['question_id', 'answer_ids', 'answered_at'])
-    .where('attempt_id', '=', id)
-    .orderBy('answered_at')
-    .orderBy(sql.ref('rowid'))
-    .execute();
+  const { answers, ...attempt } = row;
 
   return { answers, attempt };
 };
 
-export const getResumableMockAttemptId = async (database?: AppDatabase) => {
-  const row = await dbOrApp(database)
-    .selectFrom('mock_attempts')
-    .select('id')
-    .where('status', '=', 'in_progress')
-    .orderBy('created_at', 'desc')
-    .orderBy(sql.ref('rowid'), 'desc')
-    .executeTakeFirst();
-
-  return row?.id;
-};
-
-export const expireMockAttempt = async (id: string, database?: AppDatabase): Promise<void> => {
-  await dbOrApp(database)
+export const expireMockAttempt = async (
+  id: string,
+  database: AppDatabase = getAppDatabase(),
+): Promise<void> => {
+  await database
     .updateTable('mock_attempts')
     .set({ status: 'expired' })
     .where('id', '=', id)
@@ -198,9 +213,9 @@ export const saveMockAnswerRecord = async (
   questionId: string,
   answerIds: string[],
   answeredAt: string,
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await dbOrApp(database)
+  await database
     .insertInto('mock_answers')
     .values({
       answer_ids: JSON.stringify(answerIds),
@@ -220,9 +235,9 @@ export const saveMockAnswerRecord = async (
 export const setMockAttemptStatus = async (
   id: string,
   status: 'submitted',
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await dbOrApp(database)
+  await database
     .updateTable('mock_attempts')
     .set({ status })
     .where('id', '=', id)

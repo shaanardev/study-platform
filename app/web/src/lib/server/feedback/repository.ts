@@ -23,18 +23,6 @@ export interface StoredFeedback extends FeedbackKey {
   retired: 0 | 1;
 }
 
-const dbOrApp = (database?: AppDatabase): AppDatabase => database ?? getAppDatabase();
-
-const whereKey = <Q extends { where: (column: string, op: '=', value: string) => Q }>(
-  query: Q,
-  key: FeedbackKey,
-): Q =>
-  query
-    .where('exam_id', '=', key.examId)
-    .where('pack_id', '=', key.packId)
-    .where('pack_version', '=', key.packVersion)
-    .where('question_id', '=', key.questionId);
-
 const toStoredFeedback = (row: {
   exam_id: string;
   pack_id: string;
@@ -59,59 +47,59 @@ export const updateFeedback = async (
   database: AppDatabase | undefined,
   update: (current: StoredFeedback | undefined) => Omit<StoredFeedback, keyof FeedbackKey>,
 ): Promise<StoredFeedback> =>
-  await dbOrApp(database)
-    .transaction()
-    .execute(async (trx) => {
-      const currentRow = await whereKey(
-        trx
-          .selectFrom('question_feedback')
-          .select([
-            'exam_id',
-            'pack_id',
-            'pack_version',
-            'question_id',
-            'flags',
-            'correction',
-            'retired',
-          ]),
-        key,
-      ).executeTakeFirst();
+  await (database ?? getAppDatabase()).transaction().execute(async (trx) => {
+    const currentRow = await trx
+      .selectFrom('question_feedback')
+      .select([
+        'exam_id',
+        'pack_id',
+        'pack_version',
+        'question_id',
+        'flags',
+        'correction',
+        'retired',
+      ])
+      .where('exam_id', '=', key.examId)
+      .where('pack_id', '=', key.packId)
+      .where('pack_version', '=', key.packVersion)
+      .where('question_id', '=', key.questionId)
+      .executeTakeFirst();
 
-      const current = currentRow ? toStoredFeedback(currentRow) : undefined;
-      const next = { ...key, ...update(current) };
-      await trx
-        .insertInto('question_feedback')
-        .values({
+    const current = currentRow ? toStoredFeedback(currentRow) : undefined;
+    const next = { ...key, ...update(current) };
+    await trx
+      .insertInto('question_feedback')
+      .values({
+        correction: next.correction === null ? null : JSON.stringify(next.correction),
+        exam_id: key.examId,
+        flags: JSON.stringify(next.flags),
+        pack_id: key.packId,
+        pack_version: key.packVersion,
+        question_id: key.questionId,
+        retired: next.retired,
+        updated_at: new Date().toISOString(),
+      })
+      .onConflict((conflict) =>
+        conflict.columns(['exam_id', 'pack_id', 'pack_version', 'question_id']).doUpdateSet({
           correction: next.correction === null ? null : JSON.stringify(next.correction),
-          exam_id: key.examId,
           flags: JSON.stringify(next.flags),
-          pack_id: key.packId,
-          pack_version: key.packVersion,
-          question_id: key.questionId,
           retired: next.retired,
           updated_at: new Date().toISOString(),
-        })
-        .onConflict((conflict) =>
-          conflict.columns(['exam_id', 'pack_id', 'pack_version', 'question_id']).doUpdateSet({
-            correction: next.correction === null ? null : JSON.stringify(next.correction),
-            flags: JSON.stringify(next.flags),
-            retired: next.retired,
-            updated_at: new Date().toISOString(),
-          }),
-        )
-        .execute();
+        }),
+      )
+      .execute();
 
-      return { ...next, correction: next.correction, flags: next.flags };
-    });
+    return { ...next, correction: next.correction, flags: next.flags };
+  });
 
 /** List feedback for a pack version, ordered by question ID. */
 export const listFeedbackRows = async (
   examId: string,
   packId: string,
   packVersion: string,
-  database?: AppDatabase,
+  database: AppDatabase = getAppDatabase(),
 ): Promise<StoredFeedback[]> => {
-  const rows = await dbOrApp(database)
+  const rows = await database
     .selectFrom('question_feedback')
     .select(['exam_id', 'pack_id', 'pack_version', 'question_id', 'flags', 'correction', 'retired'])
     .where('exam_id', '=', examId)
@@ -124,8 +112,10 @@ export const listFeedbackRows = async (
 };
 
 /** Read all feedback rows in the stable export order. */
-export const listAllFeedbackRows = async (database?: AppDatabase): Promise<StoredFeedback[]> => {
-  const rows = await dbOrApp(database)
+export const listAllFeedbackRows = async (
+  database: AppDatabase = getAppDatabase(),
+): Promise<StoredFeedback[]> => {
+  const rows = await database
     .selectFrom('question_feedback')
     .select(['exam_id', 'pack_id', 'pack_version', 'question_id', 'flags', 'correction', 'retired'])
     .orderBy('exam_id')

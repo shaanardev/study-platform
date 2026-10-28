@@ -7,17 +7,12 @@ import { MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
-import {
-  getApprovedSourceRoot,
-  getImportedPack,
-  getImportedSourceAsset,
-} from '#lib/server/packs/repository.js';
+import { getImportedPack, getImportedSourceContext } from '#lib/server/packs/repository.js';
 
 import {
   createPracticeSessionRecord,
   getPracticeHistory,
   getPracticeSessionRecord,
-  getResumablePracticeSessionId,
   savePracticeAnswer,
 } from './repository.js';
 
@@ -117,7 +112,7 @@ const toPracticeSession = (
   };
 };
 
-const readSession = async (id: string, database?: AppDatabase) => {
+const readSession = async (id: string | undefined, database?: AppDatabase) => {
   const stored = await getPracticeSessionRecord(id, database);
 
   return stored ? toPracticeSession(stored) : undefined;
@@ -238,11 +233,8 @@ export const createPracticeSession = async (
 export const getPracticeSession = async (sessionId: string, database?: AppDatabase) =>
   await readSession(sessionId, database);
 
-export const getResumablePracticeSession = async (database?: AppDatabase) => {
-  const id = await getResumablePracticeSessionId(database);
-
-  return id === undefined ? undefined : await readSession(id, database);
-};
+export const getResumablePracticeSession = async (database?: AppDatabase) =>
+  await readSession(undefined, database);
 
 export const answerQuestion = async (
   sessionId: string,
@@ -307,7 +299,16 @@ export const readQuestionSource = async (
   sourcePath: string,
   database?: AppDatabase,
 ) => {
-  const pack = await getImportedPack(examId, packId, packVersion, database);
+  const context = await getImportedSourceContext(
+    database,
+    examId,
+    packId,
+    packVersion,
+    questionId,
+    sourcePath,
+  );
+
+  const pack = context?.pack;
 
   const source = pack?.questions
     .find((question) => question.id === questionId)
@@ -321,24 +322,14 @@ export const readQuestionSource = async (
     httpError(HTTP_NOT_FOUND, 'Source excerpt not found.');
   }
 
-  if (
-    source.path.startsWith('file:') &&
-    (await getApprovedSourceRoot(database, examId, packId, packVersion)) === undefined
-  ) {
+  if (source.path.startsWith('file:') && context?.approvedSourceRoot === null) {
     httpError(
       HTTP_NOT_FOUND,
       'Local citation is unavailable because no approved source root was recorded.',
     );
   }
 
-  const asset = await getImportedSourceAsset(
-    database,
-    examId,
-    packId,
-    packVersion,
-    questionId,
-    sourcePath,
-  );
+  const asset = context?.asset;
 
   if (!asset) {
     httpError(HTTP_NOT_FOUND, 'Saved source excerpt is unavailable.');

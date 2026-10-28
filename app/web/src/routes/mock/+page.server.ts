@@ -8,10 +8,10 @@ import {
 } from '#lib/quiz/constants.js';
 import { getFormString } from '#lib/server/form-data.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
-import { listImportedPacks } from '#lib/server/packs/repository.js';
 import {
   createMockAttempt,
   getMockAttempt,
+  getMockCatalog,
   getMockCoverage,
   getResumableMockAttempt,
   saveMockAnswer,
@@ -21,7 +21,6 @@ import {
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ url }) => {
-  const packs = await listImportedPacks();
   const attemptId = url.searchParams.get('attempt');
 
   const attempt =
@@ -32,23 +31,7 @@ export const load: PageServerLoad = async ({ url }) => {
   }
 
   const questionCount = Number(url.searchParams.get('count') ?? String(DEFAULT_QUESTION_COUNT));
-
-  const coverageEntries = await Promise.all(
-    packs.map(async (pack) => {
-      const key = `${pack.examId}|${pack.packId}|${pack.packVersion}`;
-
-      try {
-        return [
-          key,
-          await getMockCoverage(pack.examId, pack.packId, pack.packVersion, questionCount),
-        ] as const;
-      } catch {
-        return [key, undefined] as const;
-      }
-    }),
-  );
-
-  const coverages = Object.fromEntries(coverageEntries);
+  const { coverages, packs } = await getMockCatalog(questionCount);
 
   return {
     attempt,

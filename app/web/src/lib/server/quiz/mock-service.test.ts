@@ -6,12 +6,14 @@ import { validateExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDatabase } from '#lib/server/database/connection.js';
+import { createCorrection, retireQuestion } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST } from '#lib/server/http-status.js';
 import { saveImportedPack } from '#lib/server/packs/repository.js';
 import {
   createMockAttempt,
   getMockAttempt,
   getMockCoverage,
+  getMockCatalog,
   saveMockAnswer,
   submitMockAttempt,
 } from '#lib/server/quiz/mock-service.js';
@@ -92,6 +94,61 @@ describe('timed mock attempts', () => {
       },
       status: HTTP_BAD_REQUEST,
     });
+  });
+
+  it('batches coverage and isolates version feedback across imported packs', async () => {
+    const { database, pack } = await setup();
+    const nextVersion = structuredClone(pack);
+    nextVersion.pack.version = '1.0.1';
+    await saveImportedPack(database, nextVersion);
+
+    const questionId = 'delta-transaction-basics';
+    await retireQuestion(
+      {
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        questionId,
+      },
+      true,
+      database,
+    );
+    await createCorrection(
+      {
+        correction: { domainId: 'pipelines' },
+        examId: nextVersion.exam.id,
+        packId: nextVersion.pack.id,
+        packVersion: nextVersion.pack.version,
+        questionId,
+      },
+      database,
+    );
+
+    const { coverages, packs } = await getMockCatalog(5, database);
+    const originalKey = `${pack.exam.id}|${pack.pack.id}|${pack.pack.version}`;
+    const nextKey = `${nextVersion.exam.id}|${nextVersion.pack.id}|${nextVersion.pack.version}`;
+
+    const originalCoverage = await getMockCoverage(
+      pack.exam.id,
+      pack.pack.id,
+      pack.pack.version,
+      5,
+      database,
+    );
+
+    const nextCoverage = await getMockCoverage(
+      nextVersion.exam.id,
+      nextVersion.pack.id,
+      nextVersion.pack.version,
+      5,
+      database,
+    );
+
+    expect(packs.map(({ packVersion }) => packVersion)).toStrictEqual(['1.0.1', pack.pack.version]);
+    expect(coverages[originalKey]).toStrictEqual(originalCoverage);
+    expect(coverages[nextKey]).toStrictEqual(nextCoverage);
+    expect(originalCoverage.gaps.map(({ available }) => available)).toStrictEqual([0, 1]);
+    expect(nextCoverage.gaps.map(({ available }) => available)).toStrictEqual([0]);
   });
 
   it('persists answers and deadline across resume, then reveals scoring only after submit', async () => {

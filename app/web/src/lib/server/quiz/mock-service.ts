@@ -8,8 +8,11 @@ import {
   MAX_QUESTION_COUNT,
   PERCENTAGE_SCALE,
 } from '#lib/quiz/constants.js';
+import { getAppDatabase } from '#lib/server/database/app-database.js';
 import type { AppDatabase } from '#lib/server/database/connection.js';
-import { getEffectivePack } from '#lib/server/feedback/service.js';
+import { listAllFeedbackRows } from '#lib/server/feedback/repository.js';
+import type { StoredFeedback } from '#lib/server/feedback/repository.js';
+import { applyFeedbackToPack, getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { getImportedPack } from '#lib/server/packs/repository.js';
 import { allocateWeightedQuestions, findCoverageGaps } from '#lib/server/quiz/mock-selection.js';
@@ -19,7 +22,6 @@ import {
   createMockAttemptRecord,
   expireMockAttempt,
   getMockAttemptRecord,
-  getResumableMockAttemptId,
   saveMockAnswerRecord,
   setMockAttemptStatus,
 } from './repository.js';
@@ -77,6 +79,73 @@ const getMockCoverageForPack = (pack: ExamPack, questionCount: number) => {
   };
 };
 
+/** Read the mock catalog with one pack query and one feedback query. */
+export const getMockCatalog = async (
+  questionCount: number,
+  database: AppDatabase = getAppDatabase(),
+) => {
+  const packRows = await database
+    .selectFrom('imported_packs')
+    .select(['content', 'imported_at'])
+    .orderBy('imported_at', 'desc')
+    .execute();
+
+  const records = packRows.map(({ content, imported_at }) => ({
+    importedAt: imported_at,
+    pack: content,
+  }));
+
+  const feedbackRows = await listAllFeedbackRows(database);
+
+  const feedbackByPack = feedbackRows.reduce<Map<string, StoredFeedback[]>>((byPack, feedback) => {
+    const key = `${feedback.examId}|${feedback.packId}|${feedback.packVersion}`;
+    const rows = byPack.get(key) ?? [];
+    rows.push(feedback);
+    byPack.set(key, rows);
+
+    return byPack;
+  }, new Map());
+
+  const coverageEntries = records.map(({ pack }) => {
+    const key = `${pack.exam.id}|${pack.pack.id}|${pack.pack.version}`;
+    const effectivePack = applyFeedbackToPack(pack, feedbackByPack.get(key) ?? []);
+
+    try {
+      return [key, getMockCoverageForPack(effectivePack, questionCount)] as const;
+    } catch {
+      return [key, undefined] as const;
+    }
+  });
+
+  return {
+    coverages: Object.fromEntries(coverageEntries),
+    packs: records
+      .toSorted(
+        (a, b) =>
+          a.pack.exam.title.localeCompare(b.pack.exam.title) ||
+          a.pack.pack.title.localeCompare(b.pack.pack.title) ||
+          b.pack.pack.version.localeCompare(a.pack.pack.version),
+      )
+      .map(({ pack, importedAt }) => ({
+        domainCount: pack.domains.length,
+        domains: pack.domains.map((domain) => ({
+          ...domain,
+          questionCount: pack.questions.filter((question) => question.domainId === domain.id)
+            .length,
+        })),
+        examId: pack.exam.id,
+        examTitle: pack.exam.title,
+        examVersion: pack.exam.version,
+        importedAt,
+        packId: pack.pack.id,
+        packTitle: pack.pack.title,
+        packVersion: pack.pack.version,
+        questionCount: pack.questions.length,
+        synthetic: pack.pack.synthetic,
+      })),
+  };
+};
+
 export const getMockCoverage = async (
   examId: string,
   packId: string,
@@ -94,7 +163,7 @@ export const getMockCoverage = async (
 };
 
 const readMockAttempt = async (
-  id: string,
+  id: string | undefined,
   database?: AppDatabase,
   now = Date.now(),
 ): Promise<MockAttempt | undefined> => {
@@ -115,7 +184,7 @@ const readMockAttempt = async (
 
   if (status === 'in_progress' && isExpired(row.deadline, now)) {
     status = 'expired';
-    await expireMockAttempt(id, database);
+    await expireMockAttempt(row.id, database);
   }
 
   const attemptQuestions = row.question_snapshot;
@@ -317,11 +386,8 @@ export const createMockAttempt = async (options: {
 export const getMockAttempt = async (id: string, database?: AppDatabase, now = Date.now()) =>
   await readMockAttempt(id, database, now);
 
-export const getResumableMockAttempt = async (database?: AppDatabase, now = Date.now()) => {
-  const id = await getResumableMockAttemptId(database);
-
-  return id === undefined ? undefined : await readMockAttempt(id, database, now);
-};
+export const getResumableMockAttempt = async (database?: AppDatabase, now = Date.now()) =>
+  await readMockAttempt(undefined, database, now);
 
 export const saveMockAnswer = async (
   attemptId: string,

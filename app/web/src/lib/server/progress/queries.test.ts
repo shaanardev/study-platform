@@ -83,6 +83,41 @@ describe('progress queries', () => {
     });
   });
 
+  it('keeps unanswered practice and mock attempts while leaving scores empty', async () => {
+    const { database, pack } = await fixture();
+
+    await createPracticeSession({
+      database,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    });
+    await createMockAttempt({
+      database,
+      durationMinutes: 30,
+      examId: pack.exam.id,
+      now: 10_000,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    });
+
+    const progress = await getProgress(database);
+
+    expect(progress.recentAttempts).toHaveLength(2);
+    expect(progress.recentAttempts).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ answeredCount: 0, correctCount: 0, kind: 'practice' }),
+        expect.objectContaining({ answeredCount: 0, correctCount: 0, kind: 'mock' }),
+      ]),
+    );
+    expect(progress.domainScores).toStrictEqual([]);
+    expect(progress.missedQuestions).toStrictEqual([]);
+  });
+
   it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', async () => {
     const { database, pack } = await fixture();
 
@@ -200,6 +235,53 @@ describe('progress queries', () => {
     );
     expect(progress.missedQuestions).not.toContainEqual(
       expect.objectContaining({ questionId: 'q-storage' }),
+    );
+  });
+
+  it('aggregates historical missed-question details in answer chronology across attempt snapshots', async () => {
+    const { database, pack } = await fixture();
+
+    const earlierSession = await createPracticeSession({
+      database,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    });
+
+    await answerQuestion(earlierSession.id, 'q-compute', ['no'], database);
+
+    await createCorrection(
+      {
+        correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        questionId: 'q-compute',
+      },
+      database,
+    );
+
+    const laterSession = await createPracticeSession({
+      database,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    });
+
+    await answerQuestion(laterSession.id, 'q-compute', ['yes'], database);
+
+    const progress = await getProgress(database);
+
+    expect(progress.missedQuestions).toContainEqual(
+      expect.objectContaining({
+        missCount: 2,
+        prompt: 'Compute?',
+        questionId: 'q-compute',
+      }),
     );
   });
 

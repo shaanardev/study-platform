@@ -1,4 +1,4 @@
-import type { PackQuestion } from '@learning-platform/exam-pack';
+import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 import { sql } from 'kysely';
 
 import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
@@ -53,6 +53,16 @@ export interface ProgressData {
   missedQuestions: MissedQuestion[];
 }
 
+interface AggregatedAnswerRow {
+  questionId: string;
+  correct: 0 | 1 | null;
+  answerIds: string[] | null;
+  answeredAt: string;
+  answerRowid: number;
+}
+
+type ProgressPackContent = Pick<ExamPack, 'domains' | 'exam' | 'pack'>;
+
 const sameAnswerSet = (first: string[], second: string[]): boolean =>
   first.length === second.length && first.every((id) => second.includes(id));
 
@@ -77,135 +87,129 @@ const attemptKey = (kind: ProgressAttempt['kind'], id: string): string => `${kin
 export const getProgress = async (
   database: AppDatabase = getAppDatabase(),
 ): Promise<ProgressData> => {
-  const [practiceRows, mockRows, answerRows] = await Promise.all([
-    database
-      .selectFrom('practice_sessions as s')
-      .innerJoin('imported_packs as p', (join) =>
-        join
-          .onRef('p.exam_id', '=', 's.exam_id')
-          .onRef('p.pack_id', '=', 's.pack_id')
-          .onRef('p.pack_version', '=', 's.pack_version'),
-      )
-      .leftJoin('practice_answers as a', 'a.session_id', 's.id')
-      .select([
-        's.id as id',
-        's.exam_id as examId',
-        'p.content as content',
-        'p.pack_id as packId',
-        'p.pack_version as packVersion',
-        's.status as status',
-        's.updated_at as updatedAt',
-        's.question_ids as question_ids',
-        's.question_snapshot as question_snapshot',
-        'a.question_id as questionId',
-        'a.correct as correct',
-      ])
-      .orderBy('s.updated_at', 'desc')
-      .orderBy(sql.ref('s.rowid'), 'desc')
-      .execute(),
-    database
-      .selectFrom('mock_attempts as m')
-      .innerJoin('imported_packs as p', (join) =>
-        join
-          .onRef('p.exam_id', '=', 'm.exam_id')
-          .onRef('p.pack_id', '=', 'm.pack_id')
-          .onRef('p.pack_version', '=', 'm.pack_version'),
-      )
-      .leftJoin('mock_answers as a', 'a.attempt_id', 'm.id')
-      .select([
-        'm.id as id',
-        'm.exam_id as examId',
-        'm.pack_id as packId',
-        'm.pack_version as packVersion',
-        'p.content as content',
-        'm.status as status',
-        'm.created_at as createdAt',
-        'm.question_ids as question_ids',
-        'm.question_snapshot as question_snapshot',
-        'a.question_id as questionId',
-        'a.answer_ids as answer_ids',
-      ])
-      .orderBy('m.created_at', 'desc')
-      .orderBy(sql.ref('m.rowid'), 'desc')
-      .orderBy(sql.ref('a.rowid'))
-      .execute(),
-    database
-      .selectFrom('practice_answers as a')
-      .innerJoin('practice_sessions as s', 's.id', 'a.session_id')
-      .innerJoin('imported_packs as p', (join) =>
-        join
-          .onRef('p.exam_id', '=', 's.exam_id')
-          .onRef('p.pack_id', '=', 's.pack_id')
-          .onRef('p.pack_version', '=', 's.pack_version'),
-      )
-      .select([
-        's.exam_id as examId',
-        's.pack_id as packId',
-        's.pack_version as packVersion',
-        'p.content as content',
-        's.question_snapshot as question_snapshot',
-        'a.question_id as questionId',
-        'a.correct as correct',
-      ])
-      .orderBy('a.answered_at')
-      .orderBy(sql.ref('a.rowid'))
-      .execute(),
-  ]);
+  const practiceRows = database
+    .selectFrom('practice_sessions as s')
+    .innerJoin('imported_packs as p', (join) =>
+      join
+        .onRef('p.exam_id', '=', 's.exam_id')
+        .onRef('p.pack_id', '=', 's.pack_id')
+        .onRef('p.pack_version', '=', 's.pack_version'),
+    )
+    .select([
+      sql<ProgressAttempt['kind']>`'practice'`.as('kind'),
+      's.id as id',
+      's.exam_id as examId',
+      's.pack_id as packId',
+      's.pack_version as packVersion',
+      sql<ProgressPackContent>`json_object(
+        'exam', json(json_extract(p.content, '$.exam')),
+        'pack', json(json_extract(p.content, '$.pack')),
+        'domains', json(json_extract(p.content, '$.domains'))
+      )`.as('content'),
+      sql<string>`s.status`.as('status'),
+      's.updated_at as attemptedAt',
+      's.question_ids as question_ids',
+      's.question_snapshot as question_snapshot',
+      sql<AggregatedAnswerRow[]>`(
+        SELECT json_group_array(json_object(
+          'questionId', answer.question_id,
+          'correct', answer.correct,
+          'answerIds', NULL,
+          'answeredAt', answer.answered_at,
+          'answerRowid', answer.rowid
+        ))
+        FROM (
+          SELECT question_id, correct, answered_at, rowid
+          FROM practice_answers
+          WHERE session_id = s.id
+          ORDER BY answered_at, rowid
+        ) AS answer
+      )`.as('answers'),
+      sql<number>`s.rowid`.as('attemptRowid'),
+      sql<number>`0`.as('kindOrder'),
+    ]);
+
+  const mockRows = database
+    .selectFrom('mock_attempts as m')
+    .innerJoin('imported_packs as p', (join) =>
+      join
+        .onRef('p.exam_id', '=', 'm.exam_id')
+        .onRef('p.pack_id', '=', 'm.pack_id')
+        .onRef('p.pack_version', '=', 'm.pack_version'),
+    )
+    .select([
+      sql<ProgressAttempt['kind']>`'mock'`.as('kind'),
+      'm.id as id',
+      'm.exam_id as examId',
+      'm.pack_id as packId',
+      'm.pack_version as packVersion',
+      sql<ProgressPackContent>`json_object(
+        'exam', json(json_extract(p.content, '$.exam')),
+        'pack', json(json_extract(p.content, '$.pack')),
+        'domains', json(json_extract(p.content, '$.domains'))
+      )`.as('content'),
+      sql<string>`m.status`.as('status'),
+      'm.created_at as attemptedAt',
+      'm.question_ids as question_ids',
+      'm.question_snapshot as question_snapshot',
+      sql<AggregatedAnswerRow[]>`(
+        SELECT json_group_array(json_object(
+          'questionId', answer.question_id,
+          'correct', NULL,
+          'answerIds', json(answer.answer_ids),
+          'answeredAt', answer.answered_at,
+          'answerRowid', answer.rowid
+        ))
+        FROM (
+          SELECT question_id, answer_ids, answered_at, rowid
+          FROM mock_answers
+          WHERE attempt_id = m.id
+          ORDER BY rowid
+        ) AS answer
+      )`.as('answers'),
+      sql<number>`m.rowid`.as('attemptRowid'),
+      sql<number>`1`.as('kindOrder'),
+    ]);
+
+  const rows = await practiceRows
+    .unionAll(mockRows)
+    .orderBy('attemptedAt', 'desc')
+    .orderBy('kindOrder')
+    .orderBy('attemptRowid', 'desc')
+    .execute();
 
   const attempts = new Map<string, ProgressAttempt>();
 
-  practiceRows.forEach((row) => {
-    const attempt = attempts.get(attemptKey('practice', row.id)) ?? {
+  rows.forEach((row) => {
+    const baseAttempt = {
       answeredCount: 0,
-      completedAt: row.updatedAt,
+      completedAt: row.attemptedAt,
       correctCount: 0,
       examId: row.examId,
       examTitle: row.content.exam.title,
       examVersion: row.content.exam.version,
       id: row.id,
-      kind: 'practice' as const,
+      kind: row.kind,
       packId: row.packId,
       packTitle: row.content.pack.title,
       packVersion: row.packVersion,
       questionCount: row.question_ids.length,
       status: row.status,
-    };
+    } satisfies ProgressAttempt;
 
-    if (row.questionId !== null) {
-      attempt.answeredCount += 1;
-      attempt.correctCount += row.correct ?? 0;
-    }
+    const answerRows = row.answers;
+    const attempt = { ...baseAttempt, answeredCount: answerRows.length };
 
-    attempts.set(attemptKey('practice', row.id), attempt);
-  });
+    attempt.correctCount =
+      row.kind === 'practice'
+        ? answerRows.reduce((total, answer) => total + (answer.correct ?? 0), 0)
+        : answerRows.reduce((total, answer) => {
+            const question = row.question_snapshot.find((item) => item.id === answer.questionId);
 
-  mockRows.forEach((row) => {
-    const attempt = attempts.get(attemptKey('mock', row.id)) ?? {
-      answeredCount: 0,
-      completedAt: row.createdAt,
-      correctCount: 0,
-      examId: row.examId,
-      examTitle: row.content.exam.title,
-      examVersion: row.content.exam.version,
-      id: row.id,
-      kind: 'mock' as const,
-      packId: row.packId,
-      packTitle: row.content.pack.title,
-      packVersion: row.packVersion,
-      questionCount: row.question_ids.length,
-      status: row.status,
-    };
+            return total + (answerIsCorrect(question, answer.answerIds ?? []) ? 1 : 0);
+          }, 0);
 
-    if (row.questionId !== null && row.answer_ids !== null) {
-      attempt.answeredCount += 1;
-      const question = row.question_snapshot.find((item) => item.id === row.questionId);
-
-      if (answerIsCorrect(question, row.answer_ids)) {
-        attempt.correctCount += 1;
-      }
-    }
-
-    attempts.set(attemptKey('mock', row.id), attempt);
+    attempts.set(attemptKey(row.kind, row.id), attempt);
   });
 
   const orderedAttempts = [...attempts.values()].toSorted((a, b) =>
@@ -215,9 +219,19 @@ export const getProgress = async (
   const domainTotals = new Map<string, DomainScore>();
   const missedTotals = new Map<string, MissedQuestion>();
 
-  answerRows.forEach((row) => {
+  const orderedPracticeAnswers = rows
+    .flatMap((row) =>
+      row.kind === 'practice' ? row.answers.map((answer) => ({ answer, row })) : [],
+    )
+    .toSorted(
+      (first, second) =>
+        first.answer.answeredAt.localeCompare(second.answer.answeredAt) ||
+        first.answer.answerRowid - second.answer.answerRowid,
+    );
+
+  orderedPracticeAnswers.forEach(({ answer: answerRow, row }) => {
     const snapshot = row.question_snapshot;
-    const question = snapshot.find((item) => item.id === row.questionId);
+    const question = snapshot.find((item) => item.id === answerRow.questionId);
     const domain = question && row.content.domains.find((item) => item.id === question.domainId);
 
     if (!question || !domain) {
@@ -240,11 +254,11 @@ export const getProgress = async (
     };
 
     score.answeredCount += 1;
-    score.correctCount += row.correct;
+    score.correctCount += answerRow.correct ?? 0;
     score.percent = Math.round((score.correctCount / score.answeredCount) * PERCENTAGE_SCALE);
     domainTotals.set(scoreId, score);
 
-    if (row.correct === 0) {
+    if (answerRow.correct === 0) {
       const missedId = missedKey(row.examId, row.packId, row.packVersion, question.id);
 
       const missed = missedTotals.get(missedId) ?? {
