@@ -95,6 +95,7 @@ const config: OxlintConfig = defineConfig({
       },
     ],
     'project/no-for-of': 'error',
+    'typescript/no-deprecated': 'error',
     'typescript/no-unnecessary-condition': ['error', { allowConstantLoopConditions: 'always' }],
     'typescript/prefer-for-of': 'off',
     'unicorn/no-array-for-each': 'off',

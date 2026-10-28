@@ -52,6 +52,7 @@ const config: OxlintConfig = defineConfig({
     // hitl: turning off unstable api usage warnings to reduce noise in stdout from pnpm verify
     'effecttsgo/unstable-api-usage': 'off',
     'project/no-array-method-this-argument': 'error',
+    'typescript/no-deprecated': 'error',
     'unicorn/no-array-method-this-argument': 'off',
   },
 });
