@@ -86,7 +86,8 @@ split_json=$(herdr pane split --current --direction right --cwd "$repo_root" --n
 pane_id=$(jq -er '.result.pane.pane_id | strings | select(length > 0)' <<<"$split_json") || fail 'Herdr did not return the new pane ID'
 
 marker="AGENT_WORKER_${BASHPID}_${RANDOM}"
-printf -v wt_command 'wt switch --create %q --base @; rc=$?; printf "\\n%s:%%s:%%s\\n" "$rc" "$PWD"' "$branch" "$marker"
+wt_path_config='worktree-path = "{{ repo_path }}/.worktrees/{{ branch | sanitize }}"'
+printf -v wt_command 'wt --config-set %q switch --create %q --base @; rc=$?; printf "\\n%s:%%s:%%s\\n" "$rc" "$PWD"' "$wt_path_config" "$branch" "$marker"
 herdr pane run "$pane_id" "$wt_command" >/dev/null || fail "could not submit Work Trunk setup in pane $pane_id"
 
 if ! herdr pane wait-output "$pane_id" --match "$marker:" --timeout 120000 >/dev/null; then
@@ -105,6 +106,12 @@ done <<<"$pane_output"
 IFS=: read -r setup_status worktree_path <<<"$setup_result"
 [[ $setup_status == 0 ]] || fail "wt switch failed in pane $pane_id with status ${setup_status:-unknown}; inspect that pane before retrying"
 [[ -n ${worktree_path:-} && $worktree_path != "$repo_root" ]] || fail "pane $pane_id did not enter a separate worktree"
+resolved_worktree_root=$(cd -P -- "$repo_root/.worktrees" && pwd -P) || fail "could not resolve the expected worktree directory at $repo_root/.worktrees"
+resolved_worktree_path=$(cd -P -- "$worktree_path" && pwd -P) || fail "could not resolve worktree path $worktree_path"
+case "$resolved_worktree_path" in
+  "$resolved_worktree_root"/*) ;;
+  *) fail "Worktrunk created a worktree outside $resolved_worktree_root: $resolved_worktree_path" ;;
+esac
 active_branch=$(git -C "$worktree_path" branch --show-current 2>/dev/null) || fail "cannot verify worktree at $worktree_path"
 [[ $active_branch == "$branch" ]] || fail "expected branch $branch in pane $pane_id, found ${active_branch:-detached}"
 
