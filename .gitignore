@@ -2,7 +2,7 @@ node_modules
 .ordewell
 .pnpm-store
 .local/
-/data/
+/data/*
 /.worktrees/
 /.plannotator/
 *.sqlite

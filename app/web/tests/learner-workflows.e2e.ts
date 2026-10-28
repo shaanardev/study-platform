@@ -1,3 +1,8 @@
+import { validateExamPack } from '@learning-platform/exam-pack';
+import type { Page } from '@playwright/test';
+import Database from 'better-sqlite3';
+
+import { sampleLearningPackFixture } from '../src/lib/test-fixtures.js';
 import { expect, test } from './fixtures.js';
 
 const samplePack = {
@@ -16,15 +21,131 @@ const pipelineSecondCorrectAnswer = 'Track pipeline failures and execution statu
 
 const reviewUrl = `/review?${new URLSearchParams(samplePack).toString()}`;
 
-test.describe('remote baseline', () => {
-  // This single smoke test follows linked journeys through shared persisted state.
+const seedAlternatePackVersion = (): void => {
+  const databasePath = process.env['DB_PATH'];
 
-  test('records the current library, quiz, progress, and review journeys', async ({ page }) => {
+  if (databasePath === undefined || databasePath === '') {
+    throw new Error('The Playwright global setup did not provide DB_PATH.');
+  }
+
+  const database = new Database(databasePath);
+
+  try {
+    const validation = validateExamPack(sampleLearningPackFixture());
+
+    if (!validation.valid) {
+      throw new Error(validation.errors.join('\n'));
+    }
+
+    const alternatePack = validation.pack;
+    alternatePack.pack.id = 'synthetic-alternate';
+    alternatePack.pack.title = 'Alternative foundations sample';
+    alternatePack.pack.version = '2.0.0';
+    const [firstDomain, secondDomain] = alternatePack.domains;
+    const [firstQuestion, secondQuestion] = alternatePack.questions;
+
+    if (
+      firstDomain === undefined ||
+      secondDomain === undefined ||
+      firstQuestion === undefined ||
+      secondQuestion === undefined
+    ) {
+      throw new Error('The sample pack fixture needs two domains and two questions.');
+    }
+
+    firstDomain.id = 'transactions';
+    firstDomain.title = 'Transaction foundations';
+    secondDomain.id = 'operations';
+    secondDomain.title = 'Operations foundations';
+    firstQuestion.domainId = 'transactions';
+    secondQuestion.domainId = 'operations';
+
+    database
+      .prepare(
+        'INSERT INTO imported_packs (exam_id, pack_id, pack_version, content, approved_source_root, imported_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        alternatePack.exam.id,
+        alternatePack.pack.id,
+        alternatePack.pack.version,
+        JSON.stringify(alternatePack),
+        null,
+        new Date().toISOString(),
+      );
+  } finally {
+    database.close();
+  }
+};
+
+const expectEmptyStudyViews = async (page: Page): Promise<void> => {
+  await page.goto('/progress');
+  await expect(page.getByRole('heading', { name: 'No attempts yet' })).toBeVisible();
+  await expect(
+    page.getByText('Domain scores will appear after you answer questions.'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('No missed questions to review. Any incorrect answers will appear here.'),
+  ).toBeVisible();
+
+  await page.goto('/practice');
+  await expect(
+    page.getByRole('heading', { name: 'No exam packs are available yet' }),
+  ).toBeVisible();
+
+  await page.goto(reviewUrl);
+  await expect(page.getByRole('heading', { name: 'No imported packs' })).toBeVisible();
+};
+
+const expectPackSwitchUpdatesDomains = async (page: Page): Promise<void> => {
+  await page.getByLabel('Delta Lake foundations').check();
+  await expect(page.getByLabel('Number of questions')).toHaveAttribute('max', '1');
+  await page
+    .getByLabel('Exam pack version')
+    .selectOption('sample-engineer-exam|synthetic-alternate|2.0.0');
+  await expect(page.getByRole('group', { name: /Domains/u })).toContainText(
+    'Transaction foundations',
+  );
+  await expect(page.getByRole('group', { name: /Domains/u })).not.toContainText(
+    'Delta Lake foundations',
+  );
+  await page
+    .getByLabel('Exam pack version')
+    .selectOption(`${samplePack.examId}|${samplePack.packId}|${samplePack.packVersion}`);
+  await expect(page.getByRole('group', { name: /Domains/u })).toContainText(
+    'Delta Lake foundations',
+  );
+  await expect(page.getByLabel('Delta Lake foundations')).not.toBeChecked();
+  await expect(page.getByLabel('Number of questions')).toHaveAttribute('max', '2');
+};
+
+const resumePracticeQuiz = async (page: Page): Promise<void> => {
+  await page.goto('/practice');
+  await page.getByRole('link', { name: 'Resume quiz' }).click();
+  await expect(page).toHaveURL(/\/practice\?session=[^&]+$/u);
+  await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
+};
+
+const expectSourceCitation = async (page: Page): Promise<void> => {
+  await expect(
+    page.getByRole('link', { name: 'Synthetic study notes, section 1' }),
+  ).toHaveAttribute('href', /\/practice\/source\?/u);
+};
+
+test.describe('learner workflows', () => {
+  // These linked flows share persisted state, so keep them in one ordered test.
+
+  test('imports a pack, completes practice and a mock exam, tracks progress, and updates question feedback', async ({
+    page,
+  }) => {
     await test.step('library read and pack import', async () => {
       await page.goto('/');
       await expect(page).toHaveURL(/\/$/u);
       await expect(page.getByRole('heading', { name: 'Exam pack library' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'No imported packs yet' })).toBeVisible();
+
+      await expectEmptyStudyViews(page);
+
+      await page.goto('/');
 
       await page.getByRole('button', { name: 'Import or refresh local citations' }).click();
       await expect(page.getByRole('status')).toContainText(/Imported \d+ pack version\(s\)\./u);
@@ -33,6 +154,8 @@ test.describe('remote baseline', () => {
       await page.reload();
       await expect(page.getByText('Synthetic foundations sample')).toBeVisible();
       await expect(page.getByText('2 questions · 2 domains')).toBeVisible();
+
+      seedAlternatePackVersion();
     });
 
     await test.step('practice read, start redirect, answer redirect, and saved result', async () => {
@@ -42,18 +165,24 @@ test.describe('remote baseline', () => {
       await page
         .getByLabel('Exam pack version')
         .selectOption(`${samplePack.examId}|${samplePack.packId}|${samplePack.packVersion}`);
+      await expectPackSwitchUpdatesDomains(page);
       await page.getByLabel('Delta Lake foundations').check();
       await page.getByLabel('Number of questions').fill('1');
       await page.getByRole('button', { name: 'Start quiz' }).click();
       await expect(page).toHaveURL(/\/practice\?session=[^&]+$/u);
       await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
 
+      await resumePracticeQuiz(page);
+
       await page.getByLabel(practiceWrongAnswer).check();
       await page.getByRole('button', { name: 'Submit answer' }).click();
       await expect(page).toHaveURL(/\/practice\?session=[^&]+$/u);
+
       const answerFeedback = page.getByRole('status').filter({ hasText: 'Not quite' });
       await expect(answerFeedback).toContainText('Not quite');
       await expect(answerFeedback).toContainText(practiceCorrectAnswer);
+
+      await expectSourceCitation(page);
 
       await page.reload();
       await expect(page.getByRole('heading', { name: 'Quiz complete' })).toBeVisible();
@@ -144,6 +273,7 @@ test.describe('remote baseline', () => {
       await expect(
         page.getByRole('heading', { name: 'Improve your imported questions' }),
       ).toBeVisible();
+      await expectSourceCitation(page);
 
       const question = page.locator('article').filter({
         has: page.getByRole('heading', { name: practiceQuestion }),
@@ -186,7 +316,7 @@ test.describe('remote baseline', () => {
       await expect(page.getByRole('alert')).toContainText('Correction must be valid JSON.');
       await expect(page).toHaveURL(
         new RegExp(
-          `/review\\?examId=${samplePack.examId}&packId=${samplePack.packId}&packVersion=${samplePack.packVersion}&/correct$`,
+          `/review\\?examId=${samplePack.examId}&packId=${samplePack.packId}&packVersion=${samplePack.packVersion}`,
           'u',
         ),
       );
@@ -194,6 +324,9 @@ test.describe('remote baseline', () => {
       await correctionField.fill(JSON.stringify(correction));
       await correctionForm.getByRole('button', { name: 'Save correction' }).click();
       await expect(page).toHaveURL(new RegExp(`/review\\?examId=${samplePack.examId}.*`, 'u'));
+      await expect(correctionField).toHaveValue(
+        /Saved synthetic correction for the browser baseline\./u,
+      );
       await page.reload();
 
       const savedCorrection = page

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { onMount } from 'svelte';
 
   import {
@@ -9,9 +10,20 @@
     TIME_COMPONENT_WIDTH,
   } from '#lib/quiz/constants.js';
 
-  import type { PageProps } from './$types';
+  import {
+    getMockPage,
+    saveMockAnswer as saveMockAnswerForm,
+    startMock,
+    submitMock,
+  } from './mock.remote';
 
-  let { data, form }: PageProps = $props();
+  let queryArguments = $derived({
+    attemptId: page.url.searchParams.get('attempt') ?? undefined,
+    count: page.url.searchParams.get('count') ?? undefined,
+    packChoice: page.url.searchParams.get('packChoice') ?? undefined,
+  });
+
+  let data = $derived(await getMockPage(queryArguments));
   let selectedPackKey = $state('');
   let selectedQuestionCount = $state(0);
   let durationMinutes = $state(DEFAULT_MOCK_DURATION_MINUTES);
@@ -184,31 +196,19 @@
               {/if}
             </div>
           {/if}
-          {#if form?.message}
-            <p class="text-error-text mt-4" role="alert">{form.message}</p>
-          {/if}
-          {#if form?.gaps?.length}
-            <ul class="text-error-text mt-4 grid gap-2 pl-5" role="alert">
-              {#each form.gaps as gap (gap.id)}
-                <li>
-                  {gap.title}: needs {gap.required}, has {gap.available} (missing {gap.missing})
-                </li>
-              {/each}
-            </ul>
-          {/if}
-          <form
-            class="border-divider mt-5 grid gap-3 border-t pt-4"
-            action={resolve('/mock?/start')}
-            method="POST"
-          >
-            <input name="examId" type="hidden" value={selectedPack?.examId ?? ''} />
-            <input name="packId" type="hidden" value={selectedPack?.packId ?? ''} />
-            <input name="packVersion" type="hidden" value={selectedPack?.packVersion ?? ''} />
-            <input name="questionCount" type="hidden" value={effectiveQuestionCount} />
+          <form {...startMock} class="border-divider mt-5 grid gap-3 border-t pt-4">
+            <input {...startMock.fields.examId.as('hidden', selectedPack?.examId ?? '')} />
+            <input {...startMock.fields.packId.as('hidden', selectedPack?.packId ?? '')} />
+            <input
+              {...startMock.fields.packVersion.as('hidden', selectedPack?.packVersion ?? '')}
+            />
+            <input
+              {...startMock.fields.questionCount.as('hidden', String(effectiveQuestionCount))}
+            />
             <label class="font-bold" for="duration">Time limit in minutes</label>
             <input
+              {...startMock.fields.durationMinutes.as('text')}
               id="duration"
-              name="durationMinutes"
               class="input border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
               max="600"
               min="1"
@@ -224,6 +224,12 @@
               Start timed mock
             </button>
           </form>
+          {#each startMock.fields.questionCount.issues() ?? [] as issue (issue.message)}
+            <p class="text-error-text mt-4" role="alert">{issue.message}</p>
+          {/each}
+          {#each startMock.fields.durationMinutes.issues() ?? [] as issue (issue.message)}
+            <p class="text-error-text mt-4" role="alert">{issue.message}</p>
+          {/each}
         </section>
       {/if}
     {/if}
@@ -276,9 +282,10 @@
             </p>
             <h2 class="mb-4 text-xl/relaxed font-semibold">{question.prompt}</h2>
             {#if data.attempt.status === 'in_progress'}
-              <form class="grid gap-3" action={resolve('/mock?/answer')} method="POST">
-                <input name="attemptId" type="hidden" value={data.attempt.id} />
-                <input name="questionId" type="hidden" value={question.id} />
+              {const answerForm = $derived(saveMockAnswerForm.for(question.id))}
+              <form {...answerForm} class="grid gap-3">
+                <input {...answerForm.fields.attemptId.as('hidden', data.attempt.id)} />
+                <input {...answerForm.fields.questionId.as('hidden', question.id)} />
                 <fieldset class="border-card-border my-2 grid min-w-0 gap-1 rounded-xl border p-4">
                   <legend class="font-bold">
                     {question.type === 'multiple_choice'
@@ -288,15 +295,29 @@
                   {#each question.options as option (option.id)}
                     <label
                       class="has-checked:bg-panel-tint focus-within:outline-focus-gold flex items-start gap-3 rounded-md px-1 py-3 font-medium focus-within:outline-2"
-                      ><input
-                        name="answerIds"
-                        class="size-answer-control accent-brand focus-visible:outline-focus-gold mt-0.5 focus-visible:outline-2"
-                        checked={savedAnswers.get(question.id)?.includes(option.id) ?? false}
-                        required={question.type === 'single_choice'}
-                        type={question.type === 'multiple_choice' ? 'checkbox' : 'radio'}
-                        value={option.id}
-                      /><span>{option.text}</span></label
                     >
+                      {#if question.type === 'multiple_choice'}
+                        <input
+                          {...answerForm.fields['answerIds'].as(
+                            'checkbox',
+                            option.id,
+                            savedAnswers.get(question.id)?.includes(option.id) ?? false,
+                          )}
+                          class="size-answer-control accent-brand focus-visible:outline-focus-gold mt-0.5 focus-visible:outline-2"
+                        />
+                      {:else}
+                        <input
+                          {...answerForm.fields['answerId'].as(
+                            'radio',
+                            option.id,
+                            savedAnswers.get(question.id)?.includes(option.id) ?? false,
+                          )}
+                          class="size-answer-control accent-brand focus-visible:outline-focus-gold mt-0.5 focus-visible:outline-2"
+                          required
+                        />
+                      {/if}
+                      <span>{option.text}</span>
+                    </label>
                   {/each}
                 </fieldset>
                 <button
@@ -305,6 +326,9 @@
                 >
                   Save answer
                 </button>
+                {#each answerForm.fields['answerIds'].issues() ?? [] as issue (issue.message)}
+                  <p class="text-error-text" role="alert">{issue.message}</p>
+                {/each}
               </form>
             {:else}
               <ul class="grid gap-2 pl-5">
@@ -337,12 +361,8 @@
           </article>
         {/each}
         {#if data.attempt.status === 'in_progress'}
-          <form
-            class="border-divider mt-8 grid gap-3 border-t pt-5"
-            action={resolve('/mock?/submit')}
-            method="POST"
-          >
-            <input name="attemptId" type="hidden" value={data.attempt.id} />
+          <form {...submitMock} class="border-divider mt-8 grid gap-3 border-t pt-5">
+            <input {...submitMock.fields.attemptId.as('hidden', data.attempt.id)} />
             <button
               class="btn bg-brand hover:bg-brand-hover-deep focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
               type="submit"

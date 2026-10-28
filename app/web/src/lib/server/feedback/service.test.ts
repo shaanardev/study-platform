@@ -100,6 +100,30 @@ describe('question feedback', () => {
     await expect(createCorrection({ ...feedbackKey, correction })).rejects.toThrow(error);
   });
 
+  it('classifies unavailable review targets separately from correctable feedback errors', async () => {
+    const key = feedbackKey;
+
+    await expect(
+      flagQuestion({ ...key, questionId: 'missing-question', reason: 'Needs review.' }),
+    ).rejects.toMatchObject({ kind: 'missing-target' });
+    await expect(
+      createCorrection({
+        ...key,
+        correction: { prompt: 'Updated prompt' },
+        questionId: 'missing-question',
+      }),
+    ).rejects.toMatchObject({ kind: 'missing-target' });
+    await expect(
+      retireQuestion({ ...key, questionId: 'missing-question' }, true),
+    ).rejects.toMatchObject({ kind: 'missing-target' });
+    await expect(
+      createCorrection({ ...key, correction: { prompt: 'Updated prompt' }, packVersion: '9.9.9' }),
+    ).rejects.toMatchObject({ kind: 'missing-target' });
+    await expect(
+      createCorrection({ ...key, correction: { unsupported: true } }),
+    ).rejects.toMatchObject({ kind: 'invalid-input' });
+  });
+
   it('keeps prior results and the imported pack unchanged when corrections apply to new sessions', async () => {
     const original = questionAt(pack, 0);
 

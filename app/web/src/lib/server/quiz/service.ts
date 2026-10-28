@@ -6,6 +6,7 @@ import { error as httpError } from '@sveltejs/kit';
 import { MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
+import { toSourceReference } from '#lib/server/packs/client-safe.js';
 import { getImportedPack, getImportedSourceContext } from '#lib/server/packs/repository.js';
 
 import {
@@ -277,22 +278,40 @@ export const readQuestionSource = async (
   questionId: string,
   sourcePath: string,
 ) => {
-  const context = await getImportedSourceContext(
-    examId,
-    packId,
-    packVersion,
-    questionId,
-    sourcePath,
-  );
+  let context = await getImportedSourceContext(examId, packId, packVersion, questionId, sourcePath);
 
-  const pack = context?.pack;
-
-  const source = pack?.questions
+  let source = context?.pack.questions
     .find((question) => question.id === questionId)
     ?.sources.find((item) => item.path === sourcePath);
 
+  const isSourceReference = sourcePath.startsWith('source-ref-') && source === undefined;
+
+  if (isSourceReference && context?.pack) {
+    const effectivePack = await getEffectivePack(context.pack);
+    source = [effectivePack, context.pack]
+      .flatMap(
+        (pack) => pack.questions.find((question) => question.id === questionId)?.sources ?? [],
+      )
+      .find((item) => toSourceReference(item.path) === sourcePath);
+
+    if (source) {
+      // Opaque references cannot join the asset row directly; resolve the original path first.
+      context = await getImportedSourceContext(
+        examId,
+        packId,
+        packVersion,
+        questionId,
+        source.path,
+      );
+    }
+  }
+
   if (!source) {
-    if (/^[a-zA-Z][a-zA-Z\d+.-]*:/u.test(sourcePath) && !sourcePath.startsWith('file:///')) {
+    if (
+      !isSourceReference &&
+      /^[a-zA-Z][a-zA-Z\d+.-]*:/u.test(sourcePath) &&
+      !sourcePath.startsWith('file:///')
+    ) {
       httpError(HTTP_BAD_REQUEST, 'Citation URL scheme is unsupported.');
     }
 

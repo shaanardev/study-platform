@@ -29,10 +29,12 @@ const citationKey = (value: PackSource): string =>
 
 export class FeedbackValidationError extends Error {
   readonly issues: string[];
+  readonly kind: 'invalid-input' | 'missing-target';
 
-  constructor(issues: string[]) {
+  constructor(issues: string[], kind: 'invalid-input' | 'missing-target' = 'invalid-input') {
     super(issues.join(' '));
     this.issues = issues;
+    this.kind = kind;
     this.name = 'FeedbackValidationError';
   }
 }
@@ -101,7 +103,10 @@ const validateCorrection = (
   const original = pack.questions.find((question) => question.id === questionId);
 
   if (!original) {
-    throw new FeedbackValidationError(['Question is not in this imported pack version.']);
+    throw new FeedbackValidationError(
+      ['Question is not in this imported pack version.'],
+      'missing-target',
+    );
   }
 
   const allowed = new Set([
@@ -183,7 +188,10 @@ export const flagQuestion = async (
   const pack = await getImportedPack(input.examId, input.packId, input.packVersion);
 
   if (pack?.questions.some((question) => question.id === input.questionId) !== true) {
-    throw new FeedbackValidationError(['Question is not in this imported pack version.']);
+    throw new FeedbackValidationError(
+      ['Question is not in this imported pack version.'],
+      'missing-target',
+    );
   }
 
   const row = await updateFeedback(input, (previous) => {
@@ -209,7 +217,7 @@ export const createCorrection = async (
   const pack = await getImportedPack(input.examId, input.packId, input.packVersion);
 
   if (!pack) {
-    throw new FeedbackValidationError(['Imported pack version is unavailable.']);
+    throw new FeedbackValidationError(['Imported pack version is unavailable.'], 'missing-target');
   }
 
   const correction = validateCorrection(pack, input.questionId, input.correction);
@@ -227,7 +235,10 @@ export const retireQuestion = async (key: FeedbackKey, retired: boolean): Promis
   const pack = await getImportedPack(key.examId, key.packId, key.packVersion);
 
   if (pack?.questions.some((question) => question.id === key.questionId) !== true) {
-    throw new FeedbackValidationError(['Question is not in this imported pack version.']);
+    throw new FeedbackValidationError(
+      ['Question is not in this imported pack version.'],
+      'missing-target',
+    );
   }
 
   const row = await updateFeedback(key, (previous) => ({

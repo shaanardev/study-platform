@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 import { useTestDatabase } from '#lib/server/database/test-fixtures.js';
+import { toSourceReference } from '#lib/server/packs/client-safe.js';
 import { importPacksFromFolder } from '#lib/server/packs/importer.js';
 import { getImportedPack, saveImportedPack } from '#lib/server/packs/repository.js';
 import { mockSamplePackFolder } from '#lib/server/packs/test-fixtures.js';
@@ -65,6 +66,22 @@ describe('citation source lookup', () => {
     const { citation, pack, question } = lookup;
     await expect(
       readQuestionSource(pack.exam.id, pack.pack.id, pack.pack.version, question.id, citation.path),
+    ).resolves.toStrictEqual({ label: citation.label, text: 'Saved local excerpt.' });
+  });
+
+  it('resolves an opaque citation reference before looking up its saved excerpt', async () => {
+    const { citation, pack, question } = lookup;
+    const sourceReference = toSourceReference(citation.path);
+
+    expect(sourceReference).not.toContain(citation.path);
+    await expect(
+      readQuestionSource(
+        pack.exam.id,
+        pack.pack.id,
+        pack.pack.version,
+        question.id,
+        sourceReference,
+      ),
     ).resolves.toStrictEqual({ label: citation.label, text: 'Saved local excerpt.' });
   });
 

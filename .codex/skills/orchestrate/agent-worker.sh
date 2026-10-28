@@ -85,9 +85,11 @@ done
 split_json=$(herdr pane split --current --direction right --cwd "$repo_root" --no-focus) || fail 'could not split a worker pane'
 pane_id=$(jq -er '.result.pane.pane_id | strings | select(length > 0)' <<<"$split_json") || fail 'Herdr did not return the new pane ID'
 
-marker="AGENT_WORKER_${BASHPID}_${RANDOM}"
+marker_prefix="AGENT_WORKER_${BASHPID}_"
+marker_suffix="${RANDOM}"
+marker="${marker_prefix}${marker_suffix}"
 wt_path_config='worktree-path = "{{ repo_path }}/.worktrees/{{ branch | sanitize }}"'
-printf -v wt_command 'wt --config-set %q switch --create %q --base @; rc=$?; printf "\\n%s:%%s:%%s\\n" "$rc" "$PWD"' "$wt_path_config" "$branch" "$marker"
+printf -v wt_command 'wt --config-set %q switch --create %q --base @; rc=$?; printf "\\n%%s%%s:%%s:%%s\\n" %q %q "$rc" "$PWD"' "$wt_path_config" "$branch" "$marker_prefix" "$marker_suffix"
 herdr pane run "$pane_id" "$wt_command" >/dev/null || fail "could not submit Work Trunk setup in pane $pane_id"
 
 if ! herdr pane wait-output "$pane_id" --match "$marker:" --timeout 120000 >/dev/null; then

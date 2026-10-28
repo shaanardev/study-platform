@@ -1,9 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
 
-  import type { PageProps } from './$types';
+  import { getImportedPacks, importPacks } from './packs.remote';
 
-  let { data, form }: PageProps = $props();
+  const packsQuery = getImportedPacks();
+  let packs = $derived(await packsQuery);
+  let importResult = $derived(importPacks.result?.importResult);
 </script>
 
 <svelte:head>
@@ -71,19 +73,21 @@
           href={resolve('/exam-pack.schema.json')}>Read the exam pack JSON schema</a
         >
       </div>
-      <form class="w-full sm:w-auto" action={resolve('/?/import')} method="POST">
+      <form {...importPacks} class="w-full sm:w-auto">
         <label class="text-surface-600-400 mb-3 block text-sm">
           Approved local source root for absolute file citations
           <input
-            name="approvedSourceRoot"
+            {...importPacks.fields.approvedSourceRoot.as('text')}
             class="input mt-1 min-h-11 w-full"
             autocomplete="off"
             placeholder="/path/to/source/folder"
-            type="text"
           />
+          {#each importPacks.fields.approvedSourceRoot.issues() ?? [] as issue (issue.message)}
+            <span class="text-error-700-300 mt-1 block">{issue.message}</span>
+          {/each}
         </label>
         <label class="text-surface-600-400 mb-3 flex items-start gap-2 text-sm">
-          <input name="approveLocalSourceRoot" class="mt-1" type="checkbox" />
+          <input {...importPacks.fields.approveLocalSourceRoot.as('checkbox')} class="mt-1" />
           <span>
             I approve reading cited files beneath this folder during import. Their excerpts will be
             saved with the pack.
@@ -98,25 +102,25 @@
       </form>
     </section>
 
-    {#if form?.importResult}
+    {#if importResult}
       <div
         class="card border-surface-200-800 bg-surface-50-950 -mt-6 mb-10 rounded-2xl border px-4 py-3"
         aria-live="polite"
         role="status"
       >
-        {#if form.importResult.imported.length > 0}
-          <p class="my-1">Imported {form.importResult.imported.length} pack version(s).</p>
+        {#if importResult.imported.length > 0}
+          <p class="my-1">Imported {importResult.imported.length} pack version(s).</p>
         {/if}
-        {#if form.importResult.refreshed.length > 0}
+        {#if importResult.refreshed.length > 0}
           <p class="my-1">
-            Reapproved and refreshed local citations for {form.importResult.refreshed.length}
+            Reapproved and refreshed local citations for {importResult.refreshed.length}
             existing pack version(s).
           </p>
         {/if}
-        {#each form.importResult.errors as message (message)}
+        {#each [...new Set(importResult.errors)] as message (message)}
           <p class="text-error-700-300 my-1">{message}</p>
         {/each}
-        {#if form.importResult.imported.length === 0 && form.importResult.refreshed.length === 0 && form.importResult.errors.length === 0}
+        {#if importResult.imported.length === 0 && importResult.refreshed.length === 0 && importResult.errors.length === 0}
           <p class="my-1">No new pack versions were imported.</p>
         {/if}
       </div>
@@ -133,12 +137,12 @@
           </h2>
         </div>
         <p class="text-surface-600-400 m-0 text-sm">
-          {data.packs.length}
-          version{data.packs.length === 1 ? '' : 's'}
+          {packs.length}
+          version{packs.length === 1 ? '' : 's'}
         </p>
       </div>
 
-      {#if data.packs.length === 0}
+      {#if packs.length === 0}
         <div class="card border-surface-200-800 bg-surface-50-950 rounded-2xl border p-8">
           <h3 class="mb-2 text-lg font-semibold">No imported packs yet</h3>
           <p>
@@ -151,7 +155,7 @@
         </div>
       {:else}
         <div class="pack-card-grid grid gap-4">
-          {#each data.packs as pack (`${pack.examId}:${pack.packId}:${pack.packVersion}`)}
+          {#each packs as pack (`${pack.examId}:${pack.packId}:${pack.packVersion}`)}
             <article class="card border-surface-200-800 bg-surface-50-950 rounded-2xl border p-5">
               <div class="mb-3 flex items-center justify-between gap-4">
                 <p class="tracking-eyebrow text-primary-700-300 mb-0 text-xs font-bold uppercase">
