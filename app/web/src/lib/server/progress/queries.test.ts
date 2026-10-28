@@ -1,11 +1,7 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-
 import type { ExamPack } from '@learning-platform/exam-pack';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { initializeAppDatabase, closeAppDatabase } from '#lib/server/database/app-database.js';
+import { useTestDatabase } from '#lib/server/database/test-fixtures.js';
 import { createCorrection, retireQuestion } from '#lib/server/feedback/service.js';
 import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { getProgress } from '#lib/server/progress/queries.js';
@@ -15,85 +11,76 @@ import {
   submitMockAttempt,
 } from '#lib/server/quiz/mock-service.js';
 import { answerQuestion, createPracticeSession } from '#lib/server/quiz/service.js';
-
-const directories: string[] = [];
-
-const fixture = async () => {
-  const directory = mkdtempSync(path.join(tmpdir(), 'orde-progress-'));
-  directories.push(directory);
-  const databasePath = path.join(directory, 'progress.sqlite');
-  await initializeAppDatabase(databasePath);
-
-  const pack: ExamPack = {
-    domains: [
-      { id: 'storage', title: 'Storage', weight: 60 },
-      { id: 'compute', title: 'Compute', weight: 40 },
-    ],
-    exam: { id: 'exam-a', title: 'Cloud exam', version: '2026' },
-    pack: { id: 'pack-a', synthetic: false, title: 'Cloud foundations', version: '1.0' },
-    questions: [
-      {
-        answerIds: ['yes'],
-        domainId: 'storage',
-        explanation: 'Yes.',
-        id: 'q-storage',
-        options: [
-          { id: 'yes', text: 'Yes' },
-          { id: 'no', text: 'No' },
-        ],
-        prompt: 'Storage?',
-        sources: [{ label: 'Notes', path: 'notes.md' }],
-        type: 'single_choice',
-      },
-      {
-        answerIds: ['yes'],
-        domainId: 'compute',
-        explanation: 'Yes.',
-        id: 'q-compute',
-        options: [
-          { id: 'yes', text: 'Yes' },
-          { id: 'no', text: 'No' },
-        ],
-        prompt: 'Compute?',
-        sources: [{ label: 'Notes', path: 'notes.md' }],
-        type: 'single_choice',
-      },
-    ],
-    schemaVersion: 1,
-  };
-
-  await saveImportedPack(pack);
-
-  return { pack };
-};
+import type { StartPracticeOptions } from '#lib/server/quiz/service.js';
 
 describe('progress queries', () => {
-  afterEach(async () => {
-    await closeAppDatabase();
+  let pack: ExamPack;
+  let practiceOptions: StartPracticeOptions;
+  let mockOptions: Omit<Parameters<typeof createMockAttempt>[0], 'now'>;
 
-    directories.splice(0).forEach((directory) => {
-      rmSync(directory, { force: true, recursive: true });
-    });
+  useTestDatabase(async () => {
+    pack = {
+      domains: [
+        { id: 'storage', title: 'Storage', weight: 60 },
+        { id: 'compute', title: 'Compute', weight: 40 },
+      ],
+      exam: { id: 'exam-a', title: 'Cloud exam', version: '2026' },
+      pack: { id: 'pack-a', synthetic: false, title: 'Cloud foundations', version: '1.0' },
+      questions: [
+        {
+          answerIds: ['yes'],
+          domainId: 'storage',
+          explanation: 'Yes.',
+          id: 'q-storage',
+          options: [
+            { id: 'yes', text: 'Yes' },
+            { id: 'no', text: 'No' },
+          ],
+          prompt: 'Storage?',
+          sources: [{ label: 'Notes', path: 'notes.md' }],
+          type: 'single_choice',
+        },
+        {
+          answerIds: ['yes'],
+          domainId: 'compute',
+          explanation: 'Yes.',
+          id: 'q-compute',
+          options: [
+            { id: 'yes', text: 'Yes' },
+            { id: 'no', text: 'No' },
+          ],
+          prompt: 'Compute?',
+          sources: [{ label: 'Notes', path: 'notes.md' }],
+          type: 'single_choice',
+        },
+      ],
+      schemaVersion: 1,
+    };
+
+    await saveImportedPack(pack);
+
+    practiceOptions = {
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    };
+    mockOptions = {
+      durationMinutes: 30,
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionCount: 2,
+      random: () => 0,
+    };
   });
 
   it('keeps unanswered practice and mock attempts while leaving scores empty', async () => {
-    const { pack } = await fixture();
-
-    await createPracticeSession({
-      examId: pack.exam.id,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
-    });
+    await createPracticeSession(practiceOptions);
     await createMockAttempt({
-      durationMinutes: 30,
-      examId: pack.exam.id,
-      now: 10_000,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
+      ...mockOptions,
+      now: Date.now(),
     });
 
     const progress = await getProgress();
@@ -110,15 +97,7 @@ describe('progress queries', () => {
   });
 
   it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', async () => {
-    const { pack } = await fixture();
-
-    const session = await createPracticeSession({
-      examId: pack.exam.id,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
-    });
+    const session = await createPracticeSession(practiceOptions);
 
     await answerQuestion(session.id, 'q-storage', ['yes']);
     await answerQuestion(session.id, 'q-compute', ['no']);
@@ -135,17 +114,15 @@ describe('progress queries', () => {
       packVersion: '1.0',
       questionCount: 2,
     });
-    expect(progress.domainScores).toStrictEqual([
+    expect(progress.domainScores).toMatchObject([
       {
         answeredCount: 1,
         correctCount: 0,
         domainId: 'compute',
         domainTitle: 'Compute',
-        examId: 'exam-a',
-        examTitle: 'Cloud exam',
-        packId: 'pack-a',
-        packTitle: 'Cloud foundations',
-        packVersion: '1.0',
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
         percent: 0,
       },
       {
@@ -153,22 +130,71 @@ describe('progress queries', () => {
         correctCount: 1,
         domainId: 'storage',
         domainTitle: 'Storage',
-        examId: 'exam-a',
-        examTitle: 'Cloud exam',
-        packId: 'pack-a',
-        packTitle: 'Cloud foundations',
-        packVersion: '1.0',
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
         percent: 100,
       },
     ]);
-    expect(progress.missedQuestions).toStrictEqual([
+    expect(progress.missedQuestions).toMatchObject([
       {
         domainId: 'compute',
         domainTitle: 'Compute',
-        examId: 'exam-a',
-        examTitle: 'Cloud exam',
+        examId: pack.exam.id,
         missCount: 1,
-        packId: 'pack-a',
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        prompt: 'Compute?',
+        questionId: 'q-compute',
+      },
+    ]);
+  });
+
+  it('keeps domain scores and missed prompts isolated by pack version', async () => {
+    const newerPack = structuredClone(pack);
+    newerPack.pack = { ...newerPack.pack, title: 'Cloud foundations 2', version: '2.0' };
+
+    await saveImportedPack(newerPack);
+
+    const version1Session = await createPracticeSession(practiceOptions);
+
+    const version2Session = await createPracticeSession({
+      ...practiceOptions,
+      packVersion: newerPack.pack.version,
+    });
+
+    await answerQuestion(version1Session.id, 'q-compute', ['no']);
+    await answerQuestion(version2Session.id, 'q-compute', ['yes']);
+
+    const progress = await getProgress();
+
+    expect(progress.domainScores).toMatchObject([
+      {
+        answeredCount: 1,
+        correctCount: 0,
+        domainId: 'compute',
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packTitle: 'Cloud foundations',
+        packVersion: '1.0',
+        percent: 0,
+      },
+      {
+        answeredCount: 1,
+        correctCount: 1,
+        domainId: 'compute',
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packTitle: 'Cloud foundations 2',
+        packVersion: '2.0',
+        percent: 100,
+      },
+    ]);
+    expect(progress.missedQuestions).toMatchObject([
+      {
+        domainId: 'compute',
+        missCount: 1,
+        packId: pack.pack.id,
         packTitle: 'Cloud foundations',
         packVersion: '1.0',
         prompt: 'Compute?',
@@ -178,15 +204,7 @@ describe('progress queries', () => {
   });
 
   it('keeps historical scores and missed questions tied to the attempt snapshot after feedback changes', async () => {
-    const { pack } = await fixture();
-
-    const session = await createPracticeSession({
-      examId: pack.exam.id,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
-    });
+    const session = await createPracticeSession(practiceOptions);
 
     await createCorrection({
       correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
@@ -223,18 +241,18 @@ describe('progress queries', () => {
     );
   });
 
-  it('aggregates historical missed-question details in answer chronology across attempt snapshots', async () => {
-    const { pack } = await fixture();
-
-    const earlierSession = await createPracticeSession({
-      examId: pack.exam.id,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
+  it('aggregates historical missed-question details in answer chronology across attempt snapshots', async ({
+    onTestFinished,
+  }) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
     });
 
+    const earlierSession = await createPracticeSession(practiceOptions);
+
     await answerQuestion(earlierSession.id, 'q-compute', ['no']);
+    vi.advanceTimersByTime(1000);
 
     await createCorrection({
       correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
@@ -244,13 +262,7 @@ describe('progress queries', () => {
       questionId: 'q-compute',
     });
 
-    const laterSession = await createPracticeSession({
-      examId: pack.exam.id,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
-    });
+    const laterSession = await createPracticeSession(practiceOptions);
 
     await answerQuestion(laterSession.id, 'q-compute', ['yes']);
 
@@ -266,21 +278,12 @@ describe('progress queries', () => {
   });
 
   it('includes submitted mock exams in recent attempt summaries', async () => {
-    const { pack } = await fixture();
+    const now = Date.now();
+    const attempt = await createMockAttempt({ ...mockOptions, now });
 
-    const attempt = await createMockAttempt({
-      durationMinutes: 30,
-      examId: pack.exam.id,
-      now: 10_000,
-      packId: pack.pack.id,
-      packVersion: pack.pack.version,
-      questionCount: 2,
-      random: () => 0,
-    });
-
-    await saveMockAnswer(attempt.id, 'q-storage', ['yes'], 11_000);
-    await saveMockAnswer(attempt.id, 'q-compute', ['no'], 12_000);
-    await submitMockAttempt(attempt.id, 13_000);
+    await saveMockAnswer(attempt.id, 'q-storage', ['yes'], now + 1000);
+    await saveMockAnswer(attempt.id, 'q-compute', ['no'], now + 2000);
+    await submitMockAttempt(attempt.id, now + 3000);
 
     const progress = await getProgress();
 

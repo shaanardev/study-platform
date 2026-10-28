@@ -1,14 +1,16 @@
-import { cp, mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { workspacePath } from '#lib/server/workspace-paths.js';
+import { validateExamPack } from '@learning-platform/exam-pack';
 
-const samplePack = workspacePath('packs/incoming/sample-learning-pack.json');
+import { saveImportedPack } from '#lib/server/packs/repository.js';
+
+import samplePack from '../../../../../../packs/incoming/sample-learning-pack.json' with { type: 'json' };
 
 export const mockSamplePackFolder = async (folder: string) => {
   const assets = path.join(folder, 'assets');
   await mkdir(assets, { recursive: true });
-  await cp(samplePack, path.join(folder, 'sample-learning-pack.json'));
+  await writeFile(path.join(folder, 'sample-learning-pack.json'), JSON.stringify(samplePack));
   await writeFile(
     path.join(assets, 'synthetic-notes.md'),
     [
@@ -27,4 +29,17 @@ export const mockSamplePackFolder = async (folder: string) => {
     ].join('\n'),
     'utf-8',
   );
+};
+
+/** Seed a fresh copy of the tracked sample pack into the current test database. */
+export const seedSamplePack = async () => {
+  const validation = validateExamPack(structuredClone(samplePack));
+
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(' '));
+  }
+
+  await saveImportedPack(validation.pack);
+
+  return validation.pack;
 };

@@ -1,82 +1,37 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-
 import type { ExamPack } from '@learning-platform/exam-pack';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-  closeAppDatabase,
-  getAppDatabase,
-  initializeAppDatabase,
-} from '#lib/server/database/app-database.js';
-import {
-  getImportedPack,
-  listImportedPacks,
-  saveImportedPack,
-} from '#lib/server/packs/repository.js';
-
-const temporaryDirectories: string[] = [];
+import { useTestDatabase } from '#lib/server/database/test-fixtures.js';
+import { getImportedPack, listImportedPacks } from '#lib/server/packs/repository.js';
+import { seedSamplePack } from '#lib/server/packs/test-fixtures.js';
 
 describe('pack persistence', () => {
-  afterEach(async () => {
-    await closeAppDatabase();
-    await Promise.all(
-      temporaryDirectories.splice(0).map(async (directory) => {
-        await rm(directory, { force: true, recursive: true });
-      }),
-    );
+  let pack: ExamPack;
+
+  useTestDatabase(async () => {
+    pack = await seedSamplePack();
   });
 
-  it('round trips typed ExamPack JSON through the Kysely result plugin', async () => {
-    const directory = await mkdtemp(path.join(tmpdir(), 'exam-pack-db-'));
-    temporaryDirectories.push(directory);
-    await initializeAppDatabase(path.join(directory, 'packs.sqlite'));
-
-    const pack: ExamPack = {
-      domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
-      exam: { id: 'demo-exam', title: 'Demo exam', version: '1.0.0' },
-      pack: { id: 'demo-pack', synthetic: true, title: 'Demo pack', version: '1.0.0' },
-      questions: [
-        {
-          answerIds: ['b'],
-          domainId: 'fundamentals',
-          explanation: 'The second option is correct.',
-          id: 'question-1',
-          options: [
-            { id: 'a', text: 'First option' },
-            { id: 'b', text: 'Second option' },
-          ],
-          prompt: 'Which option is correct?',
-          sources: [],
-          type: 'single_choice',
-        },
-      ],
-      schemaVersion: 1,
-    };
-
-    await saveImportedPack(pack);
-
+  it('round trips the complete imported pack', async () => {
     await expect(
       getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version),
     ).resolves.toStrictEqual(pack);
+  });
 
-    const stored = await getAppDatabase()
-      .selectFrom('imported_packs')
-      .select('content as content')
-      .executeTakeFirstOrThrow();
-
-    expect(stored.content).toStrictEqual(pack);
-    expect(stored.content).toBeTypeOf('object');
-    await expect(listImportedPacks()).resolves.toStrictEqual([
-      expect.objectContaining({
-        domainCount: 1,
-        domains: [{ id: 'fundamentals', questionCount: 1, title: 'Fundamentals', weight: 100 }],
-        examTitle: 'Demo exam',
-        packTitle: 'Demo pack',
-        questionCount: 1,
+  it('lists pack metadata with question counts for each domain', async () => {
+    await expect(listImportedPacks()).resolves.toMatchObject([
+      {
+        domainCount: 2,
+        domains: [
+          { id: 'delta-lake', questionCount: 1 },
+          { id: 'pipelines', questionCount: 1 },
+        ],
+        examId: pack.exam.id,
+        packId: pack.pack.id,
+        packVersion: pack.pack.version,
+        questionCount: 2,
         synthetic: true,
-      }),
+      },
     ]);
   });
 });

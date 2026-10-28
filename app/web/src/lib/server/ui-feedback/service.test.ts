@@ -4,17 +4,19 @@ import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import * as Schema from 'effect/Schema';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { submitUiFeedback } from '#lib/server/ui-feedback/service.js';
 import { mockUiFeedback } from '#lib/test-fixtures.js';
 import { DeliveryStatus, FeedbackSchema, RetryAction } from '#lib/ui-feedback/schema.js';
 import type { Submission } from '#lib/ui-feedback/schema.js';
 
-const directories: string[] = [];
-
 const pngDataUrl =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7PsAAAAASUVORK5CYII=';
+
+let workspaceRoot: string;
+let feedback: ReturnType<typeof mockUiFeedback>;
+let submission: Submission;
 
 interface HerdrAgent {
   agent: string;
@@ -42,8 +44,8 @@ const mockService =
     runCommand: (args: readonly string[]) => string | Promise<string>,
     herdrEnvironment = '1',
   ) =>
-  async (submission: Submission, signal: AbortSignal = new AbortController().signal) =>
-    await submitUiFeedback(submission, {
+  async (input: Submission, signal: AbortSignal = new AbortController().signal) =>
+    await submitUiFeedback(input, {
       herdrEnvironment,
       receiptTimeoutMs: 500,
       runCommand: async (args) => await runCommand(args),
@@ -51,15 +53,17 @@ const mockService =
       workspaceRoot: root,
     });
 
-const fixtureDirectory = async () => {
-  const directory = await mkdtemp(path.join(tmpdir(), 'ui-feedback-'));
-  directories.push(directory);
-
-  return directory;
-};
-
 const mockAgentListResponse = (...agents: HerdrAgent[]) =>
   mockHerdrResponse('cli:agent:list', { agents });
+
+const readyAgent = (root: string, name = 'feature-agent'): HerdrAgent => ({
+  agent: 'codex',
+  agent_status: 'idle',
+  cwd: root,
+  interactive_ready: true,
+  name,
+  pane_id: 'w1:p1',
+});
 
 const commandArgument = (args: readonly string[], index: number): string =>
   Schema.decodeUnknownSync(Schema.String)(args[index]);
@@ -87,19 +91,21 @@ const mockCommandRouter =
   };
 
 describe('UI feedback delivery service', () => {
-  afterEach(async () => {
-    await Promise.all(
-      directories.splice(0).map(async (directory) => {
-        await rm(directory, { force: true, recursive: true });
-      }),
-    );
+  beforeEach(async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'ui-feedback-'));
+    workspaceRoot = root;
+    feedback = mockUiFeedback();
+    submission = { feedback, screenshot: pngDataUrl };
+
+    return async () => {
+      await rm(root, { force: true, recursive: true });
+    };
   });
 
   it('saves feedback without routing when the server is outside Herdr', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const runCommand = vi.fn<(args: readonly string[]) => Promise<string>>();
-    const result = await mockService(root, runCommand, '')({ feedback, screenshot: pngDataUrl });
+
+    const result = await mockService(workspaceRoot, runCommand, '')(submission);
 
     expect(result.message).toContain('not running inside Herdr');
     expect(result.status).toBe(DeliveryStatus.Failed);
@@ -109,42 +115,52 @@ describe('UI feedback delivery service', () => {
   });
 
   it('offers only Codex agents attached to this worktree when a choice is needed', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
-    await mkdir(path.join(root, 'apps', 'web'), { recursive: true });
+    await mkdir(path.join(workspaceRoot, 'apps', 'web'), { recursive: true });
     const calls: string[][] = [];
 
-    const service = mockService(root, (args) => {
+    const service = mockService(workspaceRoot, (args) => {
       calls.push([...args]);
 
       return mockAgentListResponse(
-        { agent: 'codex', agent_status: 'idle', cwd: root, name: 'feature-a', pane_id: 'w1:p1' },
         {
           agent: 'codex',
           agent_status: 'idle',
-          foreground_cwd: path.join(root, 'apps/web'),
+          cwd: workspaceRoot,
+          name: 'feature-a',
+          pane_id: 'w1:p1',
+        },
+        {
+          agent: 'codex',
+          agent_status: 'idle',
+          foreground_cwd: path.join(workspaceRoot, 'apps/web'),
           name: 'feature-b',
           pane_id: 'w1:p2',
         },
         {
           agent: 'codex',
           agent_status: 'idle',
-          cwd: path.dirname(root),
+          cwd: path.dirname(workspaceRoot),
           name: 'main-agent',
           pane_id: 'w2:p1',
         },
         {
           agent: 'codex',
           agent_status: 'idle',
-          cwd: path.join(root, '.worktrees', 'other'),
+          cwd: path.join(workspaceRoot, '.worktrees', 'other'),
           name: 'nested-worktree',
           pane_id: 'w3:p1',
         },
-        { agent: 'pi', agent_status: 'idle', cwd: root, name: 'pi-agent', pane_id: 'w4:p1' },
+        {
+          agent: 'pi',
+          agent_status: 'idle',
+          cwd: workspaceRoot,
+          name: 'pi-agent',
+          pane_id: 'w4:p1',
+        },
       );
     });
 
-    const result = await service({ feedback, screenshot: pngDataUrl });
+    const result = await service(submission);
 
     expect(result).toMatchObject({
       sessions: [{ id: 'feature-a' }, { id: 'feature-b' }],
@@ -157,8 +173,6 @@ describe('UI feedback delivery service', () => {
   });
 
   it('reuses an unnamed Codex agent by its pane ID', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const calls: string[][] = [];
 
     const routes = mockCommandRouter({
@@ -166,7 +180,7 @@ describe('UI feedback delivery service', () => {
         mockAgentListResponse({
           agent: 'codex',
           agent_status: 'idle',
-          foreground_cwd: root,
+          foreground_cwd: workspaceRoot,
           interactive_ready: true,
           pane_id: 'w1:p9',
         }),
@@ -178,13 +192,13 @@ describe('UI feedback delivery service', () => {
       },
     });
 
-    const service = mockService(root, async (args) => {
+    const service = mockService(workspaceRoot, async (args) => {
       calls.push([...args]);
 
       return await routes(args);
     });
 
-    const result = await service({ feedback, screenshot: pngDataUrl });
+    const result = await service(submission);
 
     expect(result.status).toBe(DeliveryStatus.Delivered);
     expect(calls.map((call) => call.slice(0, 2))).toStrictEqual([
@@ -194,27 +208,19 @@ describe('UI feedback delivery service', () => {
   });
 
   it('saves before dispatch and requires a matching receipt; retries do not resend', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     let promptCount = 0;
     let receiptPath = '';
 
     const routes = mockCommandRouter({
-      'agent list': () =>
-        mockAgentListResponse({
-          agent: 'codex',
-          agent_status: 'idle',
-          cwd: root,
-          interactive_ready: true,
-          name: 'feature-agent',
-          pane_id: 'w1:p1',
-        }),
+      'agent list': () => mockAgentListResponse(readyAgent(workspaceRoot)),
       'agent prompt': async (args) => {
         promptCount += 1;
         receiptPath = receiptPathFrom(commandArgument(args, 3));
 
         const saved = Schema.decodeUnknownSync(FeedbackSchema)(
-          JSON.parse(await readFile(path.join(root, '.ui-feedback', 'feedback-1.json'), 'utf-8')),
+          JSON.parse(
+            await readFile(path.join(workspaceRoot, '.ui-feedback', 'feedback-1.json'), 'utf-8'),
+          ),
         );
 
         expect(saved.id).toBe(feedback.id);
@@ -224,10 +230,10 @@ describe('UI feedback delivery service', () => {
       },
     });
 
-    const service = mockService(root, routes);
+    const service = mockService(workspaceRoot, routes);
 
-    const first = await service({ feedback, screenshot: pngDataUrl });
-    const second = await service({ feedback, screenshot: pngDataUrl });
+    const first = await service(submission);
+    const second = await service(submission);
 
     expect(first.status).toBe(DeliveryStatus.Delivered);
     expect(second.status).toBe(DeliveryStatus.Delivered);
@@ -239,8 +245,6 @@ describe('UI feedback delivery service', () => {
   });
 
   it('starts a Codex agent in the exact worktree when none is attached', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const calls: string[][] = [];
     let prompt = '';
     let startedName = '';
@@ -251,12 +255,8 @@ describe('UI feedback delivery service', () => {
       () => mockAgentListResponse(),
       () =>
         mockAgentListResponse({
-          agent: 'codex',
-          agent_status: 'idle',
-          foreground_cwd: root,
-          interactive_ready: true,
-          name: startedName,
-          pane_id: 'w1:p1',
+          ...readyAgent(workspaceRoot, startedName),
+          foreground_cwd: workspaceRoot,
         }),
     ];
 
@@ -281,21 +281,21 @@ describe('UI feedback delivery service', () => {
         return mockHerdrResponse('cli:agent:start', { started: true });
       },
       'pane list': () =>
-        mockHerdrResponse('cli:pane:list', { panes: [{ cwd: root, pane_id: 'w1:p1' }] }),
+        mockHerdrResponse('cli:pane:list', { panes: [{ cwd: workspaceRoot, pane_id: 'w1:p1' }] }),
       'worktree list': () =>
         mockHerdrResponse('cli:worktree:list', {
-          source: { repo_root: root },
-          worktrees: [{ open_workspace_id: 'w1', path: root }],
+          source: { repo_root: workspaceRoot },
+          worktrees: [{ open_workspace_id: 'w1', path: workspaceRoot }],
         }),
     });
 
-    const service = mockService(root, async (args) => {
+    const service = mockService(workspaceRoot, async (args) => {
       calls.push([...args]);
 
       return await routes(args);
     });
 
-    const result = await service({ feedback, screenshot: pngDataUrl });
+    const result = await service(submission);
 
     expect(result.status).toBe(DeliveryStatus.Delivered);
     expect(calls.map((call) => call.slice(0, 2))).toStrictEqual([
@@ -307,7 +307,7 @@ describe('UI feedback delivery service', () => {
       ['agent', 'prompt'],
     ]);
     expect(prompt).toContain(
-      `Feedback JSON: ${path.join(root, '.ui-feedback', `${feedback.id}.json`)}`,
+      `Feedback JSON: ${path.join(workspaceRoot, '.ui-feedback', `${feedback.id}.json`)}`,
     );
     expect(prompt).toContain(
       'Relative Svelte source paths are relative to apps/web in this worktree',
@@ -315,21 +315,15 @@ describe('UI feedback delivery service', () => {
   });
 
   it('prevents concurrent duplicate IDs from prompting more than once', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     let promptCount = 0;
 
     const service = mockService(
-      root,
+      workspaceRoot,
       mockCommandRouter({
         'agent list': () =>
           mockAgentListResponse({
-            agent: 'codex',
-            agent_status: 'idle',
-            cwd: root,
-            interactive_ready: true,
+            ...readyAgent(workspaceRoot),
             name: 'feature-agent',
-            pane_id: 'w1:p1',
           }),
         'agent prompt': async (args) => {
           promptCount += 1;
@@ -341,10 +335,7 @@ describe('UI feedback delivery service', () => {
       }),
     );
 
-    const [first, second] = await Promise.all([
-      service({ feedback, screenshot: pngDataUrl }),
-      service({ feedback, screenshot: pngDataUrl }),
-    ]);
+    const [first, second] = await Promise.all([service(submission), service(submission)]);
 
     expect([first.status, second.status]).toContain(DeliveryStatus.Delivered);
     expect([first.status, second.status]).not.toContain(DeliveryStatus.Choose);
@@ -352,21 +343,14 @@ describe('UI feedback delivery service', () => {
   });
 
   it('does not retry an ambiguous delivery without a receipt', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     let promptCount = 0;
 
     const service = mockService(
-      root,
+      workspaceRoot,
       mockCommandRouter({
         'agent list': () =>
           mockAgentListResponse({
-            agent: 'codex',
-            agent_status: 'idle',
-            cwd: root,
-            interactive_ready: true,
-            name: 'feature-agent',
-            pane_id: 'w1:p1',
+            ...readyAgent(workspaceRoot),
           }),
         'agent prompt': () => {
           promptCount += 1;
@@ -375,8 +359,8 @@ describe('UI feedback delivery service', () => {
       }),
     );
 
-    const first = await service({ feedback, screenshot: pngDataUrl });
-    const second = await service({ feedback, screenshot: pngDataUrl });
+    const first = await service(submission);
+    const second = await service(submission);
 
     expect(first.status).toBe(DeliveryStatus.Failed);
     expect(first.message).toContain('verifiable receipt');
@@ -386,20 +370,12 @@ describe('UI feedback delivery service', () => {
   }, 10_000);
 
   it('accepts a receipt that arrives shortly after the prompt command returns', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
-
     const service = mockService(
-      root,
+      workspaceRoot,
       mockCommandRouter({
         'agent list': () =>
           mockAgentListResponse({
-            agent: 'codex',
-            agent_status: 'idle',
-            cwd: root,
-            interactive_ready: true,
-            name: 'feature-agent',
-            pane_id: 'w1:p1',
+            ...readyAgent(workspaceRoot),
           }),
         'agent prompt': (args) => {
           const receipt = receiptPathFrom(commandArgument(args, 3));
@@ -416,47 +392,39 @@ describe('UI feedback delivery service', () => {
       }),
     );
 
-    const result = await service({ feedback, screenshot: pngDataUrl });
+    const result = await service(submission);
 
     expect(result.status).toBe(DeliveryStatus.Delivered);
   }, 10_000);
 
   it('does no work when already aborted', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const controller = new AbortController();
     controller.abort();
     const runCommand = vi.fn<(args: readonly string[]) => Promise<string>>();
 
-    const result = await submitUiFeedback(
-      { feedback, screenshot: pngDataUrl },
-      { runCommand, signal: controller.signal, workspaceRoot: root },
-    );
+    const result = await submitUiFeedback(submission, {
+      runCommand,
+      signal: controller.signal,
+      workspaceRoot,
+    });
 
     expect(result).toMatchObject({ retry: RetryAction.Send, status: DeliveryStatus.Failed });
     expect(runCommand).not.toHaveBeenCalled();
-    await expect(readFile(path.join(root, '.ui-feedback', `${feedback.id}.json`))).rejects.toThrow(
-      'ENOENT',
-    );
+    await expect(
+      readFile(path.join(workspaceRoot, '.ui-feedback', `${feedback.id}.json`)),
+    ).rejects.toThrow('ENOENT');
   });
 
   it('cancels receipt polling after dispatch without making a retry send', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const controller = new AbortController();
     let promptCount = 0;
 
     const service = mockService(
-      root,
+      workspaceRoot,
       mockCommandRouter({
         'agent list': () =>
           mockAgentListResponse({
-            agent: 'codex',
-            agent_status: 'idle',
-            cwd: root,
-            interactive_ready: true,
-            name: 'feature-agent',
-            pane_id: 'w1:p1',
+            ...readyAgent(workspaceRoot),
           }),
         'agent prompt': () => {
           promptCount += 1;
@@ -469,8 +437,8 @@ describe('UI feedback delivery service', () => {
       }),
     );
 
-    const result = await service({ feedback, screenshot: pngDataUrl }, controller.signal);
-    const retry = await service({ feedback, screenshot: pngDataUrl });
+    const result = await service(submission, controller.signal);
+    const retry = await service(submission);
 
     expect(result).toMatchObject({ retry: RetryAction.Check, status: DeliveryStatus.Failed });
     expect(retry.message).toContain('was not sent again');
@@ -478,8 +446,6 @@ describe('UI feedback delivery service', () => {
   });
 
   it('lets a cancelled request finish without blocking an in-flight delivery', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const started = Promise.withResolvers<null>();
     const release = Promise.withResolvers<null>();
     const controller = new AbortController();
@@ -492,12 +458,7 @@ describe('UI feedback delivery service', () => {
         await release.promise;
 
         return mockAgentListResponse({
-          agent: 'codex',
-          agent_status: 'idle',
-          cwd: root,
-          interactive_ready: true,
-          name: 'feature-agent',
-          pane_id: 'w1:p1',
+          ...readyAgent(workspaceRoot),
         });
       },
       'agent prompt': async (args) => {
@@ -507,15 +468,15 @@ describe('UI feedback delivery service', () => {
       },
     });
 
-    const service = mockService(root, async (args) => {
+    const service = mockService(workspaceRoot, async (args) => {
       calls.push([...args]);
 
       return await routes(args);
     });
 
-    const first = service({ feedback, screenshot: pngDataUrl });
+    const first = service(submission);
     await started.promise;
-    const second = service({ feedback, screenshot: pngDataUrl }, controller.signal);
+    const second = service(submission, controller.signal);
     await expect(second).resolves.toMatchObject({ status: DeliveryStatus.Failed });
     expect(calls.map((call) => call.slice(0, 2))).toStrictEqual([['agent', 'list']]);
     release.resolve(null);
@@ -528,8 +489,6 @@ describe('UI feedback delivery service', () => {
   });
 
   it('rejects PNG geometry that disagrees with the viewport before writing or dispatching', async () => {
-    const feedback = mockUiFeedback();
-    const root = await fixtureDirectory();
     const runCommand = vi.fn<(args: readonly string[]) => Promise<string>>();
 
     const result = await submitUiFeedback(
@@ -537,7 +496,7 @@ describe('UI feedback delivery service', () => {
         feedback: { ...feedback, viewport: { ...feedback.viewport, width: 2 } },
         screenshot: pngDataUrl,
       },
-      { runCommand, workspaceRoot: root },
+      { runCommand, workspaceRoot },
     );
 
     expect(result.status).toBe(DeliveryStatus.Failed);
