@@ -6,6 +6,7 @@ import { MatcherType, SelectorKind } from 'eslint-plugin-better-tailwindcss/type
 import sveltePlugin from 'eslint-plugin-svelte';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
+import playwright from 'ultracite/eslint/playwright';
 import vitest from 'ultracite/eslint/vitest';
 import vitestTypeAware from 'ultracite/eslint/vitest/type-aware';
 
@@ -31,11 +32,26 @@ const vitestFiles = [
   '**/__tests__/**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
 ];
 
+const playwrightFiles = ['tests/**/*.e2e.ts'];
+
 const tailwindPaletteClassPattern = String.raw`^(?:.*:)?!?(?:bg|text|decoration|placeholder|border(?:-(?:x|y|s|e|t|r|b|l))?|divide(?:-(?:x|y))?|outline|ring|ring-offset|inset-ring|(?:inset-)?shadow|accent|caret|fill|stroke|from|via|to)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950)(?:/[^ ]+)?!?$`;
 
 export default defineConfig([
   ...vitest,
   ...vitestTypeAware,
+  ...playwright.map((config) => ({ ...config, files: playwrightFiles })),
+  {
+    files: playwrightFiles,
+    languageOptions: {
+      parser: tsParser,
+    },
+    rules: {
+      // This end-to-end smoke test intentionally follows several persisted journeys as one case.
+      'playwright/max-expects': ['error', { max: 60 }],
+      // Scope structural container locators to selectors that have no useful accessible role.
+      'playwright/no-raw-locators': ['error', { allowed: ['article', 'form'] }],
+    },
+  },
   {
     files: vitestFiles,
     languageOptions: {
@@ -53,6 +69,7 @@ export default defineConfig([
       '**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}',
       '!**/*.svelte.{js,ts}',
       '!**/*.{test,spec,test-d,spec-d}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
+      '!**/*.e2e.ts',
       '!**/__tests__/**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
       '.svelte-kit/**',
       'build/**',

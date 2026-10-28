@@ -18,3 +18,10 @@ declare module 'ultracite/eslint/vitest/type-aware' {
   const config: Config[];
   export default config;
 }
+
+declare module 'ultracite/eslint/playwright' {
+  import type { Config } from 'eslint/config';
+
+  const config: Config[];
+  export default config;
+}
