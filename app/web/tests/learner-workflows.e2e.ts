@@ -349,6 +349,29 @@ test.describe('learner workflows', () => {
       await expect(page.getByRole('button', { name: 'Restore question' })).toBeVisible();
       await page.reload();
       await expect(page.getByText('Retired for new sessions')).toBeVisible();
+
+      const reviewFilters = page.locator('form').filter({
+        has: page.getByRole('button', { name: 'Apply filters' }),
+      });
+
+      await reviewFilters.getByLabel('Prompt or question ID').fill('delta-transaction-basics');
+      await reviewFilters.getByLabel('Domain').selectOption('delta-lake');
+      await reviewFilters.getByLabel('Flagged questions').check();
+      await reviewFilters.getByLabel('Retired questions').check();
+      await reviewFilters.getByRole('button', { name: 'Apply filters' }).click();
+      await expect(page).toHaveURL(
+        /q=delta-transaction-basics.*domain=delta-lake.*flagged=1.*retired=1/u,
+      );
+      await expect(page.getByRole('status')).toContainText('Showing 1 of 2 questions');
+      await expect(page.getByRole('status')).toContainText('pack v1.0.0');
+      await expect(
+        page.locator('article').filter({
+          has: page.getByRole('heading', { name: practiceQuestion }),
+        }),
+      ).toBeVisible();
+
+      await page.getByRole('link', { name: 'Clear filters' }).click();
+      await expect(page.getByRole('status')).toContainText('Showing 2 of 2 questions');
     });
   });
 });

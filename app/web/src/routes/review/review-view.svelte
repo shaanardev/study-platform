@@ -1,6 +1,8 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
 
+  import { filterReviewQuestions } from './review-filters';
   import { correctReviewQuestion, flagReviewQuestion, retireReviewQuestion } from './review.remote';
   import type { ReviewData } from './review.remote';
 
@@ -9,6 +11,17 @@
   const JSON_INDENT_SPACES = 2;
   let selectedPack = $derived(data.pack);
   let feedbackByQuestion = $derived(new Map(data.feedback.map((item) => [item.questionId, item])));
+
+  let filters = $derived({
+    domainId: page.url.searchParams.get('domain') ?? '',
+    flagged: page.url.searchParams.get('flagged') === '1',
+    retired: page.url.searchParams.get('retired') === '1',
+    search: page.url.searchParams.get('q') ?? '',
+  });
+
+  let filteredQuestions = $derived(
+    selectedPack ? filterReviewQuestions(selectedPack.questions, data.feedback, filters) : [],
+  );
 
   const correctionJson = (questionId: string) => {
     const question = selectedPack?.questions.find((item) => item.id === questionId);
@@ -85,43 +98,130 @@
         >
       </section>
     {:else}
-      <section
-        class="card border-surface-200-800 bg-surface-50-950 my-4 grid gap-3 rounded-2xl border p-5"
-      >
-        <label class="font-semibold" for="pack-version">Exam pack version</label>
-        <select
-          id="pack-version"
-          class="select focus-visible:outline-warning-500 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
-          onchange={(event) => {
-            const pack = data.packs.find(
-              (item) =>
-                `${item.examId}|${item.packId}|${item.packVersion}` === event.currentTarget.value,
-            );
-            if (pack) {
-              window.location.href = resolve(
-                `/review?examId=${encodeURIComponent(pack.examId)}&packId=${encodeURIComponent(pack.packId)}&packVersion=${encodeURIComponent(pack.packVersion)}`,
-              );
-            }
-          }}
-          value={selectedPack
-            ? `${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`
-            : ''}
-        >
-          {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
-            <option value="{pack.examId}|{pack.packId}|{pack.packVersion}">
-              {pack.examTitle}
-              · {pack.packTitle} · v{pack.packVersion}
-            </option>
-          {/each}
-        </select>
+      <section class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-5">
+        <form class="grid gap-4" action={resolve('/review')} method="GET">
+          <div class="grid gap-2">
+            <label class="font-semibold" for="pack-version">Exam pack version</label>
+            <select
+              id="pack-version"
+              name="packChoice"
+              class="select focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+              value={selectedPack
+                ? `${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`
+                : ''}
+            >
+              {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
+                <option value="{pack.examId}|{pack.packId}|{pack.packVersion}">
+                  {pack.examTitle}
+                  · {pack.packTitle} · v{pack.packVersion}
+                </option>
+              {/each}
+            </select>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-2">
+              <label class="font-semibold" for="question-search">Prompt or question ID</label>
+              <input
+                id="question-search"
+                class="input focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+                name="q"
+                type="search"
+                value={filters.search}
+                placeholder="Search this pack version"
+              />
+            </div>
+            <div class="grid gap-2">
+              <label class="font-semibold" for="question-domain">Domain</label>
+              <select
+                id="question-domain"
+                class="select focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+                name="domain"
+                value={filters.domainId}
+              >
+                <option value="">All domains</option>
+                {#each selectedPack?.domains ?? [] as domain (domain.id)}
+                  <option value={domain.id}>{domain.title}</option>
+                {/each}
+              </select>
+            </div>
+          </div>
+          <fieldset class="flex flex-wrap gap-x-6 gap-y-3 border-0 p-0">
+            <legend class="sr-only">Additional filters</legend>
+            <label class="flex min-h-11 items-center gap-2 font-medium">
+              <input
+                class="checkbox"
+                type="checkbox"
+                name="flagged"
+                value="1"
+                checked={filters.flagged}
+              />
+              Flagged questions
+            </label>
+            <label class="flex min-h-11 items-center gap-2 font-medium">
+              <input
+                class="checkbox"
+                type="checkbox"
+                name="retired"
+                value="1"
+                checked={filters.retired}
+              />
+              Retired questions
+            </label>
+          </fieldset>
+          <div class="flex flex-wrap items-center gap-4">
+            <button
+              class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+              type="submit"
+            >
+              Apply filters
+            </button>
+            {#if selectedPack}
+              <a
+                class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
+                href={resolve(
+                  `/review?packChoice=${encodeURIComponent(`${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`)}`,
+                )}>Clear filters</a
+              >
+            {/if}
+          </div>
+        </form>
       </section>
       {#if selectedPack}
         <p class="text-surface-600-400 my-4 leading-relaxed">
           Reviewing immutable pack version <strong>{selectedPack.pack.version}</strong>. Corrections
           apply only to future sessions.
         </p>
-        <section class="grid gap-5" aria-label="Imported questions">
-          {#each selectedPack.questions as question (question.id)}
+        <p class="text-surface-600-400 my-4" role="status" aria-live="polite">
+          Showing {filteredQuestions.length} of {selectedPack.questions.length} questions for
+          {selectedPack.exam.title} · {selectedPack.pack.title} · pack v{selectedPack.pack.version}.
+        </p>
+        {#if selectedPack.questions.length === 0}
+          <section
+            class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-6"
+          >
+            <h2 class="mb-2 text-xl font-semibold">No questions in this pack version</h2>
+            <p>This imported pack version does not contain any questions to review.</p>
+          </section>
+        {:else if filteredQuestions.length === 0}
+          <section
+            class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-6"
+          >
+            <h2 class="mb-2 text-xl font-semibold">No questions match these filters</h2>
+            <p>Try a different prompt or ID, choose another domain, or clear one of the filters.</p>
+            <a
+              class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
+              href={resolve(
+                `/review?packChoice=${encodeURIComponent(`${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`)}`,
+              )}>Clear filters</a
+            >
+          </section>
+        {/if}
+        <section
+          class="grid gap-5"
+          aria-label="Filtered imported questions"
+          aria-hidden={filteredQuestions.length === 0}
+        >
+          {#each filteredQuestions as question (question.id)}
             {const flagForm = $derived(flagReviewQuestion.for(question.id))}
             {const correctionForm = $derived(correctReviewQuestion.for(question.id))}
             {const retirementForm = $derived(retireReviewQuestion.for(question.id))}
