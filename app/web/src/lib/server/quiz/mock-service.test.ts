@@ -5,7 +5,7 @@ import path from 'node:path';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDatabase } from '#lib/server/database/connection.js';
+import { closeAppDatabase, initializeAppDatabase } from '#lib/server/database/app-database.js';
 import { createCorrection, retireQuestion } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST } from '#lib/server/http-status.js';
 import { saveImportedPack } from '#lib/server/packs/repository.js';
@@ -21,14 +21,9 @@ import { workspacePath } from '#lib/server/workspace-paths.js';
 
 describe('timed mock attempts', () => {
   const dirs: string[] = [];
-  const databases: Awaited<ReturnType<typeof createDatabase>>[] = [];
 
   afterEach(async () => {
-    await Promise.all(
-      databases.splice(0).map(async (database) => {
-        await database.destroy();
-      }),
-    );
+    await closeAppDatabase();
     await Promise.all(
       dirs.splice(0).map(async (dir) => {
         await rm(dir, { force: true, recursive: true });
@@ -50,23 +45,16 @@ describe('timed mock attempts', () => {
     expect.assert(validated.valid, validated.errors.join(' '));
 
     const { pack } = validated;
-    const database = await createDatabase(databasePath);
-    databases.push(database);
-    await saveImportedPack(database, pack);
+    await initializeAppDatabase(databasePath);
+    await saveImportedPack(pack);
 
-    return { database, pack };
+    return { pack };
   };
 
   it('blocks an attempt when weighted domain coverage is insufficient', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
 
-    const coverage = await getMockCoverage(
-      pack.exam.id,
-      pack.pack.id,
-      pack.pack.version,
-      5,
-      database,
-    );
+    const coverage = await getMockCoverage(pack.exam.id, pack.pack.id, pack.pack.version, 5);
 
     expect(coverage.gaps).toStrictEqual([
       { available: 1, id: 'delta-lake', missing: 2, required: 3, title: 'Delta Lake foundations' },
@@ -80,7 +68,6 @@ describe('timed mock attempts', () => {
     ]);
     await expect(
       createMockAttempt({
-        database,
         durationMinutes: 30,
         examId: pack.exam.id,
         packId: pack.pack.id,
@@ -97,10 +84,10 @@ describe('timed mock attempts', () => {
   });
 
   it('batches coverage and isolates version feedback across imported packs', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const nextVersion = structuredClone(pack);
     nextVersion.pack.version = '1.0.1';
-    await saveImportedPack(database, nextVersion);
+    await saveImportedPack(nextVersion);
 
     const questionId = 'delta-transaction-basics';
     await retireQuestion(
@@ -111,20 +98,16 @@ describe('timed mock attempts', () => {
         questionId,
       },
       true,
-      database,
     );
-    await createCorrection(
-      {
-        correction: { domainId: 'pipelines' },
-        examId: nextVersion.exam.id,
-        packId: nextVersion.pack.id,
-        packVersion: nextVersion.pack.version,
-        questionId,
-      },
-      database,
-    );
+    await createCorrection({
+      correction: { domainId: 'pipelines' },
+      examId: nextVersion.exam.id,
+      packId: nextVersion.pack.id,
+      packVersion: nextVersion.pack.version,
+      questionId,
+    });
 
-    const { coverages, packs } = await getMockCatalog(5, database);
+    const { coverages, packs } = await getMockCatalog(5);
     const originalKey = `${pack.exam.id}|${pack.pack.id}|${pack.pack.version}`;
     const nextKey = `${nextVersion.exam.id}|${nextVersion.pack.id}|${nextVersion.pack.version}`;
 
@@ -133,7 +116,6 @@ describe('timed mock attempts', () => {
       pack.pack.id,
       pack.pack.version,
       5,
-      database,
     );
 
     const nextCoverage = await getMockCoverage(
@@ -141,7 +123,6 @@ describe('timed mock attempts', () => {
       nextVersion.pack.id,
       nextVersion.pack.version,
       5,
-      database,
     );
 
     expect(packs.map(({ packVersion }) => packVersion)).toStrictEqual(['1.0.1', pack.pack.version]);
@@ -152,10 +133,9 @@ describe('timed mock attempts', () => {
   });
 
   it('persists answers and deadline across resume, then reveals scoring only after submit', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
 
     const attempt = await createMockAttempt({
-      database,
       durationMinutes: 2,
       examId: pack.exam.id,
       now: 10_000,
@@ -170,7 +150,7 @@ describe('timed mock attempts', () => {
     expect.assert(first, 'The mock attempt should include a question.');
     expect(first.id).toBe('delta-transaction-basics');
 
-    const saved = await saveMockAnswer(attempt.id, first.id, ['a'], database, 20_000);
+    const saved = await saveMockAnswer(attempt.id, first.id, ['a'], 20_000);
 
     const [savedAnswer] = saved.answers;
     const [savedQuestion] = saved.questions;
@@ -189,7 +169,7 @@ describe('timed mock attempts', () => {
       questionAnswerIds: false,
       questionExplanation: false,
     });
-    const resumed = await getMockAttempt(attempt.id, database, 40_000);
+    const resumed = await getMockAttempt(attempt.id, 40_000);
 
     expect.assert(resumed, 'The mock attempt should remain available.');
 
@@ -198,7 +178,7 @@ describe('timed mock attempts', () => {
       hasScore: Object.hasOwn(resumed, 'score'),
       remainingMilliseconds: resumed.remainingMilliseconds,
     }).toStrictEqual({ answerCount: 1, hasScore: false, remainingMilliseconds: 90_000 });
-    const completed = await submitMockAttempt(attempt.id, database, 50_000);
+    const completed = await submitMockAttempt(attempt.id, 50_000);
     expect({
       domains: completed.score?.domains.map(({ id, correct, total }) => ({ correct, id, total })),
       hasExplanations: completed.questions.every((question) => 'explanation' in question),
@@ -226,10 +206,9 @@ describe('timed mock attempts', () => {
   });
 
   it('expires at the persisted deadline and reveals the saved answers', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
 
     const attempt = await createMockAttempt({
-      database,
       durationMinutes: 1,
       examId: pack.exam.id,
       now: 5000,
@@ -239,8 +218,8 @@ describe('timed mock attempts', () => {
       random: () => 0,
     });
 
-    await saveMockAnswer(attempt.id, 'delta-transaction-basics', ['a'], database, 6000);
-    const expired = await getMockAttempt(attempt.id, database, 65_000);
+    await saveMockAnswer(attempt.id, 'delta-transaction-basics', ['a'], 6000);
+    const expired = await getMockAttempt(attempt.id, 65_000);
 
     expect.assert(expired, 'The expired mock attempt should remain available.');
 
@@ -250,14 +229,13 @@ describe('timed mock attempts', () => {
   });
 
   it('does not report pass or fail when the blueprint has no threshold', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const packWithoutThreshold = structuredClone(pack);
     packWithoutThreshold.pack.version = '1.0.1';
     delete packWithoutThreshold.passingThreshold;
-    await saveImportedPack(database, packWithoutThreshold);
+    await saveImportedPack(packWithoutThreshold);
 
     const attempt = await createMockAttempt({
-      database,
       durationMinutes: 1,
       examId: pack.exam.id,
       now: 1000,
@@ -267,7 +245,7 @@ describe('timed mock attempts', () => {
       random: () => 0,
     });
 
-    const completed = await submitMockAttempt(attempt.id, database, 2000);
+    const completed = await submitMockAttempt(attempt.id, 2000);
     expect(completed.score).not.toHaveProperty('passingThreshold');
     expect(completed.score).not.toHaveProperty('passed');
   });

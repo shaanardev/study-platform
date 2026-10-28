@@ -5,8 +5,7 @@ import path from 'node:path';
 import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDatabase } from '#lib/server/database/connection.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
+import { initializeAppDatabase, closeAppDatabase } from '#lib/server/database/app-database.js';
 import { createCorrection, retireQuestion } from '#lib/server/feedback/service.js';
 import { saveImportedPack } from '#lib/server/packs/repository.js';
 import { getProgress } from '#lib/server/progress/queries.js';
@@ -18,14 +17,12 @@ import {
 import { answerQuestion, createPracticeSession } from '#lib/server/quiz/service.js';
 
 const directories: string[] = [];
-const databases: AppDatabase[] = [];
 
 const fixture = async () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'orde-progress-'));
   directories.push(directory);
   const databasePath = path.join(directory, 'progress.sqlite');
-  const database = await createDatabase(databasePath);
-  databases.push(database);
+  await initializeAppDatabase(databasePath);
 
   const pack: ExamPack = {
     domains: [
@@ -65,18 +62,14 @@ const fixture = async () => {
     schemaVersion: 1,
   };
 
-  await saveImportedPack(database, pack);
+  await saveImportedPack(pack);
 
-  return { database, pack };
+  return { pack };
 };
 
 describe('progress queries', () => {
   afterEach(async () => {
-    await Promise.all(
-      databases.splice(0).map(async (database) => {
-        await database.destroy();
-      }),
-    );
+    await closeAppDatabase();
 
     directories.splice(0).forEach((directory) => {
       rmSync(directory, { force: true, recursive: true });
@@ -84,10 +77,9 @@ describe('progress queries', () => {
   });
 
   it('keeps unanswered practice and mock attempts while leaving scores empty', async () => {
-    const { database, pack } = await fixture();
+    const { pack } = await fixture();
 
     await createPracticeSession({
-      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -95,7 +87,6 @@ describe('progress queries', () => {
       random: () => 0,
     });
     await createMockAttempt({
-      database,
       durationMinutes: 30,
       examId: pack.exam.id,
       now: 10_000,
@@ -105,7 +96,7 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    const progress = await getProgress(database);
+    const progress = await getProgress();
 
     expect(progress.recentAttempts).toHaveLength(2);
     expect(progress.recentAttempts).toStrictEqual(
@@ -119,10 +110,9 @@ describe('progress queries', () => {
   });
 
   it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', async () => {
-    const { database, pack } = await fixture();
+    const { pack } = await fixture();
 
     const session = await createPracticeSession({
-      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -130,10 +120,10 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    await answerQuestion(session.id, 'q-storage', ['yes'], database);
-    await answerQuestion(session.id, 'q-compute', ['no'], database);
+    await answerQuestion(session.id, 'q-storage', ['yes']);
+    await answerQuestion(session.id, 'q-compute', ['no']);
 
-    const progress = await getProgress(database);
+    const progress = await getProgress();
 
     expect(progress.recentAttempts).toHaveLength(1);
     expect(progress.recentAttempts[0]).toMatchObject({
@@ -188,10 +178,9 @@ describe('progress queries', () => {
   });
 
   it('keeps historical scores and missed questions tied to the attempt snapshot after feedback changes', async () => {
-    const { database, pack } = await fixture();
+    const { pack } = await fixture();
 
     const session = await createPracticeSession({
-      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -199,16 +188,13 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    await createCorrection(
-      {
-        correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
-        examId: pack.exam.id,
-        packId: pack.pack.id,
-        packVersion: pack.pack.version,
-        questionId: 'q-compute',
-      },
-      database,
-    );
+    await createCorrection({
+      correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionId: 'q-compute',
+    });
     await retireQuestion(
       {
         examId: pack.exam.id,
@@ -217,13 +203,12 @@ describe('progress queries', () => {
         questionId: 'q-storage',
       },
       true,
-      database,
     );
 
-    await answerQuestion(session.id, 'q-storage', ['yes'], database);
-    await answerQuestion(session.id, 'q-compute', ['no'], database);
+    await answerQuestion(session.id, 'q-storage', ['yes']);
+    await answerQuestion(session.id, 'q-compute', ['no']);
 
-    const progress = await getProgress(database);
+    const progress = await getProgress();
 
     expect(progress.recentAttempts[0]).toMatchObject({ answeredCount: 2, correctCount: 1 });
     expect(progress.missedQuestions).toContainEqual(
@@ -239,10 +224,9 @@ describe('progress queries', () => {
   });
 
   it('aggregates historical missed-question details in answer chronology across attempt snapshots', async () => {
-    const { database, pack } = await fixture();
+    const { pack } = await fixture();
 
     const earlierSession = await createPracticeSession({
-      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -250,21 +234,17 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    await answerQuestion(earlierSession.id, 'q-compute', ['no'], database);
+    await answerQuestion(earlierSession.id, 'q-compute', ['no']);
 
-    await createCorrection(
-      {
-        correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
-        examId: pack.exam.id,
-        packId: pack.pack.id,
-        packVersion: pack.pack.version,
-        questionId: 'q-compute',
-      },
-      database,
-    );
+    await createCorrection({
+      correction: { answerIds: ['no'], prompt: 'Corrected compute?' },
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionId: 'q-compute',
+    });
 
     const laterSession = await createPracticeSession({
-      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -272,9 +252,9 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    await answerQuestion(laterSession.id, 'q-compute', ['yes'], database);
+    await answerQuestion(laterSession.id, 'q-compute', ['yes']);
 
-    const progress = await getProgress(database);
+    const progress = await getProgress();
 
     expect(progress.missedQuestions).toContainEqual(
       expect.objectContaining({
@@ -286,10 +266,9 @@ describe('progress queries', () => {
   });
 
   it('includes submitted mock exams in recent attempt summaries', async () => {
-    const { database, pack } = await fixture();
+    const { pack } = await fixture();
 
     const attempt = await createMockAttempt({
-      database,
       durationMinutes: 30,
       examId: pack.exam.id,
       now: 10_000,
@@ -299,11 +278,11 @@ describe('progress queries', () => {
       random: () => 0,
     });
 
-    await saveMockAnswer(attempt.id, 'q-storage', ['yes'], database, 11_000);
-    await saveMockAnswer(attempt.id, 'q-compute', ['no'], database, 12_000);
-    await submitMockAttempt(attempt.id, database, 13_000);
+    await saveMockAnswer(attempt.id, 'q-storage', ['yes'], 11_000);
+    await saveMockAnswer(attempt.id, 'q-compute', ['no'], 12_000);
+    await submitMockAttempt(attempt.id, 13_000);
 
-    const progress = await getProgress(database);
+    const progress = await getProgress();
 
     expect(progress.recentAttempts).toContainEqual(
       expect.objectContaining({

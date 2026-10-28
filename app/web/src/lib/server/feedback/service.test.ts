@@ -6,8 +6,7 @@ import { validateExamPack } from '@learning-platform/exam-pack';
 import * as Schema from 'effect/Schema';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDatabase } from '#lib/server/database/connection.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
+import { closeAppDatabase, initializeAppDatabase } from '#lib/server/database/app-database.js';
 import {
   createCorrection,
   exportFeedback,
@@ -29,14 +28,12 @@ import {
 } from '#lib/server/quiz/service.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
 
-const databases: AppDatabase[] = [];
 const directories: string[] = [];
 
 const setup = async () => {
   const directory = await mkdtemp(path.join(tmpdir(), 'exam-feedback-'));
   directories.push(directory);
-  const database = await createDatabase(path.join(directory, 'feedback.sqlite'));
-  databases.push(database);
+  await initializeAppDatabase(path.join(directory, 'feedback.sqlite'));
 
   const validation = validateExamPack(
     JSON.parse(await readFile(workspacePath('packs/incoming/sample-learning-pack.json'), 'utf-8')),
@@ -46,9 +43,9 @@ const setup = async () => {
     throw new Error(validation.errors.join(' '));
   }
 
-  await saveImportedPack(database, validation.pack);
+  await saveImportedPack(validation.pack);
 
-  return { database, pack: validation.pack };
+  return { pack: validation.pack };
 };
 
 const questionAt = (pack: Awaited<ReturnType<typeof setup>>['pack'], index: number) => {
@@ -73,11 +70,7 @@ const findQuestion = (pack: Awaited<ReturnType<typeof setup>>['pack'], id: strin
 
 describe('question feedback', () => {
   afterEach(async () => {
-    await Promise.all(
-      databases.splice(0).map(async (database) => {
-        await database.destroy();
-      }),
-    );
+    await closeAppDatabase();
     await Promise.all(
       directories.splice(0).map(async (directory) => {
         await rm(directory, { force: true, recursive: true });
@@ -86,41 +79,32 @@ describe('question feedback', () => {
   });
 
   it('exports flags and schema-validated corrections in a stable JSON format', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const question = questionAt(pack, 0);
-    await flagQuestion(
-      {
-        examId: pack.exam.id,
-        packId: pack.pack.id,
-        packVersion: pack.pack.version,
-        questionId: question.id,
-        reason: 'The source does not support this answer.',
-      },
-      database,
-    );
-    await createCorrection(
-      {
-        correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
-        examId: pack.exam.id,
-        packId: pack.pack.id,
-        packVersion: pack.pack.version,
-        questionId: question.id,
-      },
-      database,
-    );
+    await flagQuestion({
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionId: question.id,
+      reason: 'The source does not support this answer.',
+    });
+    await createCorrection({
+      correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionId: question.id,
+    });
 
-    const first = await exportFeedback(database);
-    await createCorrection(
-      {
-        correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
-        examId: pack.exam.id,
-        packId: pack.pack.id,
-        packVersion: pack.pack.version,
-        questionId: question.id,
-      },
-      database,
-    );
-    const second = await exportFeedback(database);
+    const first = await exportFeedback();
+    await createCorrection({
+      correction: { explanation: question.explanation, prompt: `${question.prompt} Revised` },
+      examId: pack.exam.id,
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      questionId: question.id,
+    });
+    const second = await exportFeedback();
     expect(first).toBe(second);
     expect(JSON.parse(first)).toStrictEqual({
       format: 'question-feedback',
@@ -140,7 +124,7 @@ describe('question feedback', () => {
   });
 
   it('rejects missing citations, inconsistent answers, and identity changes deterministically', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const question = questionAt(pack, 0);
 
     const key = {
@@ -150,33 +134,30 @@ describe('question feedback', () => {
       questionId: question.id,
     };
 
+    await expect(createCorrection({ ...key, correction: { sources: [] } })).rejects.toThrow(
+      FeedbackValidationError,
+    );
     await expect(
-      createCorrection({ ...key, correction: { sources: [] } }, database),
+      createCorrection({ ...key, correction: { answerIds: ['missing-option'] } }),
     ).rejects.toThrow(FeedbackValidationError);
     await expect(
-      createCorrection({ ...key, correction: { answerIds: ['missing-option'] } }, database),
-    ).rejects.toThrow(FeedbackValidationError);
-    await expect(
-      createCorrection({ ...key, correction: { id: 'different-question' } }, database),
+      createCorrection({ ...key, correction: { id: 'different-question' } }),
     ).rejects.toThrow('Correction contains unsupported field "id".');
     await expect(
-      createCorrection(
-        {
-          ...key,
-          correction: { sources: [{ label: 'Unknown notes', path: 'missing.md' }] },
-        },
-        database,
-      ),
+      createCorrection({
+        ...key,
+        correction: { sources: [{ label: 'Unknown notes', path: 'missing.md' }] },
+      }),
     ).rejects.toThrow(
       'Correction sources must refer to citation files in this imported pack version.',
     );
-    await expect(
-      createCorrection({ ...key, correction: { prompt: '' } }, database),
-    ).rejects.toThrow(FeedbackValidationError);
+    await expect(createCorrection({ ...key, correction: { prompt: '' } })).rejects.toThrow(
+      FeedbackValidationError,
+    );
   });
 
   it('keeps the imported pack and prior results unchanged while corrections apply to new sessions and versions', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const original = questionAt(pack, 0);
 
     const key = {
@@ -187,31 +168,26 @@ describe('question feedback', () => {
     };
 
     const priorSession = await createPracticeSession({
-      database,
       ...key,
       questionCount: 1,
       questionIds: [original.id],
     });
 
-    const priorAnswer = await answerQuestion(priorSession.id, original.id, ['a'], database);
-    await createCorrection(
-      {
-        ...key,
-        correction: { answerIds: ['b'], explanation: 'Locally corrected answer.' },
-      },
-      database,
-    );
+    const priorAnswer = await answerQuestion(priorSession.id, original.id, ['a']);
+    await createCorrection({
+      ...key,
+      correction: { answerIds: ['b'], explanation: 'Locally corrected answer.' },
+    });
 
     const nextSession = await createPracticeSession({
-      database,
       ...key,
       questionCount: 1,
       questionIds: [original.id],
     });
 
-    const nextAnswer = await answerQuestion(nextSession.id, original.id, ['b'], database);
-    const nextSessionResult = await getPracticeSession(nextSession.id, database);
-    const priorSessionResult = await getPracticeSession(priorSession.id, database);
+    const nextAnswer = await answerQuestion(nextSession.id, original.id, ['b']);
+    const nextSessionResult = await getPracticeSession(nextSession.id);
+    const priorSessionResult = await getPracticeSession(priorSession.id);
     expect({
       nextAnswerCorrect: nextAnswer.correct,
       nextPrompt: nextSessionResult?.questions[0]?.prompt,
@@ -225,34 +201,28 @@ describe('question feedback', () => {
       priorAnswerStillCorrect: true,
       priorExplanation: original.explanation,
     });
-    const feedback = await listFeedback(pack.exam.id, pack.pack.id, pack.pack.version, database);
+    const feedback = await listFeedback(pack.exam.id, pack.pack.id, pack.pack.version);
 
-    const importedPack = await getImportedPack(
-      pack.exam.id,
-      pack.pack.id,
-      pack.pack.version,
-      database,
-    );
+    const importedPack = await getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version);
 
     expect({
       feedbackCount: feedback.length,
       importedQuestion: importedPack?.questions[0],
     }).toStrictEqual({ feedbackCount: 1, importedQuestion: original });
-    await saveImportedPack(database, { ...pack, pack: { ...pack.pack, version: '2.0.0' } });
+    await saveImportedPack({ ...pack, pack: { ...pack.pack, version: '2.0.0' } });
 
     const exportedFeedbackSchema = Schema.fromJsonString(
       Schema.Struct({ items: Schema.Array(Schema.Unknown) }),
     );
 
     const exportedFeedback = Schema.decodeUnknownSync(exportedFeedbackSchema)(
-      await exportFeedback(database),
+      await exportFeedback(),
     );
 
     const feedbackWithCorrection = await listFeedback(
       pack.exam.id,
       pack.pack.id,
       pack.pack.version,
-      database,
     );
 
     expect({
@@ -262,7 +232,7 @@ describe('question feedback', () => {
   });
 
   it('omits retired questions from new sessions while retaining their imported version', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const question = questionAt(pack, 0);
     await retireQuestion(
       {
@@ -272,11 +242,9 @@ describe('question feedback', () => {
         questionId: question.id,
       },
       true,
-      database,
     );
 
     const session = await createPracticeSession({
-      database,
       examId: pack.exam.id,
       packId: pack.pack.id,
       packVersion: pack.pack.version,
@@ -285,12 +253,12 @@ describe('question feedback', () => {
     });
 
     expect(session.questionIds).toStrictEqual([questionAt(pack, 1).id]);
-    const feedback = await listFeedback(pack.exam.id, pack.pack.id, pack.pack.version, database);
+    const feedback = await listFeedback(pack.exam.id, pack.pack.id, pack.pack.version);
     expect(feedback[0]?.retired).toBeTruthy();
   });
 
   it('snapshots corrections into new timed attempts', async () => {
-    const { database, pack } = await setup();
+    const { pack } = await setup();
     const question = findQuestion(pack, 'delta-transaction-basics');
 
     const key = {
@@ -300,16 +268,12 @@ describe('question feedback', () => {
       questionId: question.id,
     };
 
-    await createCorrection(
-      {
-        ...key,
-        correction: { answerIds: ['b'], prompt: 'Corrected transaction question' },
-      },
-      database,
-    );
+    await createCorrection({
+      ...key,
+      correction: { answerIds: ['b'], prompt: 'Corrected transaction question' },
+    });
 
     const attempt = await createMockAttempt({
-      database,
       durationMinutes: 2,
       examId: pack.exam.id,
       now: 1000,
@@ -323,9 +287,9 @@ describe('question feedback', () => {
       'Corrected transaction question',
     );
 
-    await createCorrection({ ...key, correction: { answerIds: ['c'] } }, database);
-    await saveMockAnswer(attempt.id, question.id, ['b'], database, 2000);
-    const submittedAttempt = await submitMockAttempt(attempt.id, database, 3000);
+    await createCorrection({ ...key, correction: { answerIds: ['c'] } });
+    await saveMockAnswer(attempt.id, question.id, ['b'], 2000);
+    const submittedAttempt = await submitMockAttempt(attempt.id, 3000);
     expect(
       submittedAttempt.answers.find((answer) => answer.questionId === question.id)?.correct,
     ).toBeTruthy();

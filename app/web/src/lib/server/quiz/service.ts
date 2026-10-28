@@ -4,7 +4,6 @@ import type { PackQuestion } from '@learning-platform/exam-pack';
 import { error as httpError } from '@sveltejs/kit';
 
 import { MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
 import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND } from '#lib/server/http-status.js';
 import { getImportedPack, getImportedSourceContext } from '#lib/server/packs/repository.js';
@@ -43,7 +42,6 @@ export interface PracticeSession {
 }
 
 export interface StartPracticeOptions {
-  database?: AppDatabase;
   examId: string;
   packId: string;
   packVersion: string;
@@ -112,8 +110,8 @@ const toPracticeSession = (
   };
 };
 
-const readSession = async (id: string | undefined, database?: AppDatabase) => {
-  const stored = await getPracticeSessionRecord(id, database);
+const readSession = async (id: string | undefined) => {
+  const stored = await getPracticeSessionRecord(id);
 
   return stored ? toPracticeSession(stored) : undefined;
 };
@@ -121,18 +119,13 @@ const readSession = async (id: string | undefined, database?: AppDatabase) => {
 export const createPracticeSession = async (
   options: StartPracticeOptions,
 ): Promise<PracticeSession> => {
-  const importedPack = await getImportedPack(
-    options.examId,
-    options.packId,
-    options.packVersion,
-    options.database,
-  );
+  const importedPack = await getImportedPack(options.examId, options.packId, options.packVersion);
 
   if (!importedPack) {
     httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
   }
 
-  const pack = await getEffectivePack(importedPack, options.database);
+  const pack = await getEffectivePack(importedPack);
   const domainIds = [...new Set(options.domainIds)];
 
   if (domainIds.some((id) => !pack.domains.some((domain) => domain.id === id))) {
@@ -170,12 +163,7 @@ export const createPracticeSession = async (
     httpError(HTTP_BAD_REQUEST, 'There are not that many questions in the selected domains.');
   }
 
-  const states = await getPracticeHistory(
-    options.examId,
-    options.packId,
-    options.packVersion,
-    options.database,
-  );
+  const states = await getPracticeHistory(options.examId, options.packId, options.packVersion);
 
   const random = options.random ?? Math.random;
 
@@ -208,20 +196,17 @@ export const createPracticeSession = async (
     .map((q) => q.id);
 
   const id = randomUUID();
-  await createPracticeSessionRecord(
-    {
-      domain_ids: domainIds,
-      exam_id: options.examId,
-      id,
-      pack_id: options.packId,
-      pack_version: options.packVersion,
-      question_ids: questionIds,
-      question_snapshot: pack.questions,
-      status: 'in_progress',
-    },
-    options.database,
-  );
-  const created = await readSession(id, options.database);
+  await createPracticeSessionRecord({
+    domain_ids: domainIds,
+    exam_id: options.examId,
+    id,
+    pack_id: options.packId,
+    pack_version: options.packVersion,
+    question_ids: questionIds,
+    question_snapshot: pack.questions,
+    status: 'in_progress',
+  });
+  const created = await readSession(id);
 
   if (!created) {
     throw new Error('Could not load the new practice session.');
@@ -230,19 +215,16 @@ export const createPracticeSession = async (
   return created;
 };
 
-export const getPracticeSession = async (sessionId: string, database?: AppDatabase) =>
-  await readSession(sessionId, database);
+export const getPracticeSession = async (sessionId: string) => await readSession(sessionId);
 
-export const getResumablePracticeSession = async (database?: AppDatabase) =>
-  await readSession(undefined, database);
+export const getResumablePracticeSession = async () => await readSession(undefined);
 
 export const answerQuestion = async (
   sessionId: string,
   questionId: string,
   answerIds: string[],
-  database?: AppDatabase,
 ): Promise<QuizAnswer> => {
-  const stored = await getPracticeSessionRecord(sessionId, database);
+  const stored = await getPracticeSessionRecord(sessionId);
   const session = stored ? toPracticeSession(stored) : undefined;
 
   if (session?.status !== 'in_progress') {
@@ -269,16 +251,13 @@ export const answerQuestion = async (
 
   const correct = matchesAnswerSet(submitted, correctQuestion.answerIds);
   const answeredAt = new Date().toISOString();
-  await savePracticeAnswer(
-    {
-      answerIds: submitted,
-      answeredAt,
-      correct,
-      questionId,
-      sessionId,
-    },
-    database,
-  );
+  await savePracticeAnswer({
+    answerIds: submitted,
+    answeredAt,
+    correct,
+    questionId,
+    sessionId,
+  });
 
   return {
     answerIds: submitted,
@@ -297,10 +276,8 @@ export const readQuestionSource = async (
   packVersion: string,
   questionId: string,
   sourcePath: string,
-  database?: AppDatabase,
 ) => {
   const context = await getImportedSourceContext(
-    database,
     examId,
     packId,
     packVersion,

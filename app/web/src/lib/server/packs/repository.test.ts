@@ -5,7 +5,11 @@ import path from 'node:path';
 import type { ExamPack } from '@learning-platform/exam-pack';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDatabase } from '#lib/server/database/connection.js';
+import {
+  closeAppDatabase,
+  getAppDatabase,
+  initializeAppDatabase,
+} from '#lib/server/database/app-database.js';
 import {
   getImportedPack,
   listImportedPacks,
@@ -13,15 +17,10 @@ import {
 } from '#lib/server/packs/repository.js';
 
 const temporaryDirectories: string[] = [];
-const databases: Awaited<ReturnType<typeof createDatabase>>[] = [];
 
 describe('pack persistence', () => {
   afterEach(async () => {
-    await Promise.all(
-      databases.splice(0).map(async (database) => {
-        await database.destroy();
-      }),
-    );
+    await closeAppDatabase();
     await Promise.all(
       temporaryDirectories.splice(0).map(async (directory) => {
         await rm(directory, { force: true, recursive: true });
@@ -32,8 +31,7 @@ describe('pack persistence', () => {
   it('round trips typed ExamPack JSON through the Kysely result plugin', async () => {
     const directory = await mkdtemp(path.join(tmpdir(), 'exam-pack-db-'));
     temporaryDirectories.push(directory);
-    const database = await createDatabase(path.join(directory, 'packs.sqlite'));
-    databases.push(database);
+    await initializeAppDatabase(path.join(directory, 'packs.sqlite'));
 
     const pack: ExamPack = {
       domains: [{ id: 'fundamentals', title: 'Fundamentals', weight: 100 }],
@@ -57,20 +55,20 @@ describe('pack persistence', () => {
       schemaVersion: 1,
     };
 
-    await saveImportedPack(database, pack);
+    await saveImportedPack(pack);
 
     await expect(
-      getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version, database),
+      getImportedPack(pack.exam.id, pack.pack.id, pack.pack.version),
     ).resolves.toStrictEqual(pack);
 
-    const stored = await database
+    const stored = await getAppDatabase()
       .selectFrom('imported_packs')
       .select('content as content')
       .executeTakeFirstOrThrow();
 
     expect(stored.content).toStrictEqual(pack);
     expect(stored.content).toBeTypeOf('object');
-    await expect(listImportedPacks(database)).resolves.toStrictEqual([
+    await expect(listImportedPacks()).resolves.toStrictEqual([
       expect.objectContaining({
         domainCount: 1,
         domains: [{ id: 'fundamentals', questionCount: 1, title: 'Fundamentals', weight: 100 }],

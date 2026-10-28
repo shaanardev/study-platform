@@ -9,7 +9,6 @@ import {
   PERCENTAGE_SCALE,
 } from '#lib/quiz/constants.js';
 import { getAppDatabase } from '#lib/server/database/app-database.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
 import { listAllFeedbackRows } from '#lib/server/feedback/repository.js';
 import type { StoredFeedback } from '#lib/server/feedback/repository.js';
 import { applyFeedbackToPack, getEffectivePack } from '#lib/server/feedback/service.js';
@@ -80,11 +79,8 @@ const getMockCoverageForPack = (pack: ExamPack, questionCount: number) => {
 };
 
 /** Read the mock catalog with one pack query and one feedback query. */
-export const getMockCatalog = async (
-  questionCount: number,
-  database: AppDatabase = getAppDatabase(),
-) => {
-  const packRows = await database
+export const getMockCatalog = async (questionCount: number) => {
+  const packRows = await getAppDatabase()
     .selectFrom('imported_packs')
     .select(['content', 'imported_at'])
     .orderBy('imported_at', 'desc')
@@ -95,7 +91,7 @@ export const getMockCatalog = async (
     pack: content,
   }));
 
-  const feedbackRows = await listAllFeedbackRows(database);
+  const feedbackRows = await listAllFeedbackRows();
 
   const feedbackByPack = feedbackRows.reduce<Map<string, StoredFeedback[]>>((byPack, feedback) => {
     const key = `${feedback.examId}|${feedback.packId}|${feedback.packVersion}`;
@@ -151,30 +147,28 @@ export const getMockCoverage = async (
   packId: string,
   packVersion: string,
   questionCount: number,
-  database?: AppDatabase,
 ) => {
-  const importedPack = await getImportedPack(examId, packId, packVersion, database);
+  const importedPack = await getImportedPack(examId, packId, packVersion);
 
   if (!importedPack) {
     httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
   }
 
-  return getMockCoverageForPack(await getEffectivePack(importedPack, database), questionCount);
+  return getMockCoverageForPack(await getEffectivePack(importedPack), questionCount);
 };
 
 const readMockAttempt = async (
   id: string | undefined,
-  database?: AppDatabase,
   now = Date.now(),
 ): Promise<MockAttempt | undefined> => {
-  const stored = await getMockAttemptRecord(id, database);
+  const stored = await getMockAttemptRecord(id);
 
   if (!stored) {
     return undefined;
   }
 
   const { attempt: row, answers: answerRows } = stored;
-  const pack = await getImportedPack(row.exam_id, row.pack_id, row.pack_version, database);
+  const pack = await getImportedPack(row.exam_id, row.pack_id, row.pack_version);
 
   if (!pack) {
     return undefined;
@@ -184,7 +178,7 @@ const readMockAttempt = async (
 
   if (status === 'in_progress' && isExpired(row.deadline, now)) {
     status = 'expired';
-    await expireMockAttempt(row.id, database);
+    await expireMockAttempt(row.id);
   }
 
   const attemptQuestions = row.question_snapshot;
@@ -296,7 +290,6 @@ const readMockAttempt = async (
 };
 
 export const createMockAttempt = async (options: {
-  database?: AppDatabase;
   examId: string;
   packId: string;
   packVersion: string;
@@ -305,18 +298,13 @@ export const createMockAttempt = async (options: {
   random?: () => number;
   now?: number;
 }): Promise<MockAttempt> => {
-  const importedPack = await getImportedPack(
-    options.examId,
-    options.packId,
-    options.packVersion,
-    options.database,
-  );
+  const importedPack = await getImportedPack(options.examId, options.packId, options.packVersion);
 
   if (!importedPack) {
     httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
   }
 
-  const pack = await getEffectivePack(importedPack, options.database);
+  const pack = await getEffectivePack(importedPack);
 
   if (
     !Number.isInteger(options.durationMinutes) ||
@@ -360,21 +348,18 @@ export const createMockAttempt = async (options: {
 
   const now = options.now ?? Date.now();
   const id = randomUUID();
-  await createMockAttemptRecord(
-    {
-      deadline: createDeadline(now, options.durationMinutes),
-      duration_minutes: options.durationMinutes,
-      exam_id: options.examId,
-      id,
-      pack_id: options.packId,
-      pack_version: options.packVersion,
-      question_ids: questionIds,
-      question_snapshot: pack.questions,
-      status: 'in_progress',
-    },
-    options.database,
-  );
-  const attempt = await readMockAttempt(id, options.database, now);
+  await createMockAttemptRecord({
+    deadline: createDeadline(now, options.durationMinutes),
+    duration_minutes: options.durationMinutes,
+    exam_id: options.examId,
+    id,
+    pack_id: options.packId,
+    pack_version: options.packVersion,
+    question_ids: questionIds,
+    question_snapshot: pack.questions,
+    status: 'in_progress',
+  });
+  const attempt = await readMockAttempt(id, now);
 
   if (!attempt) {
     throw new Error('Could not load the new mock attempt.');
@@ -383,20 +368,19 @@ export const createMockAttempt = async (options: {
   return attempt;
 };
 
-export const getMockAttempt = async (id: string, database?: AppDatabase, now = Date.now()) =>
-  await readMockAttempt(id, database, now);
+export const getMockAttempt = async (id: string, now = Date.now()) =>
+  await readMockAttempt(id, now);
 
-export const getResumableMockAttempt = async (database?: AppDatabase, now = Date.now()) =>
-  await readMockAttempt(undefined, database, now);
+export const getResumableMockAttempt = async (now = Date.now()) =>
+  await readMockAttempt(undefined, now);
 
 export const saveMockAnswer = async (
   attemptId: string,
   questionId: string,
   answerIds: string[],
-  database?: AppDatabase,
   now = Date.now(),
 ): Promise<MockAttempt> => {
-  const attempt = await readMockAttempt(attemptId, database, now);
+  const attempt = await readMockAttempt(attemptId, now);
 
   if (!attempt) {
     httpError(HTTP_NOT_FOUND, 'Mock attempt not found.');
@@ -421,14 +405,8 @@ export const saveMockAnswer = async (
     httpError(HTTP_BAD_REQUEST, 'Select a valid answer.');
   }
 
-  await saveMockAnswerRecord(
-    attemptId,
-    questionId,
-    selected,
-    new Date(now).toISOString(),
-    database,
-  );
-  const saved = await readMockAttempt(attemptId, database, now);
+  await saveMockAnswerRecord(attemptId, questionId, selected, new Date(now).toISOString());
+  const saved = await readMockAttempt(attemptId, now);
 
   if (!saved) {
     httpError(HTTP_NOT_FOUND, 'Mock attempt not found.');
@@ -439,20 +417,19 @@ export const saveMockAnswer = async (
 
 export const submitMockAttempt = async (
   attemptId: string,
-  database?: AppDatabase,
   now = Date.now(),
 ): Promise<MockAttempt> => {
-  const current = await readMockAttempt(attemptId, database, now);
+  const current = await readMockAttempt(attemptId, now);
 
   if (!current) {
     httpError(HTTP_NOT_FOUND, 'Mock attempt not found.');
   }
 
   if (current.status === 'in_progress') {
-    await setMockAttemptStatus(attemptId, 'submitted', database);
+    await setMockAttemptStatus(attemptId, 'submitted');
   }
 
-  const submitted = await readMockAttempt(attemptId, database, now);
+  const submitted = await readMockAttempt(attemptId, now);
 
   if (!submitted) {
     httpError(HTTP_NOT_FOUND, 'Mock attempt not found.');

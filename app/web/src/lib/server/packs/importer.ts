@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url';
 import { validateExamPack } from '@learning-platform/exam-pack';
 import type { ExamPack, PackSource } from '@learning-platform/exam-pack';
 
-import type { AppDatabase } from '#lib/server/database/connection.js';
 import { refreshApprovedLocalSources, saveImportedPack } from '#lib/server/packs/repository.js';
 import type { ImportedSourceAsset } from '#lib/server/packs/repository.js';
 import { workspacePath } from '#lib/server/workspace-paths.js';
@@ -19,7 +18,6 @@ export interface ImportResult {
 
 export interface ImportOptions {
   folder?: string;
-  database?: AppDatabase;
   approvedSourceRoot?: string;
 }
 
@@ -232,13 +230,12 @@ const preparePackFile = async (
 
 const storePreparedPack = async (
   prepared: PreparedPackImport,
-  database: AppDatabase | undefined,
   approvedSourceRoot: string | undefined,
 ): Promise<FileImportResult> => {
   const { entryName, pack, packKey, sourceAssets } = prepared;
 
   try {
-    await saveImportedPack(database, pack, sourceAssets, approvedSourceRoot);
+    await saveImportedPack(pack, sourceAssets, approvedSourceRoot);
 
     return { kind: 'imported', packKey };
   } catch (error) {
@@ -251,7 +248,7 @@ const storePreparedPack = async (
     try {
       const refreshed =
         approvedSourceRoot !== undefined &&
-        (await refreshApprovedLocalSources(database, pack, sourceAssets, approvedSourceRoot));
+        (await refreshApprovedLocalSources(pack, sourceAssets, approvedSourceRoot));
 
       return refreshed
         ? { kind: 'refreshed', packKey }
@@ -297,7 +294,6 @@ const getPackFiles = async (folder: string): Promise<Dirent[]> => {
 const importPackFilesInBatches = async (
   files: Dirent[],
   folder: string,
-  database: AppDatabase | undefined,
   approvedSourceRoot: string | undefined,
   result: ImportResult,
 ): Promise<void> => {
@@ -322,7 +318,7 @@ const importPackFilesInBatches = async (
         const importResult: FileImportResult =
           'error' in preparation
             ? { error: preparation.error, kind: 'error' }
-            : await storePreparedPack(preparation.prepared, database, approvedSourceRoot);
+            : await storePreparedPack(preparation.prepared, approvedSourceRoot);
 
         results.push(importResult);
 
@@ -378,7 +374,7 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
     errors.push(`No .json exam packs found in ${folder}.`);
   }
 
-  await importPackFilesInBatches(files, folder, options.database, approvedSourceRoot, {
+  await importPackFilesInBatches(files, folder, approvedSourceRoot, {
     errors,
     imported,
     refreshed,

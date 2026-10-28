@@ -3,7 +3,6 @@ import type { Selectable } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
 
 import { getAppDatabase } from '#lib/server/database/app-database.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
 import type { AppDatabaseSchema } from '#lib/server/database/types.js';
 
 type PracticeSessionRow = Selectable<AppDatabaseSchema['practice_sessions']>;
@@ -14,9 +13,8 @@ export const getPracticeHistory = async (
   examId: string,
   packId: string,
   packVersion: string,
-  database: AppDatabase = getAppDatabase(),
 ): Promise<Map<string, { missed: boolean; seen: boolean }>> => {
-  const rows = await database
+  const rows = await getAppDatabase()
     .selectFrom('practice_answers as a')
     .innerJoin('practice_sessions as s', 's.id', 'a.session_id')
     .select([
@@ -34,9 +32,8 @@ export const getPracticeHistory = async (
 
 export const createPracticeSessionRecord = async (
   session: Omit<PracticeSessionRow, 'created_at' | 'updated_at'>,
-  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await database
+  await getAppDatabase()
     .insertInto('practice_sessions')
     .values({
       ...session,
@@ -49,11 +46,8 @@ export const createPracticeSessionRecord = async (
     .execute();
 };
 
-export const getPracticeSessionRecord = async (
-  id: string | undefined,
-  database: AppDatabase = getAppDatabase(),
-) => {
-  const row = await database
+export const getPracticeSessionRecord = async (id: string | undefined) => {
+  const row = await getAppDatabase()
     .selectFrom('practice_sessions')
     .selectAll()
     .select((eb) => [
@@ -97,32 +91,31 @@ export const getPracticeSessionRecord = async (
   return { answers, session };
 };
 
-export const savePracticeAnswer = async (
-  input: {
-    sessionId: string;
-    questionId: string;
-    answerIds: string[];
-    correct: boolean;
-    answeredAt: string;
-  },
-  database: AppDatabase = getAppDatabase(),
-): Promise<void> => {
-  await database.transaction().execute(async (trx) => {
-    await trx
-      .insertInto('practice_answers')
-      .values({
-        answer_ids: JSON.stringify(input.answerIds),
-        answered_at: input.answeredAt,
-        correct: input.correct ? 1 : 0,
-        question_id: input.questionId,
-        session_id: input.sessionId,
-      })
-      .execute();
+export const savePracticeAnswer = async (input: {
+  sessionId: string;
+  questionId: string;
+  answerIds: string[];
+  correct: boolean;
+  answeredAt: string;
+}): Promise<void> => {
+  await getAppDatabase()
+    .transaction()
+    .execute(async (trx) => {
+      await trx
+        .insertInto('practice_answers')
+        .values({
+          answer_ids: JSON.stringify(input.answerIds),
+          answered_at: input.answeredAt,
+          correct: input.correct ? 1 : 0,
+          question_id: input.questionId,
+          session_id: input.sessionId,
+        })
+        .execute();
 
-    await trx
-      .updateTable('practice_sessions')
-      .set({
-        status: sql<PracticeSessionRow['status']>`CASE
+      await trx
+        .updateTable('practice_sessions')
+        .set({
+          status: sql<PracticeSessionRow['status']>`CASE
             WHEN (
               SELECT COUNT(*)
               FROM practice_answers
@@ -131,18 +124,17 @@ export const savePracticeAnswer = async (
             THEN 'completed'
             ELSE 'in_progress'
           END`,
-        updated_at: input.answeredAt,
-      })
-      .where('id', '=', input.sessionId)
-      .execute();
-  });
+          updated_at: input.answeredAt,
+        })
+        .where('id', '=', input.sessionId)
+        .execute();
+    });
 };
 
 export const createMockAttemptRecord = async (
   attempt: Omit<MockAttemptRow, 'created_at'>,
-  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await database
+  await getAppDatabase()
     .insertInto('mock_attempts')
     .values({
       ...attempt,
@@ -153,11 +145,8 @@ export const createMockAttemptRecord = async (
     .execute();
 };
 
-export const getMockAttemptRecord = async (
-  id: string | undefined,
-  database: AppDatabase = getAppDatabase(),
-) => {
-  const row = await database
+export const getMockAttemptRecord = async (id: string | undefined) => {
+  const row = await getAppDatabase()
     .selectFrom('mock_attempts')
     .selectAll()
     .select((eb) => [
@@ -196,11 +185,8 @@ export const getMockAttemptRecord = async (
   return { answers, attempt };
 };
 
-export const expireMockAttempt = async (
-  id: string,
-  database: AppDatabase = getAppDatabase(),
-): Promise<void> => {
-  await database
+export const expireMockAttempt = async (id: string): Promise<void> => {
+  await getAppDatabase()
     .updateTable('mock_attempts')
     .set({ status: 'expired' })
     .where('id', '=', id)
@@ -213,9 +199,8 @@ export const saveMockAnswerRecord = async (
   questionId: string,
   answerIds: string[],
   answeredAt: string,
-  database: AppDatabase = getAppDatabase(),
 ): Promise<void> => {
-  await database
+  await getAppDatabase()
     .insertInto('mock_answers')
     .values({
       answer_ids: JSON.stringify(answerIds),
@@ -232,12 +217,8 @@ export const saveMockAnswerRecord = async (
     .execute();
 };
 
-export const setMockAttemptStatus = async (
-  id: string,
-  status: 'submitted',
-  database: AppDatabase = getAppDatabase(),
-): Promise<void> => {
-  await database
+export const setMockAttemptStatus = async (id: string, status: 'submitted'): Promise<void> => {
+  await getAppDatabase()
     .updateTable('mock_attempts')
     .set({ status })
     .where('id', '=', id)

@@ -3,7 +3,6 @@ import { sql } from 'kysely';
 
 import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
 import { getAppDatabase } from '#lib/server/database/app-database.js';
-import type { AppDatabase } from '#lib/server/database/connection.js';
 
 export interface ProgressAttempt {
   id: string;
@@ -84,9 +83,9 @@ const missedKey = (
 
 const attemptKey = (kind: ProgressAttempt['kind'], id: string): string => `${kind}\0${id}`;
 
-export const getProgress = async (
-  database: AppDatabase = getAppDatabase(),
-): Promise<ProgressData> => {
+export const getProgress = async (): Promise<ProgressData> => {
+  const database = getAppDatabase();
+
   const practiceRows = database
     .selectFrom('practice_sessions as s')
     .innerJoin('imported_packs as p', (join) =>

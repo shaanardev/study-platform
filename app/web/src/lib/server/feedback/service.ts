@@ -2,7 +2,6 @@ import { validateExamPack } from '@learning-platform/exam-pack';
 import type { ExamPack, PackQuestion, PackSource } from '@learning-platform/exam-pack';
 import { error as httpError } from '@sveltejs/kit';
 
-import type { AppDatabase } from '#lib/server/database/connection.js';
 import {
   listAllFeedbackRows,
   listFeedbackRows,
@@ -174,7 +173,6 @@ const toFeedbackItem = (row: StoredFeedback): FeedbackItem => {
 
 export const flagQuestion = async (
   input: FeedbackKey & { reason: string },
-  database?: AppDatabase,
 ): Promise<FeedbackItem> => {
   const reason = input.reason.trim();
 
@@ -182,13 +180,13 @@ export const flagQuestion = async (
     throw new FeedbackValidationError(['A flag reason is required.']);
   }
 
-  const pack = await getImportedPack(input.examId, input.packId, input.packVersion, database);
+  const pack = await getImportedPack(input.examId, input.packId, input.packVersion);
 
   if (pack?.questions.some((question) => question.id === input.questionId) !== true) {
     throw new FeedbackValidationError(['Question is not in this imported pack version.']);
   }
 
-  const row = await updateFeedback(input, database, (previous) => {
+  const row = await updateFeedback(input, (previous) => {
     const flags = previous ? [...previous.flags] : [];
 
     if (!flags.some((flag) => flag.reason === reason)) {
@@ -207,9 +205,8 @@ export const flagQuestion = async (
 
 export const createCorrection = async (
   input: FeedbackKey & { correction: JsonObject },
-  database?: AppDatabase,
 ): Promise<FeedbackItem> => {
-  const pack = await getImportedPack(input.examId, input.packId, input.packVersion, database);
+  const pack = await getImportedPack(input.examId, input.packId, input.packVersion);
 
   if (!pack) {
     throw new FeedbackValidationError(['Imported pack version is unavailable.']);
@@ -217,7 +214,7 @@ export const createCorrection = async (
 
   const correction = validateCorrection(pack, input.questionId, input.correction);
 
-  const row = await updateFeedback(input, database, (previous) => ({
+  const row = await updateFeedback(input, (previous) => ({
     correction,
     flags: previous ? [...previous.flags] : [],
     retired: previous?.retired ?? 0,
@@ -226,18 +223,14 @@ export const createCorrection = async (
   return toFeedbackItem(row);
 };
 
-export const retireQuestion = async (
-  key: FeedbackKey,
-  retired: boolean,
-  database?: AppDatabase,
-): Promise<FeedbackItem> => {
-  const pack = await getImportedPack(key.examId, key.packId, key.packVersion, database);
+export const retireQuestion = async (key: FeedbackKey, retired: boolean): Promise<FeedbackItem> => {
+  const pack = await getImportedPack(key.examId, key.packId, key.packVersion);
 
   if (pack?.questions.some((question) => question.id === key.questionId) !== true) {
     throw new FeedbackValidationError(['Question is not in this imported pack version.']);
   }
 
-  const row = await updateFeedback(key, database, (previous) => ({
+  const row = await updateFeedback(key, (previous) => ({
     correction: previous?.correction ?? null,
     flags: previous ? [...previous.flags] : [],
     retired: retired ? 1 : 0,
@@ -250,9 +243,8 @@ export const listFeedback = async (
   examId: string,
   packId: string,
   packVersion: string,
-  database?: AppDatabase,
 ): Promise<FeedbackItem[]> => {
-  const rows = await listFeedbackRows(examId, packId, packVersion, database);
+  const rows = await listFeedbackRows(examId, packId, packVersion);
 
   return rows.map(toFeedbackItem);
 };
@@ -277,18 +269,15 @@ export const applyFeedbackToPack = (
   return { ...pack, questions };
 };
 
-export const exportFeedback = async (database?: AppDatabase): Promise<string> => {
-  const rows = await listAllFeedbackRows(database);
+export const exportFeedback = async (): Promise<string> => {
+  const rows = await listAllFeedbackRows();
   const items = rows.map(toFeedbackItem);
 
   return JSON.stringify({ format: 'question-feedback', items, version: 1 });
 };
 
-export const getEffectivePack = async (
-  pack: ExamPack,
-  database?: AppDatabase,
-): Promise<ExamPack> => {
-  const feedback = await listFeedbackRows(pack.exam.id, pack.pack.id, pack.pack.version, database);
+export const getEffectivePack = async (pack: ExamPack): Promise<ExamPack> => {
+  const feedback = await listFeedbackRows(pack.exam.id, pack.pack.id, pack.pack.version);
 
   return applyFeedbackToPack(pack, feedback);
 };
@@ -297,13 +286,12 @@ export const readPackForReview = async (
   examId: string,
   packId: string,
   packVersion: string,
-  database?: AppDatabase,
 ): Promise<{ feedback: FeedbackItem[]; pack: ExamPack }> => {
-  const pack = await getImportedPack(examId, packId, packVersion, database);
+  const pack = await getImportedPack(examId, packId, packVersion);
 
   if (!pack) {
     httpError(HTTP_NOT_FOUND, 'That imported exam pack version is not available.');
   }
 
-  return { feedback: await listFeedback(examId, packId, packVersion, database), pack };
+  return { feedback: await listFeedback(examId, packId, packVersion), pack };
 };
