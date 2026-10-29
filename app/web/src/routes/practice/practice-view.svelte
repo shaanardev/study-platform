@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { tick } from 'svelte';
 
   import InlineCode from '#lib/components/inline-code.svelte';
   import { DEFAULT_QUESTION_COUNT, MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
@@ -9,36 +10,39 @@
   import type { PracticePageData } from './practice.remote';
 
   let { data }: { data: PracticePageData } = $props();
+  let feedbackElement: HTMLDivElement | undefined = $state();
   let clientReady = $state(false);
 
   const markClientReady = () => {
     clientReady = true;
   };
 
+  const packKey = (pack: (typeof data.packs)[number]) =>
+    `${pack.examId}|${pack.packId}|${pack.packVersion}`;
+
   let selectedPackKey = $state('');
   let selectedDomainIds = $state<string[]>([]);
 
   let selectedPack = $derived(
-    data.packs.find(
-      (pack) => `${pack.examId}|${pack.packId}|${pack.packVersion}` === selectedPackKey,
-    ) ?? data.packs[0],
+    data.packs.find((pack) => packKey(pack) === selectedPackKey) ?? data.packs[0],
   );
 
-  let availableQuestionCount = $derived.by(() => {
-    if (!selectedPack) {
+  const countEligibleQuestions = (pack: typeof selectedPack, domainIds: string[]): number => {
+    if (!pack) {
       return 0;
     }
 
-    if (selectedDomainIds.length === 0) {
-      return Math.min(MAX_QUESTION_COUNT, selectedPack.questionCount);
+    if (domainIds.length === 0) {
+      return pack.questionCount;
     }
 
-    const selectedDomainQuestionCount = selectedPack.domains
-      .filter((domain) => selectedDomainIds.includes(domain.id))
+    return pack.domains
+      .filter((domain) => domainIds.includes(domain.id))
       .reduce((total, domain) => total + domain.questionCount, 0);
+  };
 
-    return Math.min(MAX_QUESTION_COUNT, selectedDomainQuestionCount);
-  });
+  let eligibleQuestionCount = $derived(countEligibleQuestions(selectedPack, selectedDomainIds));
+  let questionLimit = $derived(Math.min(MAX_QUESTION_COUNT, eligibleQuestionCount));
 
   let activeQuestion = $derived(
     data.session?.questions.find(
@@ -58,16 +62,42 @@
     data.session?.questions.find((question) => question.id === latestAnswer?.questionId),
   );
 
-  const resetDomains = () => {
+  const clampQuestionCount = (
+    availableCount: number,
+    requestedCount = Number(startPractice.fields.questionCount.value()),
+  ) => {
+    const requested =
+      Number.isInteger(requestedCount) && requestedCount > 0
+        ? requestedCount
+        : DEFAULT_QUESTION_COUNT;
+
+    startPractice.fields.questionCount.set(
+      availableCount === 0 ? 0 : Math.max(1, Math.min(requested, availableCount)),
+    );
+  };
+
+  const changePack = (event: Event & { currentTarget: HTMLSelectElement }) => {
+    selectedPackKey = event.currentTarget.value;
     selectedDomainIds = [];
     startPractice.fields.domainIds.set([]);
+
+    const nextPack = data.packs.find((pack) => packKey(pack) === selectedPackKey);
+
+    clampQuestionCount(nextPack?.questionCount ?? 0);
   };
 
   const updateDomainSelection = (domainId: string, checked: boolean) => {
-    selectedDomainIds = checked
+    const nextDomainIds = checked
       ? [...selectedDomainIds, domainId]
       : selectedDomainIds.filter((selectedDomainId) => selectedDomainId !== domainId);
-    startPractice.fields.domainIds.set(selectedDomainIds);
+
+    selectedDomainIds = nextDomainIds;
+    startPractice.fields.domainIds.set(nextDomainIds);
+    clampQuestionCount(countEligibleQuestions(selectedPack, nextDomainIds));
+  };
+
+  const updateQuestionCount = (event: Event & { currentTarget: HTMLInputElement }) => {
+    clampQuestionCount(questionLimit, event.currentTarget.valueAsNumber);
   };
 </script>
 
@@ -142,11 +172,11 @@
           <select
             id="pack"
             class="select app-control-focus min-h-11 w-full"
-            onchange={resetDomains}
-            bind:value={selectedPackKey}
+            onchange={changePack}
+            value={selectedPackKey || (data.packs[0] ? packKey(data.packs[0]) : '')}
           >
-            {#each data.packs as pack (`${pack.examId}|${pack.packId}|${pack.packVersion}`)}
-              <option value="{pack.examId}|{pack.packId}|{pack.packVersion}">
+            {#each data.packs as pack (packKey(pack))}
+              <option value={packKey(pack)}>
                 {pack.examTitle}
                 · {pack.packTitle} · v{pack.packVersion}{pack.synthetic ? ' · synthetic' : ''}
               </option>
@@ -183,24 +213,39 @@
               {/each}
             </fieldset>
             <label class="font-bold" for="question-count">Number of questions</label>
+            <p class="text-body-muted m-0" id="eligible-count">
+              {eligibleQuestionCount} eligible question{eligibleQuestionCount === 1 ? '' : 's'}
+              {#if eligibleQuestionCount > MAX_QUESTION_COUNT}
+                · Up to {MAX_QUESTION_COUNT} per quiz
+              {/if}
+            </p>
+            {#if eligibleQuestionCount === 0}
+              <p class="text-error-text m-0" id="no-eligible-questions" role="status">
+                No questions are eligible for this pack and domain selection. Choose another domain
+                or pack.
+              </p>
+            {/if}
             <input
               {...startPractice.fields.questionCount.as(
                 'number',
-                Math.min(DEFAULT_QUESTION_COUNT, availableQuestionCount),
+                Math.min(DEFAULT_QUESTION_COUNT, questionLimit),
               )}
               id="question-count"
               class="input app-control-focus min-h-11 w-full"
-              max={availableQuestionCount}
+              aria-describedby="eligible-count"
+              disabled={eligibleQuestionCount === 0}
+              max={questionLimit}
               min="1"
+              onchange={updateQuestionCount}
               required
               type="number"
-              value={Math.min(DEFAULT_QUESTION_COUNT, availableQuestionCount)}
             />
             {#each startPractice.fields['questionCount'].issues() ?? [] as issue (issue.message)}
               <span class="text-error-text" role="alert">{issue.message}</span>
             {/each}
             <button
               class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 rounded-lg px-4 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+              disabled={eligibleQuestionCount === 0}
               type="submit"
             >
               Start quiz
@@ -223,6 +268,7 @@
         </p>
         {#if latestAnswer && latestQuestion}
           <div
+            bind:this={feedbackElement}
             class={[
               'feedback-border-width my-4 rounded-lg p-4',
               latestAnswer.correct
@@ -230,7 +276,9 @@
                 : 'border-feedback-warning-border bg-feedback-warning-fill',
             ]}
             aria-live="polite"
+            id="answer-feedback"
             role="status"
+            tabindex="-1"
           >
             <h2 class="mb-2 text-xl font-semibold">
               {latestAnswer.correct ? 'Correct' : 'Not quite'}
@@ -277,7 +325,15 @@
             <h2 id="quiz-heading" class="mb-5 text-xl/relaxed font-semibold">
               <InlineCode text={activeQuestion.prompt} />
             </h2>
-            <form {...answerForm} class="grid gap-3">
+            <form
+              {...answerForm.enhance(async (form) => {
+                if (await form.submit()) {
+                  await tick();
+                  feedbackElement?.focus();
+                }
+              })}
+              class="grid gap-3"
+            >
               <input {...answerForm.fields.sessionId.as('hidden', data.session.id)} />
               <input {...answerForm.fields.questionId.as('hidden', activeQuestion.id)} />
               <fieldset class="grid gap-1">

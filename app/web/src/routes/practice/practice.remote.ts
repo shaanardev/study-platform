@@ -3,9 +3,10 @@ import { form, query } from '$app/server';
 import { error as httpError, invalid, isHttpError, redirect } from '@sveltejs/kit';
 import * as Schema from 'effect/Schema';
 
+import { getEffectivePack } from '#lib/server/feedback/service.js';
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
 import { toClientSafePracticeSession } from '#lib/server/packs/client-safe.js';
-import { listImportedPacks } from '#lib/server/packs/repository.js';
+import { getImportedPack, listImportedPacks } from '#lib/server/packs/repository.js';
 import {
   answerQuestion,
   createPracticeSession,
@@ -40,7 +41,34 @@ export const getPracticePage = query(PracticeQuerySchema, async ({ sessionId }) 
     httpError(HTTP_BAD_REQUEST, 'Practice session ID cannot be empty.');
   }
 
-  const packs = await listImportedPacks();
+  const importedPacks = await listImportedPacks();
+
+  const packs = await Promise.all(
+    importedPacks.map(async (pack) => {
+      const importedPack = await getImportedPack(pack.examId, pack.packId, pack.packVersion);
+
+      if (!importedPack) {
+        return {
+          ...pack,
+          domains: pack.domains.map((domain) => ({ ...domain, questionCount: 0 })),
+          questionCount: 0,
+        };
+      }
+
+      const effectivePack = await getEffectivePack(importedPack);
+
+      return {
+        ...pack,
+        domains: pack.domains.map((domain) => ({
+          ...domain,
+          questionCount: effectivePack.questions.filter(
+            (question) => question.domainId === domain.id,
+          ).length,
+        })),
+        questionCount: effectivePack.questions.length,
+      };
+    }),
+  );
 
   const session =
     sessionId === undefined
@@ -94,8 +122,5 @@ export const answerPractice = form(AnswerPracticeSchema, async (input, issue) =>
     throw error;
   }
 
-  redirect(
-    HTTP_STATUS_REDIRECT,
-    `${resolve('/practice')}?session=${encodeURIComponent(input.sessionId)}`,
-  );
+  return { saved: true };
 });

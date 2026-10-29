@@ -9,3 +9,4 @@ export const MILLISECONDS_PER_SECOND = 1000;
 export const MIN_ANSWER_OPTIONS = 2;
 export const PERCENTAGE_SCALE = 100;
 export const TIME_COMPONENT_WIDTH = 2;
+export const WEAK_DOMAIN_PERCENT_THRESHOLD = 70;

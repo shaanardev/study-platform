@@ -1,7 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
 
-  import { practiceMissed } from './progress.remote';
+  import {
+    practiceRecommendedDomain,
+    practiceRecommendedQuestion,
+    practiceMissed,
+  } from './progress.remote';
   import type { ProgressData } from './progress.remote';
 
   let { data }: { data: ProgressData } = $props();
@@ -26,6 +30,26 @@
         return groups;
       }, {}),
     );
+
+  let nextMissedForm = $derived.by(() => {
+    const action = data.nextStudyAction;
+
+    return action.kind === 'missed_question'
+      ? practiceRecommendedQuestion.for(
+          `${action.examId}:${action.packId}:${action.packVersion}:${action.questionId}`,
+        )
+      : undefined;
+  });
+
+  let nextDomainForm = $derived.by(() => {
+    const action = data.nextStudyAction;
+
+    return action.kind === 'domain'
+      ? practiceRecommendedDomain.for(
+          `${action.examId}:${action.packId}:${action.packVersion}:${action.domainId}`,
+        )
+      : undefined;
+  });
 </script>
 
 <svelte:head>
@@ -49,6 +73,83 @@
         Results stay tied to the exam pack version used for each attempt.
       </p>
     </header>
+
+    <section
+      class="card border-card-border rounded-2xl border bg-white p-5"
+      aria-labelledby="next-study-heading"
+    >
+      <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
+        Suggested next step
+      </p>
+      <h2 id="next-study-heading" class="text-section-heading mb-2 font-semibold">
+        What to study next
+      </h2>
+      {#if data.nextStudyAction.kind === 'missed_question' && nextMissedForm}
+        <p class="text-body-muted mb-4">
+          <strong>{data.nextStudyAction.prompt}</strong> You missed it
+          {data.nextStudyAction.missCount} times in
+          {data.nextStudyAction.packTitle} · pack {data.nextStudyAction.packVersion}. Revisit it to
+          check what you remember.
+        </p>
+        <form {...nextMissedForm} class="grid justify-items-start gap-2">
+          <input {...nextMissedForm.fields.examId.as('hidden', data.nextStudyAction.examId)} />
+          <input {...nextMissedForm.fields.packId.as('hidden', data.nextStudyAction.packId)} />
+          <input
+            {...nextMissedForm.fields.packVersion.as('hidden', data.nextStudyAction.packVersion)}
+          />
+          <input
+            {...nextMissedForm.fields.questionId.as('hidden', data.nextStudyAction.questionId)}
+          />
+          {#if nextMissedForm.fields.questionId.issues()?.[0]}
+            <p class="text-progress-alert m-0" role="alert">
+              {nextMissedForm.fields.questionId.issues()?.[0]?.message}
+            </p>
+          {/if}
+          <button
+            class="btn bg-brand hover:bg-brand-hover-progress focus-visible:outline-focus-amber min-h-11 rounded-lg border-0 px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+            type="submit"
+          >
+            Practice this question again
+          </button>
+        </form>
+      {:else if data.nextStudyAction.kind === 'domain' && nextDomainForm}
+        <p class="text-body-muted mb-4">
+          You answered {data.nextStudyAction.correctCount} of
+          {data.nextStudyAction.answeredCount} questions correctly in
+          {data.nextStudyAction.domainTitle} ({data.nextStudyAction.percent}%) for
+          {data.nextStudyAction.packTitle} · pack {data.nextStudyAction.packVersion}. Practice this
+          domain next.
+        </p>
+        <form {...nextDomainForm} class="grid justify-items-start gap-2">
+          <input {...nextDomainForm.fields.examId.as('hidden', data.nextStudyAction.examId)} />
+          <input {...nextDomainForm.fields.packId.as('hidden', data.nextStudyAction.packId)} />
+          <input
+            {...nextDomainForm.fields.packVersion.as('hidden', data.nextStudyAction.packVersion)}
+          />
+          <input {...nextDomainForm.fields.domainId.as('hidden', data.nextStudyAction.domainId)} />
+          {#if nextDomainForm.fields.domainId.issues()?.[0]}
+            <p class="text-progress-alert m-0" role="alert">
+              {nextDomainForm.fields.domainId.issues()?.[0]?.message}
+            </p>
+          {/if}
+          <button
+            class="btn bg-brand hover:bg-brand-hover-progress focus-visible:outline-focus-amber min-h-11 rounded-lg border-0 px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+            type="submit"
+          >
+            Practice {data.nextStudyAction.domainTitle}
+          </button>
+        </form>
+      {:else}
+        <p class="text-body-muted mb-4">
+          Start a short practice quiz from an imported pack. Your answers will create your first
+          progress snapshot and help identify what to review next.
+        </p>
+        <a
+          class="btn bg-brand hover:bg-brand-hover-progress focus-visible:outline-focus-amber inline-flex min-h-11 items-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+          href={resolve('/practice')}>Start a practice quiz</a
+        >
+      {/if}
+    </section>
 
     <section class="mt-10" aria-labelledby="recent-heading">
       <div class="mb-4">

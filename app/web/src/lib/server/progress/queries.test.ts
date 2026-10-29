@@ -94,6 +94,155 @@ describe('progress queries', () => {
     );
     expect(progress.domainScores).toStrictEqual([]);
     expect(progress.missedQuestions).toStrictEqual([]);
+    expect(progress.nextStudyAction).toStrictEqual({ kind: 'start_practice' });
+  });
+
+  it('recommends the weakest domain with its evidence and pack version', async () => {
+    const session = await createPracticeSession({
+      ...practiceOptions,
+      questionCount: 1,
+      questionIds: ['q-storage'],
+    });
+
+    await answerQuestion(session.id, 'q-storage', ['no']);
+
+    await expect(getProgress()).resolves.toMatchObject({
+      nextStudyAction: {
+        answeredCount: 1,
+        correctCount: 0,
+        domainId: 'storage',
+        domainTitle: 'Storage',
+        examId: pack.exam.id,
+        kind: 'domain',
+        packId: pack.pack.id,
+        packTitle: pack.pack.title,
+        packVersion: pack.pack.version,
+        percent: 0,
+        questionCount: 1,
+      },
+    });
+  });
+
+  it('breaks recommendation ties by pack ID when display titles match', async () => {
+    const duplicatePack = structuredClone(pack);
+    duplicatePack.pack = { ...duplicatePack.pack, id: 'pack-z' };
+    await saveImportedPack(duplicatePack);
+
+    const firstPackSession = await createPracticeSession({
+      ...practiceOptions,
+      questionCount: 1,
+      questionIds: ['q-storage'],
+    });
+
+    const duplicatePackSession = await createPracticeSession({
+      ...practiceOptions,
+      packId: duplicatePack.pack.id,
+      questionCount: 1,
+      questionIds: ['q-storage'],
+    });
+
+    await answerQuestion(firstPackSession.id, 'q-storage', ['no']);
+    await answerQuestion(duplicatePackSession.id, 'q-storage', ['no']);
+
+    await expect(getProgress()).resolves.toMatchObject({
+      nextStudyAction: { domainId: 'storage', kind: 'domain', packId: 'pack-a' },
+    });
+  });
+
+  it('orders tied scores and misses consistently before choosing a recommendation', async () => {
+    const duplicatePack = structuredClone(pack);
+    duplicatePack.pack = { ...duplicatePack.pack, id: 'pack-z' };
+    const newerVersionPack = structuredClone(pack);
+    newerVersionPack.pack = { ...newerVersionPack.pack, version: '2.0' };
+    const duplicateExam = structuredClone(pack);
+    duplicateExam.exam = { ...duplicateExam.exam, id: 'exam-z' };
+
+    await saveImportedPack(duplicatePack);
+    await saveImportedPack(newerVersionPack);
+    await saveImportedPack(duplicateExam);
+
+    await Promise.all(
+      [duplicateExam, duplicatePack, newerVersionPack, pack].map(async (variant) => {
+        const session = await createPracticeSession({
+          ...practiceOptions,
+          examId: variant.exam.id,
+          packId: variant.pack.id,
+          packVersion: variant.pack.version,
+          questionCount: 1,
+          questionIds: ['q-storage'],
+        });
+
+        await answerQuestion(session.id, 'q-storage', ['no']);
+      }),
+    );
+
+    const progress = await getProgress();
+
+    const expectedPackOrder = [
+      { examId: 'exam-a', packId: 'pack-a', packVersion: '1.0' },
+      { examId: 'exam-a', packId: 'pack-a', packVersion: '2.0' },
+      { examId: 'exam-a', packId: 'pack-z', packVersion: '1.0' },
+      { examId: 'exam-z', packId: 'pack-a', packVersion: '1.0' },
+    ];
+
+    expect(
+      progress.domainScores.map(({ examId, packId, packVersion }) => ({
+        examId,
+        packId,
+        packVersion,
+      })),
+    ).toStrictEqual(expectedPackOrder);
+    expect(
+      progress.missedQuestions.map(({ examId, packId, packVersion }) => ({
+        examId,
+        packId,
+        packVersion,
+      })),
+    ).toStrictEqual(expectedPackOrder);
+    expect(progress.nextStudyAction).toMatchObject({
+      domainId: 'storage',
+      examId: 'exam-a',
+      kind: 'domain',
+      packId: 'pack-a',
+      packVersion: '1.0',
+    });
+  });
+
+  it('prioritizes repeated misses and keeps the recommendation scoped to the attempt version', async () => {
+    const newerPack = structuredClone(pack);
+    newerPack.pack = { ...newerPack.pack, title: 'Cloud foundations 2', version: '2.0' };
+    await saveImportedPack(newerPack);
+
+    const olderSessionOptions = {
+      ...practiceOptions,
+      questionCount: 1,
+      questionIds: ['q-compute'],
+    };
+
+    const first = await createPracticeSession(olderSessionOptions);
+    const second = await createPracticeSession(olderSessionOptions);
+
+    const newerVersionSession = await createPracticeSession({
+      ...olderSessionOptions,
+      packVersion: newerPack.pack.version,
+    });
+
+    await answerQuestion(first.id, 'q-compute', ['no']);
+    await answerQuestion(second.id, 'q-compute', ['no']);
+    await answerQuestion(newerVersionSession.id, 'q-compute', ['no']);
+
+    const progress = await getProgress();
+
+    expect(progress.nextStudyAction).toStrictEqual({
+      examId: pack.exam.id,
+      kind: 'missed_question',
+      missCount: 2,
+      packId: pack.pack.id,
+      packTitle: pack.pack.title,
+      packVersion: pack.pack.version,
+      prompt: 'Compute?',
+      questionId: 'q-compute',
+    });
   });
 
   it('aggregates answer scores by domain and preserves the attempt pack version for missed questions', async () => {
@@ -148,6 +297,14 @@ describe('progress queries', () => {
         questionId: 'q-compute',
       },
     ]);
+    expect(progress.nextStudyAction).toMatchObject({
+      domainId: 'compute',
+      examId: pack.exam.id,
+      kind: 'domain',
+      packId: pack.pack.id,
+      packVersion: pack.pack.version,
+      percent: 0,
+    });
   });
 
   it('keeps domain scores and missed prompts isolated by pack version', async () => {

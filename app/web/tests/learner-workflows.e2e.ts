@@ -164,6 +164,108 @@ const resumePracticeQuiz = async (page: Page): Promise<void> => {
   await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
 };
 
+const expectPackSwitchUpdatesDomains = async (page: Page): Promise<void> => {
+  await expect(page.getByRole('main')).toHaveAttribute('data-client-ready', 'true');
+  await page
+    .getByLabel('Exam pack version')
+    .selectOption(`${samplePack.examId}|${samplePack.packId}|${samplePack.packVersion}`);
+  await expect(page.getByRole('group', { name: /Domains/u })).toContainText(
+    'Delta Lake foundations',
+  );
+  await page.getByLabel('Number of questions').fill('2');
+  await page.getByLabel('Delta Lake foundations').check();
+  await expect(page.getByLabel('Number of questions')).toHaveAttribute('max', '1');
+  await expect(page.getByLabel('Number of questions')).toHaveValue('1');
+  await expect(page.getByText('1 eligible question', { exact: true })).toBeVisible();
+  await page
+    .getByLabel('Exam pack version')
+    .selectOption('sample-engineer-exam|synthetic-alternate|2.0.0');
+  await expect(page.getByRole('group', { name: /Domains/u })).toContainText(
+    'Transaction foundations',
+  );
+  await expect(page.getByRole('group', { name: /Domains/u })).not.toContainText(
+    'Delta Lake foundations',
+  );
+  await page
+    .getByLabel('Exam pack version')
+    .selectOption(`${samplePack.examId}|${samplePack.packId}|${samplePack.packVersion}`);
+  await expect(page.getByRole('group', { name: /Domains/u })).toContainText(
+    'Delta Lake foundations',
+  );
+  await expect(page.getByLabel('Delta Lake foundations')).not.toBeChecked();
+  await expect(page.getByLabel('Number of questions')).toHaveAttribute('max', '2');
+  await expect(page.getByLabel('Number of questions')).toHaveValue('1');
+};
+
+const expectPracticeAnswerContinuity = async (page: Page, documentTime: number): Promise<void> => {
+  await expect(page.getByText('1 / 1 answered')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Quiz complete' })).toBeVisible();
+
+  const answerFeedback = page.getByRole('status').filter({ hasText: 'Not quite' });
+
+  await expect(answerFeedback).toContainText('Not quite');
+  await expect(answerFeedback).toContainText(practiceCorrectAnswer);
+  await expect(answerFeedback).toBeFocused();
+  await expect
+    .poll(async () => await page.evaluate(() => performance.timeOrigin))
+    .toBe(documentTime);
+};
+
+const expectRecommendedDomainStartsFocusedPractice = async (page: Page): Promise<void> => {
+  const recommendation = page.getByRole('region', { name: 'What to study next' });
+
+  await expect(recommendation).toContainText('0%');
+  await recommendation.getByRole('button', { name: 'Practice Delta Lake foundations' }).click();
+  await expect(page).toHaveURL(/\/practice\?session=[^&]+$/u);
+  await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
+  await expect(page.getByRole('main')).toContainText('synthetic-foundations v1.0.0');
+  await page.goto('/progress');
+};
+
+const expectRetiredDomainDisablesPracticeSetup = async (page: Page): Promise<void> => {
+  await page.goto('/practice');
+  await expect(page.getByRole('main')).toHaveAttribute('data-client-ready', 'true');
+  await page
+    .getByLabel('Exam pack version')
+    .selectOption(`${samplePack.examId}|${samplePack.packId}|${samplePack.packVersion}`);
+  await page.getByLabel('Delta Lake foundations').check();
+  await expect(page.getByText('0 eligible questions', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toContainText(
+    'No questions are eligible for this pack and domain selection.',
+  );
+  await expect(page.getByRole('button', { name: 'Start quiz' })).toBeDisabled();
+};
+
+const expectMissedQuestionNavigation = async (page: Page, sessionUrl: string): Promise<void> => {
+  await page.reload();
+  await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/progress$/u);
+  await page.goForward();
+  await expect(page).toHaveURL(sessionUrl);
+  await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
+};
+
+const expectRetiredQuestionCannotBePracticedAgain = async (
+  page: Page,
+  sessionUrl: string,
+): Promise<void> => {
+  await page.goto('/progress');
+  await page.getByRole('button', { name: 'Practice Delta Lake foundations' }).click();
+  await expect(page.getByRole('alert')).toContainText(
+    'No questions are available in this domain for this pack version.',
+  );
+  await page.goto(sessionUrl);
+  await page.getByLabel(practiceWrongAnswer).check();
+  await page.getByRole('button', { name: 'Submit answer' }).click();
+  await expect(page.getByRole('heading', { name: 'Quiz complete' })).toBeVisible();
+  await page.goto('/progress');
+  await page.getByRole('button', { name: 'Practice this question again' }).click();
+  await expect(page.getByRole('alert')).toContainText(
+    'This question is no longer available in this pack version.',
+  );
+};
+
 const expectSourceCitation = async (page: Page): Promise<void> => {
   await expect(
     page.getByRole('link', { name: 'Synthetic study notes, section 1' }),
@@ -254,6 +356,8 @@ test.describe('learner workflows', () => {
   test('imports a pack, completes practice and a mock exam, tracks progress, and updates question feedback', async ({
     page,
   }) => {
+    let selectedMissedSessionUrl = '';
+
     await test.step('library read and pack import', async () => {
       await page.goto('/');
       await expect(page).toHaveURL(/\/$/u);
@@ -286,6 +390,7 @@ test.describe('learner workflows', () => {
       await page.goto('/practice');
       await expect(page).toHaveURL(/\/practice$/u);
       await expect(page.getByRole('heading', { name: 'Start a practice quiz' })).toBeVisible();
+      await expectPackSwitchUpdatesDomains(page);
       await page.getByLabel('Delta Lake foundations').check();
       await page.getByLabel('Number of questions').fill('1');
       await page.getByRole('button', { name: 'Start quiz' }).click();
@@ -295,12 +400,10 @@ test.describe('learner workflows', () => {
       await resumePracticeQuiz(page);
 
       await page.getByLabel(practiceWrongAnswer).check();
+      const documentTime = await page.evaluate(() => performance.timeOrigin);
       await page.getByRole('button', { name: 'Submit answer' }).click();
       await expect(page).toHaveURL(/\/practice\?session=[^&]+$/u);
-
-      const answerFeedback = page.getByRole('status').filter({ hasText: 'Not quite' });
-      await expect(answerFeedback).toContainText('Not quite');
-      await expect(answerFeedback).toContainText(practiceCorrectAnswer);
+      await expectPracticeAnswerContinuity(page, documentTime);
 
       await expectSourceCitation(page);
 
@@ -378,13 +481,14 @@ test.describe('learner workflows', () => {
       await expect(page.getByRole('heading', { name: 'Timed mock exam' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Missed questions' })).toBeVisible();
       await expect(page.getByText(practiceQuestion)).toBeVisible();
+      await expectRecommendedDomainStartsFocusedPractice(page);
 
       await page.getByLabel(practiceQuestion).check();
       await page.getByRole('button', { name: 'Practice selected missed questions' }).click();
       await expect(page).toHaveURL(/\/practice\?session=[^&]+$/u);
       await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
-      await page.reload();
-      await expect(page.getByRole('heading', { name: practiceQuestion })).toBeVisible();
+      selectedMissedSessionUrl = page.url();
+      await expectMissedQuestionNavigation(page, selectedMissedSessionUrl);
     });
 
     await test.step('review read, flag, correction validation and save, and retirement', async () => {
@@ -462,11 +566,44 @@ test.describe('learner workflows', () => {
       await expect(page.getByRole('button', { name: 'Restore question' })).toBeVisible();
       await page.reload();
       await expect(page.getByText('Retired for new sessions')).toBeVisible();
+      await expectRetiredDomainDisablesPracticeSetup(page);
+      await expectRetiredQuestionCannotBePracticedAgain(page, selectedMissedSessionUrl);
 
       await expectReviewFiltersPreserveContext(page);
     });
 
     await expect(page.getByRole('status')).toContainText('Showing 2 of 2 questions');
+  });
+
+  test('practice answer submission works without JavaScript', async ({ browser }) => {
+    const noJavaScriptContext = await browser.newContext({ javaScriptEnabled: false });
+    const noJavaScriptPage = await noJavaScriptContext.newPage();
+
+    try {
+      await noJavaScriptPage.goto('/practice');
+      await noJavaScriptPage.getByLabel('Number of questions').fill('1');
+      await noJavaScriptPage.getByRole('button', { name: 'Start quiz' }).click();
+      await expect(noJavaScriptPage).toHaveURL(/\/practice\?session=[^&]+$/u);
+
+      const submitAnswer = noJavaScriptPage.getByRole('button', { name: 'Submit answer' });
+
+      await submitAnswer.focus();
+      await noJavaScriptPage.keyboard.press('Shift+Tab');
+      await noJavaScriptPage.keyboard.press('Space');
+      await submitAnswer.click();
+      await expect(noJavaScriptPage.getByText('1 / 1 answered')).toBeVisible();
+      await expect(noJavaScriptPage.getByRole('heading', { name: 'Quiz complete' })).toBeVisible();
+      await expect(
+        noJavaScriptPage.getByRole('heading', { name: /Correct|Not quite/u }),
+      ).toBeVisible();
+
+      await noJavaScriptPage.reload();
+      await expect(noJavaScriptPage.getByRole('heading', { name: 'Quiz complete' })).toBeVisible();
+    } finally {
+      await noJavaScriptContext.close();
+    }
+
+    expect(noJavaScriptContext.pages()).toHaveLength(0);
   });
 
   test('applies the shared Skeleton controls and theme on populated routes', async ({ page }) => {

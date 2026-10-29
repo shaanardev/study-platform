@@ -1,7 +1,11 @@
 import type { ExamPack, PackQuestion } from '@learning-platform/exam-pack';
 import { sql } from 'kysely';
 
-import { MAX_RECENT_ATTEMPTS, PERCENTAGE_SCALE } from '#lib/quiz/constants.js';
+import {
+  MAX_RECENT_ATTEMPTS,
+  PERCENTAGE_SCALE,
+  WEAK_DOMAIN_PERCENT_THRESHOLD,
+} from '#lib/quiz/constants.js';
 import { getAppDatabase } from '#lib/server/database/app-database.js';
 
 export interface ProgressAttempt {
@@ -30,6 +34,7 @@ export interface DomainScore {
   domainTitle: string;
   correctCount: number;
   answeredCount: number;
+  questionCount: number;
   percent: number;
 }
 
@@ -46,10 +51,37 @@ export interface MissedQuestion {
   missCount: number;
 }
 
+export type NextStudyAction =
+  | {
+      kind: 'missed_question';
+      examId: string;
+      packId: string;
+      packTitle: string;
+      packVersion: string;
+      questionId: string;
+      prompt: string;
+      missCount: number;
+    }
+  | {
+      kind: 'domain';
+      examId: string;
+      packId: string;
+      packTitle: string;
+      packVersion: string;
+      domainId: string;
+      domainTitle: string;
+      answeredCount: number;
+      correctCount: number;
+      questionCount: number;
+      percent: number;
+    }
+  | { kind: 'start_practice' };
+
 export interface ProgressData {
   recentAttempts: ProgressAttempt[];
   domainScores: DomainScore[];
   missedQuestions: MissedQuestion[];
+  nextStudyAction: NextStudyAction;
 }
 
 interface AggregatedAnswerRow {
@@ -61,6 +93,40 @@ interface AggregatedAnswerRow {
 }
 
 type ProgressPackContent = Pick<ExamPack, 'domains' | 'exam' | 'pack'>;
+
+type Comparator<T> = (first: T, second: T) => number;
+
+const compareInOrder =
+  <T>(...comparators: Comparator<T>[]): Comparator<T> =>
+  (first, second) =>
+    comparators.reduce((comparison, comparator) => comparison || comparator(first, second), 0);
+
+type PackOrder = Pick<DomainScore, 'examId' | 'examTitle' | 'packId' | 'packTitle' | 'packVersion'>;
+
+const comparePackOrder = compareInOrder<PackOrder>(
+  (first, second) => first.examTitle.localeCompare(second.examTitle),
+  (first, second) => first.packTitle.localeCompare(second.packTitle),
+  (first, second) => first.examId.localeCompare(second.examId),
+  (first, second) => first.packId.localeCompare(second.packId),
+  (first, second) => first.packVersion.localeCompare(second.packVersion),
+);
+
+const compareDomainScores = compareInOrder<DomainScore>(comparePackOrder, (first, second) =>
+  first.domainTitle.localeCompare(second.domainTitle),
+);
+
+const compareMissedQuestions = compareInOrder<MissedQuestion>(
+  (first, second) => second.missCount - first.missCount,
+  comparePackOrder,
+  (first, second) => first.questionId.localeCompare(second.questionId),
+);
+
+const compareWeakDomains = compareInOrder<DomainScore>(
+  (first, second) => first.percent - second.percent,
+  (first, second) => second.answeredCount - first.answeredCount,
+  comparePackOrder,
+  (first, second) => first.domainId.localeCompare(second.domainId),
+);
 
 const sameAnswerSet = (first: string[], second: string[]): boolean =>
   first.length === second.length && first.every((id) => second.includes(id));
@@ -250,6 +316,7 @@ export const getProgress = async (): Promise<ProgressData> => {
       packTitle: row.content.pack.title,
       packVersion: row.packVersion,
       percent: 0,
+      questionCount: snapshot.filter((item) => item.domainId === domain.id).length,
     };
 
     score.answeredCount += 1;
@@ -278,20 +345,49 @@ export const getProgress = async (): Promise<ProgressData> => {
     }
   });
 
+  const domainScores = [...domainTotals.values()].toSorted(compareDomainScores);
+
+  const missedQuestions = [...missedTotals.values()].toSorted(compareMissedQuestions);
+
+  const repeatedMiss = missedQuestions.find((question) => question.missCount > 1);
+
+  const [weakDomain] = domainScores
+    .filter((score) => score.percent < WEAK_DOMAIN_PERCENT_THRESHOLD)
+    .toSorted(compareWeakDomains);
+
+  let nextStudyAction: NextStudyAction = { kind: 'start_practice' };
+
+  if (repeatedMiss) {
+    nextStudyAction = {
+      examId: repeatedMiss.examId,
+      kind: 'missed_question',
+      missCount: repeatedMiss.missCount,
+      packId: repeatedMiss.packId,
+      packTitle: repeatedMiss.packTitle,
+      packVersion: repeatedMiss.packVersion,
+      prompt: repeatedMiss.prompt,
+      questionId: repeatedMiss.questionId,
+    };
+  } else if (weakDomain) {
+    nextStudyAction = {
+      answeredCount: weakDomain.answeredCount,
+      correctCount: weakDomain.correctCount,
+      domainId: weakDomain.domainId,
+      domainTitle: weakDomain.domainTitle,
+      examId: weakDomain.examId,
+      kind: 'domain',
+      packId: weakDomain.packId,
+      packTitle: weakDomain.packTitle,
+      packVersion: weakDomain.packVersion,
+      percent: weakDomain.percent,
+      questionCount: weakDomain.questionCount,
+    };
+  }
+
   return {
-    domainScores: [...domainTotals.values()].toSorted(
-      (a, b) =>
-        a.examTitle.localeCompare(b.examTitle) ||
-        a.packTitle.localeCompare(b.packTitle) ||
-        a.packVersion.localeCompare(b.packVersion) ||
-        a.domainTitle.localeCompare(b.domainTitle),
-    ),
-    missedQuestions: [...missedTotals.values()].toSorted(
-      (a, b) =>
-        b.missCount - a.missCount ||
-        a.examTitle.localeCompare(b.examTitle) ||
-        a.questionId.localeCompare(b.questionId),
-    ),
+    domainScores,
+    missedQuestions,
+    nextStudyAction,
     recentAttempts: orderedAttempts.slice(0, MAX_RECENT_ATTEMPTS),
   };
 };
