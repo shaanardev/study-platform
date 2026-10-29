@@ -15,6 +15,7 @@ template-append = """
 - Keep the summary concise and imperative.
 - Write a concise Markdown bullet list in the body, with each bullet starting with `- ` and describing one key change in a single sentence.
 - Put distinct changes in separate bullets instead of joining them with `and`.
-- Add the trailer `Co-authored-by: Codex <noreply@openai.com>` to every generated commit message.
+- After the Markdown bullet list, add a blank line and then the trailer `Co-authored-by: Codex <noreply@openai.com>`.
+- Keep trailers outside the Markdown bullet list: never prefix a trailer with `- ` or format it as a bullet.
 - Preserve relevant trailers such as `Co-authored-by`; do not invent issue references.
 """
