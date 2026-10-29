@@ -252,6 +252,7 @@ describe('mock quiz service', () => {
 
       expect(expired).toMatchObject({
         answers: [{ answerIds: ['a'], correct: true, questionId: 'delta-transaction-basics' }],
+        remainingMilliseconds: 0,
         score: { correct: 1 },
         status: 'expired',
       });

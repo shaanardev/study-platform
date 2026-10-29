@@ -121,8 +121,26 @@ export const saveMockAnswer = form(
 
 export const submitMock = form(
   Schema.toStandardSchemaV1(SubmitMockSchema),
-  async ({ attemptId }) => {
+  async ({ attemptId, confirmUnanswered }) => {
+    const current = await getMockAttempt(attemptId);
+
+    if (current?.status === 'in_progress') {
+      const answeredQuestionIds = new Set(current.answers.map((answer) => answer.questionId));
+
+      const unansweredQuestionIds = current.questionIds.filter(
+        (questionId) => !answeredQuestionIds.has(questionId),
+      );
+
+      if (unansweredQuestionIds.length > 0 && confirmUnanswered !== 'yes') {
+        return { reviewRequired: true };
+      }
+    }
+
     await submitMockAttempt(attemptId);
-    redirect(HTTP_STATUS_REDIRECT, `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`);
+
+    return redirect(
+      HTTP_STATUS_REDIRECT,
+      `${resolve('/mock')}?attempt=${encodeURIComponent(attemptId)}`,
+    );
   },
 );

@@ -83,4 +83,19 @@ describe('mock remote form schemas', () => {
       /Expected string/u,
     );
   });
+
+  it('accepts only the explicit unanswered confirmation value', () => {
+    expect(
+      Schema.decodeUnknownSync(SubmitMockSchema)({
+        attemptId: 'attempt-a',
+        confirmUnanswered: 'yes',
+      }),
+    ).toStrictEqual({ attemptId: 'attempt-a', confirmUnanswered: 'yes' });
+    expect(() =>
+      Schema.decodeUnknownSync(SubmitMockSchema)({
+        attemptId: 'attempt-a',
+        confirmUnanswered: 'no',
+      }),
+    ).toThrow(/Expected "yes"/u);
+  });
 });

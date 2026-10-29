@@ -5,6 +5,7 @@ import * as Schema from 'effect/Schema';
 
 import { HTTP_BAD_REQUEST, HTTP_NOT_FOUND, HTTP_STATUS_REDIRECT } from '#lib/server/http-status.js';
 import { getProgress } from '#lib/server/progress/queries.js';
+import type { NextStudyAction } from '#lib/server/progress/queries.js';
 import { createPracticeSession } from '#lib/server/quiz/service.js';
 
 const PracticeMissedSchema = Schema.Struct({
@@ -29,6 +30,30 @@ const PracticeQuestionSchema = Schema.Struct({
   packVersion: Schema.String.check(Schema.isMinLength(1)),
   questionId: Schema.String.check(Schema.isMinLength(1)),
 });
+
+type DomainRecommendation = Extract<NextStudyAction, { kind: 'domain' }>;
+
+type MissedQuestionRecommendation = Extract<NextStudyAction, { kind: 'missed_question' }>;
+
+const matchesDomainRecommendation = (
+  recommendation: NextStudyAction,
+  target: typeof PracticeDomainSchema.Type,
+): recommendation is DomainRecommendation =>
+  recommendation.kind === 'domain' &&
+  recommendation.domainId === target.domainId &&
+  recommendation.examId === target.examId &&
+  recommendation.packId === target.packId &&
+  recommendation.packVersion === target.packVersion;
+
+const matchesQuestionRecommendation = (
+  recommendation: NextStudyAction,
+  target: typeof PracticeQuestionSchema.Type,
+): recommendation is MissedQuestionRecommendation =>
+  recommendation.kind === 'missed_question' &&
+  recommendation.questionId === target.questionId &&
+  recommendation.examId === target.examId &&
+  recommendation.packId === target.packId &&
+  recommendation.packVersion === target.packVersion;
 
 export const getProgressData = query(getProgress);
 
@@ -82,13 +107,7 @@ export const practiceRecommendedDomain = form(
     const progress = await getProgress();
     const recommendation = progress.nextStudyAction;
 
-    if (
-      recommendation.kind !== 'domain' ||
-      recommendation.domainId !== domainId ||
-      recommendation.examId !== examId ||
-      recommendation.packId !== packId ||
-      recommendation.packVersion !== packVersion
-    ) {
+    if (!matchesDomainRecommendation(recommendation, { domainId, examId, packId, packVersion })) {
       invalid(issue.domainId('This recommendation has changed. Reload Progress and try again.'));
     }
 
@@ -136,11 +155,7 @@ export const practiceRecommendedQuestion = form(
     const recommendation = progress.nextStudyAction;
 
     if (
-      recommendation.kind !== 'missed_question' ||
-      recommendation.questionId !== questionId ||
-      recommendation.examId !== examId ||
-      recommendation.packId !== packId ||
-      recommendation.packVersion !== packVersion
+      !matchesQuestionRecommendation(recommendation, { examId, packId, packVersion, questionId })
     ) {
       invalid(issue.questionId('This recommendation has changed. Reload Progress and try again.'));
     }

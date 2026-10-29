@@ -43,4 +43,7 @@ export const SaveMockAnswerSchema = Schema.Struct({
   questionId: Schema.String,
 });
 
-export const SubmitMockSchema = Schema.Struct({ attemptId: Schema.String });
+export const SubmitMockSchema = Schema.Struct({
+  attemptId: Schema.String,
+  confirmUnanswered: Schema.optional(Schema.Literal('yes')),
+});

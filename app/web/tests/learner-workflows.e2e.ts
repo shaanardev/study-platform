@@ -350,6 +350,39 @@ const requiredE2eDatabasePath = (): string => {
 
 const SavedExcerptSchema = Schema.Struct({ excerpt: Schema.String });
 
+const reviewAndSubmitMockWithUnansweredQuestions = async (page: Page): Promise<void> => {
+  await expect(page.getByText('1 of 2 answers saved · 1 unanswered')).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('1 of 2 answers saved · 1 unanswered')).toBeVisible();
+
+  const pipelineArticle = page.locator('article').filter({
+    has: page.getByRole('heading', { name: pipelineQuestion }),
+  });
+
+  const firstAnswerSaved = await pipelineArticle.getByLabel(pipelineFirstCorrectAnswer).isChecked();
+
+  const secondAnswerSaved = await pipelineArticle
+    .getByLabel(pipelineSecondCorrectAnswer)
+    .isChecked();
+
+  expect([firstAnswerSaved, secondAnswerSaved]).toStrictEqual([true, true]);
+
+  await page.getByRole('button', { name: 'Submit mock exam' }).click();
+  await expect(page.getByRole('heading', { name: 'Review unanswered questions' })).toBeVisible();
+  await expect(page.getByText(/1 question\(s\) have no saved answer/u)).toBeVisible();
+  await expect(page.getByRole('status', { name: 'Review unanswered questions' })).toContainText(
+    /seconds\s+remaining/u,
+  );
+  await expect(page.getByRole('link', { name: 'Review question 1' })).toBeVisible();
+  await page.getByRole('button', { name: 'Submit with unanswered questions' }).click();
+  await expect(page).toHaveURL(/\/mock\?attempt=[^&]+$/u);
+  await expect(page.getByRole('heading', { name: 'Mock exam results' })).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('1 / 2 correct · 50%');
+  await expect(page.getByRole('status')).toContainText(/1 of 2 questions answered/u);
+  await expect(page.getByRole('status')).toContainText(/1 unanswered/u);
+  await expect(page.getByRole('status')).toContainText(/Submitted before the 5-minute deadline/u);
+};
+
 test.describe('learner workflows', () => {
   // These linked flows share persisted state, so keep them in one ordered test.
 
@@ -434,23 +467,20 @@ test.describe('learner workflows', () => {
       await page.getByRole('button', { name: 'Start timed mock' }).click();
       await expect(page).toHaveURL(/\/mock\?attempt=[^&]+$/u);
       await expect(page.getByRole('region', { name: 'Mock exam attempt' })).toBeVisible();
-      await expect(page.getByText('0 of 2 answers saved')).toBeVisible();
-
-      const deltaArticle = page.locator('article').filter({
-        has: page.getByRole('heading', { name: practiceQuestion }),
-      });
-
-      await deltaArticle.getByLabel(practiceCorrectAnswer).check();
-      await deltaArticle.getByRole('button', { name: 'Save answer' }).click();
-      await expect(page).toHaveURL(/\/mock\?attempt=[^&]+$/u);
-      await expect(page.getByText('1 of 2 answers saved')).toBeVisible();
-      await page.reload();
+      await expect(page.getByText('0 of 2 answers saved · 2 unanswered')).toBeVisible();
+      const questionIndexLink = page.getByRole('link', { name: 'Question 2, unanswered' });
+      await questionIndexLink.focus();
+      await questionIndexLink.press('Enter');
+      await expect(page).toHaveURL(/#mock-question-/u);
+      await page.getByRole('button', { name: 'Submit mock exam' }).click();
       await expect(
-        page
-          .locator('article')
-          .filter({ has: page.getByRole('heading', { name: practiceQuestion }) })
-          .getByLabel(practiceCorrectAnswer),
-      ).toBeChecked();
+        page.getByRole('heading', { name: 'Review unanswered questions' }),
+      ).toBeVisible();
+      await expect(page.getByText(/2 question\(s\) have no saved answer/u)).toBeVisible();
+      await expect(page.getByRole('status', { name: 'Review unanswered questions' })).toContainText(
+        /seconds\s+remaining/u,
+      );
+      await page.getByRole('link', { name: 'Review question 2' }).click();
 
       const pipelineArticle = page.locator('article').filter({
         has: page.getByRole('heading', { name: pipelineQuestion }),
@@ -460,15 +490,11 @@ test.describe('learner workflows', () => {
       await pipelineArticle.getByLabel(pipelineSecondCorrectAnswer).check();
 
       await pipelineArticle.getByRole('button', { name: 'Save answer' }).click();
-      await expect(page.getByText('2 of 2 answers saved')).toBeVisible();
-
-      await page.getByRole('button', { name: 'Submit mock exam' }).click();
-      await expect(page).toHaveURL(/\/mock\?attempt=[^&]+$/u);
-      await expect(page.getByRole('heading', { name: 'Mock exam results' })).toBeVisible();
-      await expect(page.getByRole('status')).toContainText('2 / 2 correct · 100%');
+      await expect(page.getByText('1 of 2 answers saved · 1 unanswered')).toBeVisible();
+      await reviewAndSubmitMockWithUnansweredQuestions(page);
       await page.reload();
       await expect(page.getByRole('heading', { name: 'Mock exam results' })).toBeVisible();
-      await expect(page.getByRole('status')).toContainText('2 / 2 correct · 100%');
+      await expect(page.getByRole('status')).toContainText('1 / 2 correct · 50%');
     });
 
     await test.step('progress read and missed-question practice redirect', async () => {

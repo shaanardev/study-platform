@@ -17,6 +17,7 @@
     startMock,
     submitMock,
   } from './mock.remote';
+  import { getTimerAnnouncement } from './timer-announcement.js';
 
   let queryArguments = $derived({
     attemptId: page.url.searchParams.get('attempt') ?? undefined,
@@ -46,15 +47,47 @@
 
   let remaining = $derived(data.attempt ? Math.max(0, data.attempt.deadline - now) : 0);
 
+  let remainingTime = $derived.by(() => {
+    const minutes = Math.floor(remaining / MILLISECONDS_PER_MINUTE);
+    const seconds = Math.floor((remaining % MILLISECONDS_PER_MINUTE) / MILLISECONDS_PER_SECOND);
+
+    return {
+      formatted: `${minutes}:${String(seconds).padStart(TIME_COMPONENT_WIDTH, '0')}`,
+      minutes,
+      seconds,
+    };
+  });
+
   let savedAnswers = $derived(
     new Map(data.attempt?.answers.map((answer) => [answer.questionId, answer.answerIds])),
   );
 
+  let answeredCount = $derived(savedAnswers.size);
+
+  let unansweredQuestions = $derived(
+    data.attempt?.questions.filter((question) => !savedAnswers.has(question.id)) ?? [],
+  );
+
+  let needsUnansweredConfirmation = $derived(
+    submitMock.result?.reviewRequired === true && unansweredQuestions.length > 0,
+  );
+
+  let timerAnnouncement = $derived(
+    getTimerAnnouncement(data.attempt?.status === 'in_progress' ? remaining : undefined),
+  );
+
   onMount(() => {
+    let expirationReloading = false;
+
     const timer = window.setInterval(() => {
       now = Date.now();
 
-      if (data.attempt?.status === 'in_progress' && remaining <= 0) {
+      if (
+        !expirationReloading &&
+        data.attempt?.status === 'in_progress' &&
+        Date.now() >= data.attempt.deadline
+      ) {
+        expirationReloading = true;
         window.location.reload();
       }
     }, MILLISECONDS_PER_SECOND);
@@ -84,25 +117,25 @@
     {#if data.attempt?.status === 'in_progress'}
       <section
         class="border-card-border bg-panel-tint my-5 flex flex-col justify-between gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:p-6"
-        aria-live="polite"
       >
         <div>
           <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
             Time remaining
           </p>
-          <strong class="text-3xl tabular-nums"
-            >{Math.floor(remaining / MILLISECONDS_PER_MINUTE)}:{String(
-              Math.floor((remaining % MILLISECONDS_PER_MINUTE) / MILLISECONDS_PER_SECOND),
-            ).padStart(TIME_COMPONENT_WIDTH, '0')}</strong
-          >
+          <span class="sr-only">Time remaining:</span>
+          <strong class="text-3xl tabular-nums">{remainingTime.formatted}</strong>
         </div>
         <p class="text-mock-muted m-0">
-          {data.attempt.answers.length}
-          of {data.attempt.questionIds.length} answers saved ·
+          {answeredCount}
+          of {data.attempt.questionIds.length} answers saved · {unansweredQuestions.length}
+          unanswered ·
           {data.attempt.packId}
           v{data.attempt.packVersion}
         </p>
       </section>
+      <p class="sr-only" aria-atomic="true" aria-live="polite" role="status">
+        {timerAnnouncement}
+      </p>
     {/if}
 
     {#if data.attempt?.status !== 'in_progress'}
@@ -254,6 +287,13 @@
               {data.attempt.score?.correct}
               / {data.attempt.score?.total} correct · {data.attempt.score?.percent}%
             </p>
+            <p>
+              {answeredCount} of {data.attempt.questionIds.length} questions answered ·
+              {unansweredQuestions.length} unanswered ·
+              {data.attempt.status === 'expired'
+                ? 'Time expired at the server deadline.'
+                : `Submitted before the ${data.attempt.durationMinutes}-minute deadline.`}
+            </p>
             {#if data.attempt.score?.passingThreshold !== undefined}
               <p>
                 {data.attempt.score.passed ? 'Pass' : 'Fail'}
@@ -271,8 +311,34 @@
             </ul>
           </div>
         {/if}
+        {#if data.attempt.status === 'in_progress'}
+          <nav class="border-divider mt-6 border-t pt-5" aria-label="Question index">
+            <h2 class="mb-3 text-lg font-semibold">Question index</h2>
+            <p class="text-mock-muted mb-3">
+              {answeredCount} saved · {unansweredQuestions.length} unanswered
+            </p>
+            <ol class="m-0 flex list-none flex-wrap gap-2 p-0">
+              {#each data.attempt.questions as question, index (question.id)}
+                {const answered = $derived(savedAnswers.has(question.id))}
+                <li>
+                  <a
+                    class="border-control-muted focus-visible:outline-focus-gold inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border px-3 font-semibold underline-offset-2 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
+                    href="#mock-question-{question.id}"
+                    aria-label="Question {index + 1}, {answered ? 'answer saved' : 'unanswered'}"
+                  >
+                    {index + 1}<span aria-hidden="true">{answered ? '✓' : '·'}</span>
+                  </a>
+                </li>
+              {/each}
+            </ol>
+          </nav>
+        {/if}
         {#each data.attempt.questions as question, index (question.id)}
-          <article class="border-divider mt-6 border-t pt-5">
+          <article
+            class="border-divider mt-6 border-t pt-5"
+            id="mock-question-{question.id}"
+            tabindex="-1"
+          >
             <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
               {index + 1}
               of {data.attempt.questions.length} · {question.domainId}
@@ -360,13 +426,46 @@
           </article>
         {/each}
         {#if data.attempt.status === 'in_progress'}
+          {#if needsUnansweredConfirmation}
+            <section
+              class="border-control-border bg-panel-tint mt-8 rounded-xl border p-4"
+              aria-labelledby="unanswered-review-heading"
+              role="status"
+            >
+              <h2 id="unanswered-review-heading" class="mb-2 text-lg font-semibold">
+                Review unanswered questions
+              </h2>
+              <p>
+                {unansweredQuestions.length} question(s) have no saved answer. You have
+                {remainingTime.minutes} minute(s) and {remainingTime.seconds} seconds remaining. If you
+                save an answer, submit again to review the remaining questions and time.
+              </p>
+              <ul class="grid gap-2 pl-5">
+                {#each unansweredQuestions as question, questionIndex (question.id)}
+                  <li>
+                    <a
+                      class="text-brand focus-visible:outline-focus-gold font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
+                      href="#mock-question-{question.id}"
+                    >
+                      Review question {questionIndex + 1}
+                    </a>
+                  </li>
+                {/each}
+              </ul>
+            </section>
+          {/if}
           <form {...submitMock} class="border-divider mt-8 grid gap-3 border-t pt-5">
             <input {...submitMock.fields.attemptId.as('hidden', data.attempt.id)} />
+            {#if needsUnansweredConfirmation}
+              <input {...submitMock.fields.confirmUnanswered.as('hidden', 'yes')} />
+            {/if}
             <button
               class="btn bg-brand hover:bg-brand-hover-deep focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
               type="submit"
             >
-              Submit mock exam
+              {needsUnansweredConfirmation
+                ? 'Submit with unanswered questions'
+                : 'Submit mock exam'}
             </button>
           </form>
         {/if}
