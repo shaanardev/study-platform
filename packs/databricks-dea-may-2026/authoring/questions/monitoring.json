@@ -11,7 +11,7 @@
       },
       {
         "id": "b",
-        "text": "Run DESCRIBE HISTORY on an unrelated Delta table"
+        "text": "Run `DESCRIBE HISTORY` on an unrelated Delta table"
       },
       {
         "id": "c",
@@ -25,16 +25,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "Job run history provides previous durations, statuses, and task details. Compare runs with similar inputs and configurations before attributing a slowdown. Delta DESCRIBE HISTORY describes table transactions and is not a replacement for job execution history.",
+    "explanation": "Job run history provides previous durations, statuses, and task details. Compare runs with similar inputs and configurations before attributing a slowdown. Delta `DESCRIBE HISTORY` describes table transactions and is not a replacement for job execution history.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Core Components > jobs and tasks",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/jobs/monitor"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Core Components > jobs and tasks"
       }
     ]
   },
@@ -67,13 +63,9 @@
     "explanation": "Configure log delivery to durable storage before the run. Retained logs help investigate failures after compute terminates. This is separate from Spark streaming checkpoints and Delta table history.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Creating & Scheduling Jobs > notifications and run monitoring",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/compute/configure"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Creating & Scheduling Jobs > notifications and run monitoring"
       }
     ]
   },
@@ -106,14 +98,9 @@
     "explanation": "A duration warning signals slow execution, while a timeout limits how long a task is allowed to run. Monitor historical baselines and failure patterns. Notification delivery depends on its configured destinations.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Creating & Scheduling Jobs > notifications",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/jobs/notifications",
-          "https://docs.databricks.com/aws/en/jobs/configure-job"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Creating & Scheduling Jobs > notifications"
       }
     ]
   },
@@ -146,14 +133,9 @@
     "explanation": "Stateful operators retain information across batches. Growing state can increase resource pressure and checkpoint costs. Check the operator metrics and use valid watermark or timeout semantics to bound state when the business logic permits.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Code Optimizations > Spark workload performance",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/stateful-streaming",
-          "https://docs.databricks.com/aws/en/structured-streaming/stream-monitoring"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Code Optimizations > Spark workload performance"
       }
     ]
   },
@@ -161,7 +143,7 @@
     "id": "dea26-baseline-099",
     "type": "single_choice",
     "domainId": "monitoring",
-    "prompt": "Why can dropDuplicates on a streaming DataFrame without a watermark become expensive over time?",
+    "prompt": "Why can `dropDuplicates` on a streaming `DataFrame` without a watermark become expensive over time?",
     "options": [
       {
         "id": "a",
@@ -186,14 +168,9 @@
     "explanation": "Without a valid state eviction rule, deduplication retains previously seen keys to detect later repeats, so state can grow without bound. A watermark-based design bounds state according to the lateness policy; it is not a promise to remember duplicates forever.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Code Optimizations > Spark workload performance",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/watermarks",
-          "https://docs.databricks.com/aws/en/structured-streaming/stateful-streaming"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Code Optimizations > Spark workload performance"
       }
     ]
   },
@@ -205,11 +182,11 @@
     "options": [
       {
         "id": "a",
-        "text": "OPTIMIZE to compact files"
+        "text": "`OPTIMIZE` to compact files"
       },
       {
         "id": "b",
-        "text": "VACUUM to compact the current files"
+        "text": "`VACUUM` to compact the current files"
       },
       {
         "id": "c",
@@ -223,16 +200,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "OPTIMIZE compacts small files to reduce scan and metadata overhead. VACUUM removes eligible unreferenced old files; it does not compact the current table. Target file sizes depend on table and runtime settings, not a universal 128 MB default.",
+    "explanation": "`OPTIMIZE` compacts small files to reduce scan and metadata overhead. `VACUUM` removes eligible unreferenced old files; it does not compact the current table. Target file sizes depend on table and runtime settings, not a universal 128 MB default.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Designing the Foundation > avoid the small file problem",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/operations/optimize"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Designing the Foundation > avoid the small file problem"
       }
     ]
   },
@@ -240,7 +213,7 @@
     "id": "dea26-baseline-044",
     "type": "single_choice",
     "domainId": "monitoring",
-    "prompt": "What happens when you run OPTIMIZE on a partitioned Delta table with ZORDER BY?",
+    "prompt": "What happens when you run `OPTIMIZE` on a partitioned Delta table with `ZORDER BY`?",
     "options": [
       {
         "id": "a",
@@ -262,17 +235,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "OPTIMIZE with ZORDER BY compacts files and colocates related values within each partition to improve data skipping for supported Delta table layouts. It does not remove partitioning. Z-ordering is not compatible with liquid clustering on the same table.",
+    "explanation": "`OPTIMIZE` with `ZORDER BY` compacts files and colocates related values within each partition to improve data skipping for supported Delta table layouts. It does not remove partitioning. Z-ordering is not compatible with liquid clustering on the same table.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Designing the Foundation > Z-Ordering",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/operations/optimize",
-          "https://docs.databricks.com/aws/en/tables/clustering"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Designing the Foundation > Z-Ordering"
       }
     ]
   },
@@ -305,13 +273,9 @@
     "explanation": "Liquid clustering provides flexible table layout for data skipping. Changing keys does not instantly recluster all old data; use the appropriate optimization operation when needed. Automatic key selection is a separate configured capability, not a property of every clustered table.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Designing the Foundation > Liquid Clustering",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/clustering"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Designing the Foundation > Liquid Clustering"
       }
     ]
   },
@@ -344,14 +308,9 @@
     "explanation": "Init scripts run during classic compute initialization. A failing command or missing dependency can prevent startup, so inspect startup events and logs. Use supported governed script locations for the access mode; legacy DBFS script storage should not be assumed.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Core Components > compute options",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/init-scripts",
-          "https://docs.databricks.com/aws/en/compute/troubleshooting"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Core Components > compute options"
       }
     ]
   },
@@ -384,13 +343,9 @@
     "explanation": "Compute-scoped libraries are configured for a particular compute resource. Supported package sources and behavior depend on runtime and access mode. Specify compatible versions and inspect installation status if the workload reports missing or conflicting dependencies.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Core Components > compute options",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/libraries/cluster-libraries"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Core Components > compute options"
       }
     ]
   },
@@ -423,14 +378,9 @@
     "explanation": "Uneven shuffle reads and a long outlier task are evidence of skew. Check the join or aggregation keys and the execution plan. AQE skew handling or a suitable key strategy may help; simply adding workers does not automatically split the hot partition.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Code Optimizations > skew",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/compute/troubleshooting/debugging-spark-ui",
-          "https://docs.databricks.com/gcp/en/optimizations/spark-ui-guide"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Code Optimizations > skew"
       }
     ]
   },
@@ -463,14 +413,9 @@
     "explanation": "Spill indicates intermediate data could not remain fully in execution memory. Inspect partition sizes, skew, and memory pressure. Adjust partitioning, join strategy, or resources based on evidence and measure the result.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Code Optimizations > spill",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/compute/troubleshooting/debugging-spark-ui",
-          "https://docs.databricks.com/gcp/en/optimizations/spark-ui-guide"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Code Optimizations > spill"
       }
     ]
   },
@@ -482,7 +427,7 @@
     "options": [
       {
         "id": "a",
-        "text": "spark.sql.shuffle.partitions, with awareness of AQE behavior"
+        "text": "`spark.sql.shuffle.partitions`, with awareness of AQE behavior"
       },
       {
         "id": "b",
@@ -503,13 +448,9 @@
     "explanation": "SQL shuffle partition sizing can affect task memory pressure and parallelism. AQE may adapt the final partitioning. Increase or tune partitions based on measured sizes; more partitions can also add scheduling overhead.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Code Optimizations > shuffles",
-        "documentationUrls": [
-          "https://docs.databricks.com/gcp/en/optimizations/spark-ui-guide"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Code Optimizations > shuffles"
       }
     ]
   },
@@ -517,7 +458,7 @@
     "id": "dea26-monitoring-predictive-scope",
     "type": "single_choice",
     "domainId": "monitoring",
-    "prompt": "A team wants maintenance operations such as OPTIMIZE, VACUUM, and ANALYZE managed automatically for eligible tables. Which feature fits?",
+    "prompt": "A team wants maintenance operations such as `OPTIMIZE`, `VACUUM`, and `ANALYZE` managed automatically for eligible tables. Which feature fits?",
     "options": [
       {
         "id": "a",
@@ -542,13 +483,9 @@
     "explanation": "Predictive optimization runs maintenance for eligible managed tables. It is distinct from query-time AQE and does not apply identically to every external table. Check enablement and table eligibility.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Designing the Foundation > predictive optimization",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/optimizations/predictive-optimization"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Designing the Foundation > predictive optimization"
       }
     ]
   },
@@ -556,7 +493,7 @@
     "id": "dea26-monitoring-liquid-vs-zorder",
     "type": "single_choice",
     "domainId": "monitoring",
-    "prompt": "An existing liquid-clustered table needs layout maintenance. Should the engineer add ZORDER BY to its OPTIMIZE command?",
+    "prompt": "An existing liquid-clustered table needs layout maintenance. Should the engineer add `ZORDER BY` to its `OPTIMIZE` command?",
     "options": [
       {
         "id": "a",
@@ -564,7 +501,7 @@
       },
       {
         "id": "b",
-        "text": "Yes; ZORDER BY is mandatory for every liquid-clustered table"
+        "text": "Yes; `ZORDER BY` is mandatory for every liquid-clustered table"
       },
       {
         "id": "c",
@@ -581,14 +518,9 @@
     "explanation": "Use the optimization operations supported by the table layout. Liquid clustering replaces fixed partitioning and Z-ordering for that layout. Do not apply mutually incompatible layout syntax.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Designing the Foundation > Liquid Clustering and Z-Ordering",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/clustering",
-          "https://docs.databricks.com/aws/en/tables/operations/optimize"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Designing the Foundation > Liquid Clustering and Z-Ordering"
       }
     ]
   },
@@ -621,14 +553,9 @@
     "explanation": "Key changes do not themselves guarantee immediate physical reclustering of all files. Apply suitable supported optimization when the layout needs to catch up. Automatic key selection is a separate feature.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Designing the Foundation > Liquid Clustering",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/clustering",
-          "https://docs.databricks.com/aws/en/tables/operations/optimize"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Designing the Foundation > Liquid Clustering"
       }
     ]
   },
@@ -636,7 +563,7 @@
     "id": "dea26-monitoring-driver-oom",
     "type": "single_choice",
     "domainId": "monitoring",
-    "prompt": "A job fails with a driver out-of-memory error immediately after df.collect() on a very large dataset. What is the most direct code improvement?",
+    "prompt": "A job fails with a driver out-of-memory error immediately after `df.collect()` on a very large dataset. What is the most direct code improvement?",
     "options": [
       {
         "id": "a",
@@ -644,7 +571,7 @@
       },
       {
         "id": "b",
-        "text": "Increase only executor count and keep the same unbounded collect()"
+        "text": "Increase only executor count and keep the same unbounded `collect()`"
       },
       {
         "id": "c",
@@ -661,13 +588,9 @@
     "explanation": "collect returns all rows to the driver. A large result can exceed driver memory even when executors have capacity. Use distributed transformations and writes, or retrieve only a bounded sample needed by the application.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "performance-optimization/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Overview > code optimization recommendations",
-        "documentationUrls": [
-          "https://docs.databricks.com/gcp/en/pyspark/reference/classes/dataframe/collect"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Overview > code optimization recommendations"
       }
     ]
   },
@@ -700,14 +623,9 @@
     "explanation": "Inspect installation status and logs, resolve incompatible or duplicate versions, and pin a compatible dependency set. Repeating the task on the same environment may reproduce a deterministic library conflict.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Core Components > compute options",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/libraries/cluster-libraries",
-          "https://docs.databricks.com/aws/en/compute/troubleshooting"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Core Components > compute options"
       }
     ]
   },
@@ -740,13 +658,9 @@
     "explanation": "Startup event details identify whether failure occurred before Spark execution. Cloud instance capacity, instance permissions, and networking can prevent startup. Workload transformations are a separate stage of execution.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Core Components > compute options",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/compute/troubleshooting"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Core Components > compute options"
       }
     ]
   },
@@ -779,13 +693,9 @@
     "explanation": "A dependency blocker can prevent a task from starting at all. Inspect the DAG and upstream status before analyzing executor metrics. Spark UI metrics become relevant once the Spark workload is running.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs.",
-        "section": "Core Components > task orchestration",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/jobs/monitor"
-        ]
+        "label": "Academy notes take precedence for non-code content; linked Databricks documentation takes precedence for code snippets and APIs. — Core Components > task orchestration"
       }
     ]
   }

@@ -1,0 +1,110 @@
+{
+  "packSha256": "68e6e860db528ff19e36801a5fe8a28ffc4bfa491496379ac5e09e2dac0ccabb",
+  "questionCount": 200,
+  "status": "passed",
+  "domains": [
+    {
+      "actualPercent": 6,
+      "differencePercentagePoints": 0,
+      "guidePercent": 6,
+      "id": "platform",
+      "questionCount": 12,
+      "title": "Databricks Intelligence Platform"
+    },
+    {
+      "actualPercent": 21,
+      "differencePercentagePoints": 0,
+      "guidePercent": 21,
+      "id": "ingestion",
+      "questionCount": 42,
+      "title": "Data Ingestion and Loading"
+    },
+    {
+      "actualPercent": 22,
+      "differencePercentagePoints": 0,
+      "guidePercent": 22,
+      "id": "transformation",
+      "questionCount": 44,
+      "title": "Data Transformation and Modeling"
+    },
+    {
+      "actualPercent": 16,
+      "differencePercentagePoints": 0,
+      "guidePercent": 16,
+      "id": "jobs",
+      "questionCount": 32,
+      "title": "Working with Lakeflow Jobs"
+    },
+    {
+      "actualPercent": 10,
+      "differencePercentagePoints": 0,
+      "guidePercent": 10,
+      "id": "cicd",
+      "questionCount": 20,
+      "title": "Implementing CI/CD"
+    },
+    {
+      "actualPercent": 10,
+      "differencePercentagePoints": 0,
+      "guidePercent": 10,
+      "id": "monitoring",
+      "questionCount": 20,
+      "title": "Troubleshooting, Monitoring, and Optimization"
+    },
+    {
+      "actualPercent": 15,
+      "differencePercentagePoints": 0,
+      "guidePercent": 15,
+      "id": "governance",
+      "questionCount": 30,
+      "title": "Governance and Security"
+    }
+  ],
+  "exactDomainWeights": "passed",
+  "objectiveCounts": {
+    "C1": 4,
+    "C2": 4,
+    "C3": 6,
+    "C4": 6,
+    "G1": 10,
+    "G2": 9,
+    "G3": 7,
+    "G4": 4,
+    "I1": 14,
+    "I2": 5,
+    "I3": 9,
+    "I4": 4,
+    "I5": 4,
+    "I6": 4,
+    "I7": 2,
+    "J1": 10,
+    "J2": 14,
+    "J3": 5,
+    "J4": 3,
+    "M1": 1,
+    "M2": 3,
+    "M3": 5,
+    "M4": 6,
+    "M5": 5,
+    "P1": 8,
+    "P2": 4,
+    "T1": 5,
+    "T2": 6,
+    "T3": 8,
+    "T4": 12,
+    "T5": 4,
+    "T6": 6,
+    "T7": 3
+  },
+  "objectivesCovered": 33,
+  "questionRules": "passed",
+  "answerPositions": {
+    "a": 50,
+    "b": 50,
+    "c": 50,
+    "d": 50
+  },
+  "baselineAdapted": 128,
+  "baselineAuditCount": 194,
+  "newlyAuthored": 72
+}

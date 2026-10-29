@@ -45,10 +45,13 @@ vite.config.ts.timestamp-*
 !/packs/incoming/assets/synthetic-notes.md
 !/packs/incoming/databricks-dea-may-2026-v1.2.0.json
 !/packs/incoming/databricks-dea-may-2026-v1.2.1.json
+!/packs/incoming/databricks-dea-may-2026-v1.2.2.json
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.0/
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.0/**
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.1/
 !/packs/incoming/assets/databricks-dea-may-2026-v1.2.1/**
+!/packs/incoming/assets/databricks-dea-may-2026-v1.2.2/
+!/packs/incoming/assets/databricks-dea-may-2026-v1.2.2/**
 
 # Local development UI feedback captures
 /.ui-feedback/

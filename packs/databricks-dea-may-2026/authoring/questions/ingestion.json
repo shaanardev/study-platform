@@ -7,34 +7,30 @@
     "options": [
       {
         "id": "a",
-        "text": "spark.read.option(\"multiLine\", \"true\").json(path)"
+        "text": "`spark.read.option(\"multiLine\", \"true\").json(path)`"
       },
       {
         "id": "b",
-        "text": "spark.read.option(\"schema\", \"auto\").json(path)"
+        "text": "`spark.read.option(\"schema\", \"auto\").json(path)`"
       },
       {
         "id": "c",
-        "text": "spark.read.option(\"multiLine\", \"true\").parquet(path)"
+        "text": "`spark.read.option(\"multiLine\", \"true\").parquet(path)`"
       },
       {
         "id": "d",
-        "text": "spark.read.option(\"parse\", \"nested\").csv(path)"
+        "text": "`spark.read.option(\"parse\", \"nested\").csv(path)`"
       }
     ],
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "The Spark JSON reader infers a schema when none is supplied. multiLine permits a JSON document to span lines; nesting alone does not require it. For repeatable production loads, supply an explicit schema. inferSchema is not needed for the JSON reader.",
+    "explanation": "The Spark JSON reader infers a schema when none is supplied. `multiLine` permits a JSON document to span lines; nesting alone does not require it. For repeatable production loads, supply an explicit schema. `inferSchema` is not needed for the JSON reader.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingesting Semi-Structured Data (JSON)",
-        "section": "Ingesting Semi-Structure Data (JSON)",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/pyspark/reference/classes/dataframereader/json"
-        ]
+        "label": "Academy: Ingesting Semi-Structured Data (JSON) — Ingesting Semi-Structure Data (JSON)"
       }
     ]
   },
@@ -67,14 +63,9 @@
     "explanation": "A high-water mark can limit JDBC reads when the source reliably exposes changes. Advance it after a successful sink commit and make retries idempotent. Timestamp cursors need tie and late-update handling; this pattern does not capture deletes unless the source represents them.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingestion Methods",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/connect/spark-data-sources",
-          "https://docs.databricks.com/aws/en/ldp/api-ingestion"
-        ]
+        "label": "Academy: Ingestion Methods"
       }
     ]
   },
@@ -104,17 +95,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "Parquet embeds typed schema information. Auto Loader defaults to strings for JSON and CSV inference unless inferColumnTypes is enabled. Delta tables are read using the Delta source, not cloudFiles.format=\"delta\".",
+    "explanation": "Parquet embeds typed schema information. Auto Loader defaults to strings for JSON and CSV inference unless `inferColumnTypes` is enabled. Delta tables are read using the Delta source, not `cloudFiles.format=\"delta\"`.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema",
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/production"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -122,7 +108,7 @@
     "id": "dea26-baseline-059",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A team is onboarding a continuously arriving event source with Spark SQL and DataFrame operations. Which model does Structured Streaming use?",
+    "prompt": "A team is onboarding a continuously arriving event source with Spark SQL and `DataFrame` operations. Which model does Structured Streaming use?",
     "options": [
       {
         "id": "a",
@@ -144,16 +130,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "Structured Streaming is Spark's stream processing engine built on Spark SQL. It treats a data stream as an unbounded input table - new rows appended to the table represent new data in the stream. This unified programming model allows using the same operations (DataFrame/Dataset API) for both batch and streaming.",
+    "explanation": "Structured Streaming is Spark's stream processing engine built on Spark SQL. It treats a data stream as an unbounded input table - new rows appended to the table represent new data in the stream. This unified programming model allows using the same operations (`DataFrame`/Dataset API) for both batch and streaming.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Streaming ingestion",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/concepts"
-        ]
+        "label": "Academy: Streaming ingestion — Ingestion Methods"
       }
     ]
   },
@@ -183,16 +165,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "A checkpoint retains progress and state. Recovery depends on a compatible query and source, retained state, and sink semantics. Exactly-once end-to-end behavior also requires an appropriate sink; foreachBatch needs its own idempotency.",
+    "explanation": "A checkpoint retains progress and state. Recovery depends on a compatible query and source, retained state, and sink semantics. Exactly-once end-to-end behavior also requires an appropriate sink; `foreachBatch` needs its own idempotency.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Streaming ingestion",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/checkpoints"
-        ]
+        "label": "Academy: Streaming ingestion — Ingestion Methods"
       }
     ]
   },
@@ -204,7 +182,7 @@
     "options": [
       {
         "id": "a",
-        "text": "Incremental discovery and processing of new files through the cloudFiles source"
+        "text": "Incremental discovery and processing of new files through the `cloudFiles` source"
       },
       {
         "id": "b",
@@ -222,17 +200,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "Auto Loader tracks file discovery and progress to ingest new files incrementally. A durable checkpoint enables recovery. It uses Structured Streaming APIs and can process bounded increments with AvailableNow; it is not a JDBC database connector.",
+    "explanation": "Auto Loader tracks file discovery and progress to ingest new files incrementally. A durable checkpoint enables recovery. It uses Structured Streaming APIs and can process bounded increments with `AvailableNow`; it is not a JDBC database connector.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema",
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/production"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -265,13 +238,9 @@
     "explanation": "Append mode only outputs new rows added to the result table since the last trigger. Complete mode outputs the entire result table. Update mode outputs only rows that were updated. Replace mode does not exist in Structured Streaming. Append is most common for stateless transformations writing to files or Delta tables.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Streaming ingestion",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/output-mode"
-        ]
+        "label": "Academy: Streaming ingestion — Ingestion Methods"
       }
     ]
   },
@@ -304,14 +273,9 @@
     "explanation": "Change Data Capture (CDC) identifies and captures changes (inserts, updates, deletes) made to data in a source database, making them available for downstream systems. CDC enables incremental data loading without full table scans. Implementations include log-based CDC (reading transaction logs) and trigger-based CDC.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Unity Catalog tables",
-        "section": "UC (Unity Catalog) table Components",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/delta/delta-change-data-feed",
-          "https://docs.databricks.com/aws/en/sql/language-manual/functions/table_changes"
-        ]
+        "label": "Academy: Unity Catalog tables — UC (Unity Catalog) table Components"
       }
     ]
   },
@@ -323,15 +287,15 @@
     "options": [
       {
         "id": "a",
-        "text": "trigger(availableNow=True)"
+        "text": "`trigger(availableNow=True)`"
       },
       {
         "id": "b",
-        "text": "trigger(processingTime=\"10 seconds\")"
+        "text": "`trigger(processingTime=\"10 seconds\")`"
       },
       {
         "id": "c",
-        "text": "An infinite loop around spark.read"
+        "text": "An infinite loop around `spark.read`"
       },
       {
         "id": "d",
@@ -341,16 +305,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "AvailableNow processes the available backlog and terminates, respecting source rate limits through multiple batches. ProcessingTime continues polling. Trigger.Once is legacy and deprecated; AvailableNow is the preferred bounded incremental pattern.",
+    "explanation": "`AvailableNow` processes the available backlog and terminates, respecting source rate limits through multiple batches. `ProcessingTime` continues polling. `Trigger.Once` is legacy and deprecated; `AvailableNow` is the preferred bounded incremental pattern.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/triggers"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -366,7 +326,7 @@
       },
       {
         "id": "b",
-        "text": "Auto Loader schemaLocation"
+        "text": "Auto Loader `schemaLocation`"
       },
       {
         "id": "c",
@@ -374,7 +334,7 @@
       },
       {
         "id": "d",
-        "text": "COPY INTO file history"
+        "text": "`COPY INTO` file history"
       }
     ],
     "correctOptionIds": [
@@ -383,14 +343,9 @@
     "explanation": "Change Data Feed (CDF) tracks row-level changes (INSERT, UPDATE, DELETE) in Delta tables. When enabled, it maintains a history of changes that can be queried. This enables efficient incremental processing downstream - consumers can read only changed rows rather than full tables, and CDC-style workflows become simpler.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Unity Catalog tables",
-        "section": "UC (Unity Catalog) table Components",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/delta/delta-change-data-feed",
-          "https://docs.databricks.com/aws/en/sql/language-manual/functions/table_changes"
-        ]
+        "label": "Academy: Unity Catalog tables — UC (Unity Catalog) table Components"
       }
     ]
   },
@@ -402,35 +357,30 @@
     "options": [
       {
         "id": "a",
-        "text": "SELECT * FROM table_changes(\"table_name\", startVersion, endVersion)"
+        "text": "`SELECT * FROM table_changes(\"table_name\", startVersion, endVersion)`"
       },
       {
         "id": "b",
-        "text": "SELECT * FROM table_history(\"table_name\", startVersion, endVersion)"
+        "text": "`SELECT * FROM table_history(\"table_name\", startVersion, endVersion)`"
       },
       {
         "id": "c",
-        "text": "COPY INTO table_changes FROM versions"
+        "text": "`COPY INTO` `table_changes` FROM versions"
       },
       {
         "id": "d",
-        "text": "DESCRIBE STREAM table_name"
+        "text": "`DESCRIBE STREAM` `table_name`"
       }
     ],
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "table_changes() is a Delta Lake function to query Change Data Feed. Specify start/end versions or timestamps: SELECT * FROM table_changes(\"my_table\", 1, 5). It returns changed rows with metadata columns (_change_type, _commit_version, _commit_timestamp) indicating what changed. CDF must be enabled on the table first.",
+    "explanation": "`table_changes()` is a Delta Lake function to query Change Data Feed. Specify start/end versions or timestamps: `SELECT * FROM table_changes(\"my_table\", 1, 5)`. It returns changed rows with metadata columns (`_change_type`, `_commit_version`, `_commit_timestamp`) indicating what changed. CDF must be enabled on the table first.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Unity Catalog tables",
-        "section": "UC (Unity Catalog) table Components",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/delta/delta-change-data-feed",
-          "https://docs.databricks.com/aws/en/sql/language-manual/functions/table_changes"
-        ]
+        "label": "Academy: Unity Catalog tables — UC (Unity Catalog) table Components"
       }
     ]
   },
@@ -438,38 +388,34 @@
     "id": "dea26-baseline-075",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A streaming sink does not directly support a required batch DataFrame operation for each micro-batch. Which Structured Streaming interface can run custom logic on each batch?",
+    "prompt": "A streaming sink does not directly support a required batch `DataFrame` operation for each micro-batch. Which Structured Streaming interface can run custom logic on each batch?",
     "options": [
       {
         "id": "a",
-        "text": "foreachBatch"
+        "text": "`foreachBatch`"
       },
       {
         "id": "b",
-        "text": "foreachPartition, which runs once for the entire stream"
+        "text": "`foreachPartition`, which runs once for the entire stream"
       },
       {
         "id": "c",
-        "text": "AvailableNow, which is a sink callback"
+        "text": "`AvailableNow`, which is a sink callback"
       },
       {
         "id": "d",
-        "text": "schemaLocation"
+        "text": "`schemaLocation`"
       }
     ],
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "foreachBatch allows custom logic on each micro-batch as a DataFrame. It enables operations not directly supported by streaming sinks: using batch DataFrame writers, performing multiple writes, or applying custom transformations per batch. The function receives the batch DataFrame and batch ID as parameters.",
+    "explanation": "`foreachBatch` allows custom logic on each micro-batch as a `DataFrame`. It enables operations not directly supported by streaming sinks: using batch `DataFrame` writers, performing multiple writes, or applying custom transformations per batch. The function receives the batch `DataFrame` and batch ID as parameters.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Delta Lake",
-        "section": "Delta Lake",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/foreach"
-        ]
+        "label": "Academy: Delta Lake"
       }
     ]
   },
@@ -477,7 +423,7 @@
     "id": "dea26-baseline-081",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "An append-only Delta bronze table receives new rows. Why use spark.readStream.table(\"main.bronze.events\") downstream?",
+    "prompt": "An append-only Delta bronze table receives new rows. Why use `spark.readStream.table(\"main.bronze.events\")` downstream?",
     "options": [
       {
         "id": "a",
@@ -502,14 +448,9 @@
     "explanation": "A Delta streaming source tracks committed additions. An initial run can process existing data and then new commits. Updates and deletes need an appropriate design such as Change Data Feed; an append stream is not a general CDC feed.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Delta Lake",
-        "section": "Delta Lake",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/delta-lake",
-          "https://docs.databricks.com/aws/en/structured-streaming/checkpoints"
-        ]
+        "label": "Academy: Delta Lake"
       }
     ]
   },
@@ -533,7 +474,7 @@
       },
       {
         "id": "d",
-        "text": "A foreachBatch callback that blindly appends to JDBC"
+        "text": "A `foreachBatch` callback that blindly appends to JDBC"
       }
     ],
     "correctOptionIds": [
@@ -542,14 +483,9 @@
     "explanation": "The Delta streaming sink combines transactions with tracked query progress to avoid duplicate commits on recovery. Keep the checkpoint stable. Output mode alone does not establish end-to-end delivery semantics.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Delta Lake",
-        "section": "Delta Lake",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/delta-lake",
-          "https://docs.databricks.com/aws/en/structured-streaming/checkpoints"
-        ]
+        "label": "Academy: Delta Lake"
       }
     ]
   },
@@ -557,7 +493,7 @@
     "id": "dea26-baseline-085",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "What does AvailableNow change about a supported Structured Streaming source?",
+    "prompt": "What does `AvailableNow` change about a supported Structured Streaming source?",
     "options": [
       {
         "id": "a",
@@ -579,16 +515,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "AvailableNow bounds a streaming run to the available backlog and may use multiple micro-batches. It does not itself autoscale compute. Retaining the checkpoint supports incremental progress between scheduled runs.",
+    "explanation": "`AvailableNow` bounds a streaming run to the available backlog and may use multiple micro-batches. It does not itself autoscale compute. Retaining the checkpoint supports incremental progress between scheduled runs.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/triggers"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -596,7 +528,7 @@
     "id": "dea26-baseline-086",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "Auto Loader infers its schema and uses cloudFiles.schemaEvolutionMode=\"addNewColumns\". A new column arrives. What happens?",
+    "prompt": "Auto Loader infers its schema and uses `cloudFiles.schemaEvolutionMode=\"addNewColumns\"`. A new column arrives. What happens?",
     "options": [
       {
         "id": "a",
@@ -604,7 +536,7 @@
       },
       {
         "id": "b",
-        "text": "The writer mergeSchema option alone makes the reader evolve without stopping"
+        "text": "The writer `mergeSchema` option alone makes the reader evolve without stopping"
       },
       {
         "id": "c",
@@ -618,17 +550,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "Reader evolution is configured with cloudFiles.schemaEvolutionMode. addNewColumns records new fields and requires a restart; rescue captures unexpected fields without evolving the schema. Delta writer schema evolution is a separate concern.",
+    "explanation": "Reader evolution is configured with `cloudFiles.schemaEvolutionMode`. `addNewColumns` records new fields and requires a restart; rescue captures unexpected fields without evolving the schema. Delta writer schema evolution is a separate concern.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema",
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/production"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -636,7 +563,7 @@
     "id": "dea26-baseline-091",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A foreachBatch callback writes to JDBC and can be retried after a partial failure. How can it avoid duplicate destination effects?",
+    "prompt": "A `foreachBatch` callback writes to JDBC and can be retried after a partial failure. How can it avoid duplicate destination effects?",
     "options": [
       {
         "id": "a",
@@ -658,16 +585,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "foreachBatch provides at-least-once callback execution. A retry may repeat a batch. Design upserts or a transactionally maintained batch ledger to avoid duplicate effects. A checkpoint alone cannot make a non-idempotent external sink exactly-once.",
+    "explanation": "`foreachBatch` provides at-least-once callback execution. A retry may repeat a batch. Design upserts or a transactionally maintained batch ledger to avoid duplicate effects. A checkpoint alone cannot make a non-idempotent external sink exactly-once.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Delta Lake",
-        "section": "Delta Lake",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/structured-streaming/foreach"
-        ]
+        "label": "Academy: Delta Lake"
       }
     ]
   },
@@ -675,7 +598,7 @@
     "id": "dea26-baseline-093",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "What does cloudFiles.schemaLocation persist?",
+    "prompt": "What does `cloudFiles.schemaLocation` persist?",
     "options": [
       {
         "id": "a",
@@ -697,17 +620,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "schemaLocation persists Auto Loader schema metadata. checkpointLocation tracks streaming progress and state. They have different purposes, even though some configurations use the same physical directory. Independent queries need independent checkpoints.",
+    "explanation": "`schemaLocation` persists Auto Loader schema metadata. `checkpointLocation` tracks streaming progress and state. They have different purposes, even though some configurations use the same physical directory. Independent queries need independent checkpoints.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema",
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/production"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -740,13 +658,9 @@
     "explanation": "The medallion architecture flows Bronze (raw ingested data) to Silver (cleaned, conformed, deduplicated) to Gold (business-level aggregates). Each hop progressively improves data quality and structure.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Medallion Architecture",
-        "section": "Medallion Architecture",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/lakehouse/medallion"
-        ]
+        "label": "Academy: Medallion Architecture"
       }
     ]
   },
@@ -754,7 +668,7 @@
     "id": "dea26-baseline-188",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A scheduled batch job repeatedly scans a cloud directory and should skip files it already loaded. Which statement describes COPY INTO behavior?",
+    "prompt": "A scheduled batch job repeatedly scans a cloud directory and should skip files it already loaded. Which statement describes `COPY INTO` behavior?",
     "options": [
       {
         "id": "a",
@@ -776,16 +690,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "COPY INTO is a retriable, idempotent bulk load: it records which source files it has already processed, so re-running the command only ingests new files. This makes it well suited to repeatable batch ingestion into Delta tables.",
+    "explanation": "`COPY INTO` is a retriable, idempotent bulk load: it records which source files it has already processed, so re-running the command only ingests new files. This makes it well suited to repeatable batch ingestion into Delta tables.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: COPY INTO ingestion",
-        "section": "Copy Into (Incremental Batch)",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/sql/language-manual/delta-copy-into"
-        ]
+        "label": "Academy: COPY INTO ingestion — Copy Into (Incremental Batch)"
       }
     ]
   },
@@ -793,38 +703,34 @@
     "id": "dea26-ingestion-copy-syntax",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A registered cloud path contains Parquet files and main.bronze.orders is an existing Delta table. Which SQL loads them incrementally?",
+    "prompt": "A registered cloud path contains Parquet files and `main.bronze.orders` is an existing Delta table. Which SQL loads them incrementally?",
     "options": [
       {
         "id": "a",
-        "text": "COPY INTO main.bronze.orders FROM 's3://example-bucket/orders/' FILEFORMAT = PARQUET"
+        "text": "`COPY INTO` `main.bronze.orders` FROM 's3://example-bucket/orders/' `FILEFORMAT = PARQUET`"
       },
       {
         "id": "b",
-        "text": "COPY main.bronze.orders TO 's3://example-bucket/orders/'"
+        "text": "COPY `main.bronze.orders` TO 's3://example-bucket/orders/'"
       },
       {
         "id": "c",
-        "text": "RESTORE main.bronze.orders FROM PARQUET"
+        "text": "`RESTORE` `main.bronze.orders` FROM PARQUET"
       },
       {
         "id": "d",
-        "text": "OPTIMIZE main.bronze.orders FILEFORMAT = PARQUET"
+        "text": "`OPTIMIZE` `main.bronze.orders` `FILEFORMAT = PARQUET`"
       }
     ],
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "COPY INTO loads source files into the destination and tracks previously loaded files. The path must be accessible to the executing identity. RESTORE and OPTIMIZE operate on table history and layout rather than ingesting new files.",
+    "explanation": "`COPY INTO` loads source files into the destination and tracks previously loaded files. The path must be accessible to the executing identity. `RESTORE` and `OPTIMIZE` operate on table history and layout rather than ingesting new files.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: COPY INTO ingestion",
-        "section": "Copy Into (Incremental Batch)",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/sql/language-manual/delta-copy-into"
-        ]
+        "label": "Academy: COPY INTO ingestion — Copy Into (Incremental Batch)"
       }
     ]
   },
@@ -832,7 +738,7 @@
     "id": "dea26-ingestion-copy-force",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A file was already loaded with COPY INTO. An engineer now sets COPY_OPTIONS to force=true. What risk must be considered?",
+    "prompt": "A file was already loaded with `COPY INTO`. An engineer now sets `COPY_OPTIONS` to `force=true`. What risk must be considered?",
     "options": [
       {
         "id": "a",
@@ -857,13 +763,9 @@
     "explanation": "force bypasses file-loading history for the command. It is useful when deliberately reloading files, but a pipeline must account for duplicate destination effects.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: COPY INTO ingestion",
-        "section": "Copy Into (Incremental Batch)",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/sql/language-manual/delta-copy-into"
-        ]
+        "label": "Academy: COPY INTO ingestion — Copy Into (Incremental Batch)"
       }
     ]
   },
@@ -871,7 +773,7 @@
     "id": "dea26-ingestion-copy-row-duplicates",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "Two distinct source files contain the same order row. Both files are new to COPY INTO. What should the engineer expect?",
+    "prompt": "Two distinct source files contain the same order row. Both files are new to `COPY INTO`. What should the engineer expect?",
     "options": [
       {
         "id": "a",
@@ -879,11 +781,11 @@
       },
       {
         "id": "b",
-        "text": "COPY INTO automatically keeps only the row with the latest order date"
+        "text": "`COPY INTO` automatically keeps only the row with the latest order date"
       },
       {
         "id": "c",
-        "text": "COPY INTO rejects every duplicate business key"
+        "text": "`COPY INTO` rejects every duplicate business key"
       },
       {
         "id": "d",
@@ -896,13 +798,9 @@
     "explanation": "Tracking previously loaded files prevents ordinary file replay. It does not compare business keys across separate files. Perform row-level deduplication as a subsequent transformation if needed.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: COPY INTO ingestion",
-        "section": "Copy Into (Incremental Batch)",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/sql/language-manual/delta-copy-into"
-        ]
+        "label": "Academy: COPY INTO ingestion — Copy Into (Incremental Batch)"
       }
     ]
   },
@@ -910,7 +808,7 @@
     "id": "dea26-ingestion-copy-access",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "A job can read the source files, but COPY INTO fails because its execution identity lacks destination write access. What should be fixed?",
+    "prompt": "A job can read the source files, but `COPY INTO` fails because its execution identity lacks destination write access. What should be fixed?",
     "options": [
       {
         "id": "a",
@@ -918,11 +816,11 @@
       },
       {
         "id": "b",
-        "text": "Give SELECT only to the human viewing the run"
+        "text": "Give `SELECT` only to the human viewing the run"
       },
       {
         "id": "c",
-        "text": "Enable force=true to bypass authorization"
+        "text": "Enable `force=true` to bypass authorization"
       },
       {
         "id": "d",
@@ -935,13 +833,9 @@
     "explanation": "Ingestion requires both source access and authorization to modify the target. Run as determines the execution identity. File idempotency options do not bypass Unity Catalog permissions.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: COPY INTO ingestion",
-        "section": "Copy Into (Incremental Batch)",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/sql/language-manual/delta-copy-into"
-        ]
+        "label": "Academy: COPY INTO ingestion — Copy Into (Incremental Batch)"
       }
     ]
   },
@@ -949,7 +843,7 @@
     "id": "dea26-ingestion-auto-infer-types",
     "type": "single_choice",
     "domainId": "ingestion",
-    "prompt": "Auto Loader reads JSON with schema inference and no inferColumnTypes override. What type is normally inferred for a numeric JSON field?",
+    "prompt": "Auto Loader reads JSON with schema inference and no `inferColumnTypes` override. What type is normally inferred for a numeric JSON field?",
     "options": [
       {
         "id": "a",
@@ -957,7 +851,7 @@
       },
       {
         "id": "b",
-        "text": "Always decimal(38,18)"
+        "text": "Always `decimal(38,18)`"
       },
       {
         "id": "c",
@@ -971,16 +865,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "Auto Loader defaults to strings for JSON and CSV fields to reduce type mismatch issues. cloudFiles.inferColumnTypes=true enables data-based type inference. This differs from the ordinary Spark JSON reader.",
+    "explanation": "Auto Loader defaults to strings for JSON and CSV fields to reduce type mismatch issues. `cloudFiles.inferColumnTypes=true` enables data-based type inference. This differs from the ordinary Spark JSON reader.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -992,15 +882,15 @@
     "options": [
       {
         "id": "a",
-        "text": "cloudFiles.schemaEvolutionMode=\"rescue\""
+        "text": "`cloudFiles.schemaEvolutionMode=\"rescue\"`"
       },
       {
         "id": "b",
-        "text": "cloudFiles.schemaEvolutionMode=\"addNewColumns\""
+        "text": "`cloudFiles.schemaEvolutionMode=\"addNewColumns\"`"
       },
       {
         "id": "c",
-        "text": "Set only the Delta writer mergeSchema option"
+        "text": "Set only the Delta writer `mergeSchema` option"
       },
       {
         "id": "d",
@@ -1010,16 +900,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "rescue records unexpected fields in rescued data rather than evolving the schema. addNewColumns changes the stored reader schema and requires a restart on new columns.",
+    "explanation": "rescue records unexpected fields in rescued data rather than evolving the schema. `addNewColumns` changes the stored reader schema and requires a restart on new columns.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -1052,14 +938,9 @@
     "explanation": "Each independent ingestion query must maintain its own source progress and state. Sharing a sink does not make query checkpoints interchangeable. Durable paths allow compatible query recovery.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/production",
-          "https://docs.databricks.com/aws/en/structured-streaming/checkpoints"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -1092,13 +973,9 @@
     "explanation": "File event or notification discovery can reduce repeated listing overhead at scale. It is a file discovery mechanism; schema rules and checkpoint recovery still need configuration.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/file-notification-mode"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -1118,7 +995,7 @@
       },
       {
         "id": "c",
-        "text": "Set the JSON reader multiLine option regardless of format"
+        "text": "Set the JSON reader `multiLine` option regardless of format"
       },
       {
         "id": "d",
@@ -1131,14 +1008,9 @@
     "explanation": "Reader schema evolution and target write schema compatibility are separate. A compatible writer schema evolution setting may be required when adding destination columns. Neither setting grants data access.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Auto Loader ingestion",
-        "section": "Auto Loader Incremental Batch or Streaming",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/schema",
-          "https://docs.databricks.com/aws/en/structured-streaming/delta-lake"
-        ]
+        "label": "Academy: Auto Loader ingestion — Auto Loader Incremental Batch or Streaming"
       }
     ]
   },
@@ -1171,14 +1043,9 @@
     "explanation": "Auto Loader is designed for scalable incremental file ingestion. Retain its checkpoint, configure schema handling, and select a discovery mode appropriate for source scale and available storage features.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingesting Enterprise Data",
-        "section": "Ingesting Enterprise Data",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion",
-          "https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/production"
-        ]
+        "label": "Academy: Ingesting Enterprise Data"
       }
     ]
   },
@@ -1211,14 +1078,9 @@
     "explanation": "A managed database connector can operate a change-capture ingestion pipeline for supported sources. Verify source support, prerequisites, connectivity, and change capture capabilities before choosing it.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingesting Enterprise Data",
-        "section": "Ingesting Enterprise Data",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/",
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/"
-        ]
+        "label": "Academy: Ingesting Enterprise Data"
       }
     ]
   },
@@ -1251,13 +1113,9 @@
     "explanation": "Standard connectors are used in pipeline code and give the team control over processing logic. Managed connectors automate more source-specific ingestion setup and operation. Compare source support and required customization.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingesting Enterprise Data",
-        "section": "Ingesting Enterprise Data",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion"
-        ]
+        "label": "Academy: Ingesting Enterprise Data"
       }
     ]
   },
@@ -1290,14 +1148,9 @@
     "explanation": "The database ingestion gateway captures changes into staging storage. The ingestion pipeline applies staged data to destination tables. SaaS and other connector types can have different architectures.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingesting Enterprise Data",
-        "section": "Ingesting Enterprise Data",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/",
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/"
-        ]
+        "label": "Academy: Ingesting Enterprise Data"
       }
     ]
   },
@@ -1317,7 +1170,7 @@
       },
       {
         "id": "c",
-        "text": "An OPTIMIZE command"
+        "text": "An `OPTIMIZE` command"
       },
       {
         "id": "d",
@@ -1330,13 +1183,9 @@
     "explanation": "A Unity Catalog connection represents source authentication and connection details for supported connector designs. Destination configuration and privileges are separate. Avoid credentials embedded directly in source code.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Lakeflow Connect",
-        "section": "LakeFlow Connect Connectors",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/"
-        ]
+        "label": "Academy: Lakeflow Connect — LakeFlow Connect Connectors"
       }
     ]
   },
@@ -1369,14 +1218,9 @@
     "explanation": "Managed incremental ingestion generally starts with an initial load and then consumes tracked changes or a supported cursor. Exact behavior and supported change types depend on the connector and source.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Lakeflow Connect",
-        "section": "LakeFlow Connect Connectors",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/",
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/"
-        ]
+        "label": "Academy: Lakeflow Connect — LakeFlow Connect Connectors"
       }
     ]
   },
@@ -1409,14 +1253,9 @@
     "explanation": "Network reachability is only one prerequisite. Source change capture configuration and source identity permissions must meet the connector requirements. The destination must also be configured and authorized.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingesting Enterprise Data",
-        "section": "Ingesting Enterprise Data",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/",
-          "https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/"
-        ]
+        "label": "Academy: Ingesting Enterprise Data"
       }
     ]
   },
@@ -1432,7 +1271,7 @@
       },
       {
         "id": "b",
-        "text": "Use cloudFiles.format=\"jdbc\""
+        "text": "Use `cloudFiles.format=\"jdbc\"`"
       },
       {
         "id": "c",
@@ -1440,7 +1279,7 @@
       },
       {
         "id": "d",
-        "text": "Call OPTIMIZE on the source JDBC URL"
+        "text": "Call `OPTIMIZE` on the source JDBC URL"
       }
     ],
     "correctOptionIds": [
@@ -1449,13 +1288,9 @@
     "explanation": "The JDBC data source reads a supported relational database using a driver, connection settings, and query or table options. Incremental behavior must be designed explicitly; Jobs can schedule and sequence the workload.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingestion Methods",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/connect/spark-data-sources"
-        ]
+        "label": "Academy: Ingestion Methods"
       }
     ]
   },
@@ -1488,13 +1323,9 @@
     "explanation": "Pagination is part of the source API contract. Preserve a restartable cursor or page progress as appropriate and design idempotent writes. A successful HTTP response alone does not mean the complete dataset was read.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingestion Methods",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ldp/api-ingestion"
-        ]
+        "label": "Academy: Ingestion Methods"
       }
     ]
   },
@@ -1527,13 +1358,9 @@
     "explanation": "Rate limiting is usually transient, so respect the service retry guidance and cap retries. Ensure replay does not create duplicate effects. Authentication and deterministic validation errors require different remediation.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Ingestion Methods",
-        "section": "Ingestion Methods",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ldp/api-ingestion"
-        ]
+        "label": "Academy: Ingestion Methods"
       }
     ]
   },
@@ -1557,7 +1384,7 @@
       },
       {
         "id": "d",
-        "text": "Use DESCRIBE HISTORY to transfer the file"
+        "text": "Use `DESCRIBE HISTORY` to transfer the file"
       }
     ],
     "correctOptionIds": [
@@ -1566,14 +1393,9 @@
     "explanation": "A workstation path is not a distributed compute path. Upload the file to supported governed storage or use the UI table-upload workflow, then configure format, header, delimiter, and schema as appropriate.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Lakeflow Connect and file upload",
-        "section": "LakeFlow Connect Connectors",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/ingestion/overview",
-          "https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-volumes"
-        ]
+        "label": "Academy: Lakeflow Connect and file upload — LakeFlow Connect Connectors"
       }
     ]
   },
@@ -1585,7 +1407,7 @@
     "options": [
       {
         "id": "a",
-        "text": "The binaryFile data source, with governed file access"
+        "text": "The `binaryFile` data source, with governed file access"
       },
       {
         "id": "b",
@@ -1603,16 +1425,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "binaryFile produces file metadata and binary content for unstructured files. Downstream parsing or extraction is separate. Govern landing access using volumes or registered external locations.",
+    "explanation": "`binaryFile` produces file metadata and binary content for unstructured files. Downstream parsing or extraction is separate. Govern landing access using volumes or registered external locations.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Data Ingestion from Cloud Storage",
-        "section": "Data Ingestion from Cloud Storage",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/query/formats/binary"
-        ]
+        "label": "Academy: Data Ingestion from Cloud Storage"
       }
     ]
   },
@@ -1628,7 +1446,7 @@
       },
       {
         "id": "b",
-        "text": "COPY INTO from a Parquet directory"
+        "text": "`COPY INTO` from a Parquet directory"
       },
       {
         "id": "c",
@@ -1645,13 +1463,9 @@
     "explanation": "Federation provides governed queries against supported external sources. It is distinct from ingestion that materializes destination data. Choose based on latency, source load, performance, and whether a local copy is required.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-connect-data-ingestion/notes.md",
-        "label": "Academy: Lakehouse Federation",
-        "section": "Additional Features and Ingesting into Existing Delta Tables",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/query-federation/database-federation"
-        ]
+        "label": "Academy: Lakehouse Federation — Additional Features and Ingesting into Existing Delta Tables"
       }
     ]
   }

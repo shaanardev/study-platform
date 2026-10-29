@@ -1,19 +1,20 @@
 # Databricks Data Engineer Associate practice pack
 
 This pack prepares for the exam guide effective May 4, 2026. It contains 200 independent practice
-questions with four choices, one correct answer, explanations, original academy-note citations,
-and Databricks documentation links. The question bank matches all seven domain weights exactly.
-Local notes are not copied into the repository or generated pack. On import, the app requires an
-explicitly approved local source root and saves the cited excerpts in the local database.
+questions with four choices, one correct answer, explanations, and original academy-note citations.
+The question bank matches all seven domain weights exactly. Local notes are not copied into the
+repository or generated pack. On import, the app requires an explicitly approved local source
+root and saves the cited excerpts in the local database.
 
 The importable file is
-[`../incoming/databricks-dea-may-2026-v1.2.1.json`](../incoming/databricks-dea-may-2026-v1.2.1.json).
+[`../incoming/databricks-dea-may-2026-v1.2.2.json`](../incoming/databricks-dea-may-2026-v1.2.2.json).
 Its non-source metadata assets and verification report are under
-[`../incoming/assets/databricks-dea-may-2026-v1.2.1/`](../incoming/assets/databricks-dea-may-2026-v1.2.1/).
-The authored input is
-[`authoring/authoring.json`](authoring/authoring.json), with one question file per domain and a
-data-driven verification profile. The generated versioned JSON and required assets are tracked in
-Git; unrelated personal packs remain ignored.
+[`../incoming/assets/databricks-dea-may-2026-v1.2.2/`](../incoming/assets/databricks-dea-may-2026-v1.2.2/).
+The versioned authored input is
+[`authoring/authoring-v1.2.2.json`](authoring/authoring-v1.2.2.json), with one question file per
+domain and a data-driven verification profile. Version 1.2.1 remains tracked unchanged. The
+generated versioned JSON and required assets are tracked in Git; unrelated personal packs remain
+ignored.
 
 ## Exam blueprint and question counts
 
@@ -42,7 +43,7 @@ largest-remainder allocator: 3, 9, 10, 7, 5, 4, and 7 respectively. Those rounde
 
 1. Start the app with the existing `pnpm dev` command.
 2. Open the pack library and select **Import packs from local folder**.
-3. Select **May 2026 reviewed baseline and original practice**, version **1.2.1**. Enter the
+3. Select **May 2026 reviewed baseline and original practice**, version **1.2.2**. Enter the
    absolute academy-learning-plan root shown in its citation paths and check the approval box.
 4. Use domain practice or configure a timed mock.
 
@@ -65,14 +66,16 @@ documentation takes precedence over supplied notes when they differ. The syllabu
 May 2026; technical documentation was checked on October 1, 2026. Scenarios with runtime-dependent
 behavior state their supported-compute or eligibility assumptions.
 
-Version 1.2.1 stores academy-note citations as absolute `file://` URLs under the supplied local
-academy-note directory. Its citations work only on machines where the notes exist at those same
-paths; they are machine-local and are not portable when the pack is shared. The pack keeps labels,
-optional section metadata, and Databricks documentation URLs. When importing it, the app confirms
-cited files stay beneath the approved root and saves their excerpts to the local database.
-Reimporting the unchanged version with an approved root refreshes those excerpts without changing
-pack content or learner progress. The generated asset directory contains only the compact baseline
-audit, objective map, provenance record, and verification report.
+Version 1.2.1 stores academy-note citations as absolute `file://` URLs and remains byte-for-byte
+unchanged. Version 1.2.2 uses the current local-note authoring contract: each citation keeps its
+same relative note path and source label, with the section appended to the label when it was not
+already present. During import, the app confirms cited files stay beneath the approved root and
+saves their excerpts to the local database. These machine-local citations are not portable when the
+pack is shared. Reimporting an unchanged version with an approved root refreshes excerpts without
+changing pack content or learner progress. Version 1.2.2 marks technical identifiers and commands
+with paired backticks for semantic inline-code rendering; question meaning, IDs, options, answers,
+and cited note targets are unchanged. Its generated asset directory contains only the compact
+baseline audit, objective map, provenance record, and verification report.
 
 The asset directory contains:
 
@@ -89,15 +92,16 @@ for Databricks technical answers.
 
 ## Verify and archived source
 
-Verify the pack from the repository root:
+Build and verify version 1.2.2 from the repository root:
 
 ```bash
-pnpm pack:verify packs/incoming/databricks-dea-may-2026-v1.2.1.json --profile packs/databricks-dea-may-2026/authoring/profile.json
+pnpm pack:build packs/databricks-dea-may-2026/authoring/authoring-v1.2.2.json packs/incoming --local-note-root /path/to/academy-learning-plan
+pnpm pack:verify packs/incoming/databricks-dea-may-2026-v1.2.2.json --profile packs/databricks-dea-may-2026/authoring/profile-v1.2.2.json
 ```
 
 The CLI checks the exam-pack schema, local citation files, exact domain counts and weights, objective
 coverage, question rules, and baseline dispositions. The maintained authoring metadata and
-verification profile target version 1.2.1 and its matching asset directory.
+verification profile target version 1.2.2 and its matching asset directory.
 
 The verification report records the pack SHA-256, so its results apply to that precise JSON.
 For future content changes, increment the pack version, output filename, and asset directory

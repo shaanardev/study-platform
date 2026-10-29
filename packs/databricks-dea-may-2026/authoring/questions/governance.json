@@ -28,14 +28,9 @@
     "explanation": "Service Principals are security identities used by applications, services, or automation tools to access Databricks resources. Unlike user accounts, they are designed for non-interactive/automated scenarios like CI/CD pipelines, scheduled jobs, and application integrations. They can be assigned permissions and used with token-based authentication.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/admin/users-groups/service-principals",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/permissions-concepts"
-        ],
-        "section": "Unity Catalog > ACL grant answers three questions"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > ACL grant answers three questions"
       }
     ]
   },
@@ -68,14 +63,9 @@
     "explanation": "Both table types are catalog-governed. Managed tables use managed storage and lifecycle management, including recovery before purge after a drop. External tables reference customer-controlled locations, and dropping their metadata leaves the underlying data.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/types",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/object-storage-lifecycle"
-        ],
-        "section": "Unity Catalog > Data Isolation"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation"
       }
     ]
   },
@@ -108,12 +98,9 @@
     "explanation": "Cluster policies enforce rules on cluster creation: allowed instance types, max DBU/hour, auto-termination requirements, enabled/disabled settings. They help control costs, ensure security compliance, and standardize configurations. Users must select from policy-compliant options when creating clusters.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/admin/clusters/policies/"
-        ]
+        "label": "Databricks Academy learning plan: Data Privacy"
       }
     ]
   },
@@ -146,13 +133,9 @@
     "explanation": "The notebook workload uses the configured Run as identity for its data authorization. The job owner and viewers are distinct concepts. Other task types, such as dashboards published with shared data permissions, can have documented identity exceptions.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "lakeflow-job-workloads/notes.md",
-        "label": "Databricks Academy learning plan: Lakeflow Job Workloads",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/jobs/privileges"
-        ],
-        "section": "Job run identity"
+        "label": "Databricks Academy learning plan: Lakeflow Job Workloads — Job run identity"
       }
     ]
   },
@@ -185,13 +168,9 @@
     "explanation": "Unity Catalog provides unified governance across Databricks workspaces and clouds: Centralized metastore for all data assets, Fine-grained access control (RBAC), Data lineage and auditing, Data discovery and tagging, Cross-cloud data sharing. It is the recommended approach for data governance on Databricks.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/"
-        ],
-        "section": "Unity Catalog > why unified governance matters"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > why unified governance matters"
       }
     ]
   },
@@ -199,7 +178,7 @@
     "id": "dea26-baseline-144",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "What is the purpose of GRANT and REVOKE statements in Unity Catalog?",
+    "prompt": "What is the purpose of `GRANT` and `REVOKE` statements in Unity Catalog?",
     "options": [
       {
         "id": "a",
@@ -221,16 +200,12 @@
     "correctOptionIds": [
       "b"
     ],
-    "explanation": "GRANT assigns privileges on securable objects; REVOKE removes a specified grant. Effective access can still come from groups or parent grants. Row filters and column masks are policies or functions and are not simply row-level GRANT statements.",
+    "explanation": "`GRANT` assigns privileges on securable objects; `REVOKE` removes a specified grant. Effective access can still come from groups or parent grants. Row filters and column masks are policies or functions and are not simply row-level `GRANT` statements.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference"
-        ],
-        "section": "Unity Catalog > ACL grant answers three questions"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > ACL grant answers three questions"
       }
     ]
   },
@@ -263,14 +238,9 @@
     "explanation": "Tags classify data. Security enforcement requires applicable privileges, masks, filters, or ABAC policies. ABAC policy conditions use governed tags, so a plain descriptive label should not be assumed to create access restrictions.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/database-objects/tags",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts"
-        ],
-        "section": "Unity Catalog > comments and tags"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > comments and tags"
       }
     ]
   },
@@ -303,13 +273,9 @@
     "explanation": "The Unity Catalog metastore stores: Table schemas and locations, Partition information, Column statistics, Access control lists, Data lineage, Tags and comments. It provides a unified view of data across cloud storage locations. Multiple workspaces can share a metastore.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/"
-        ],
-        "section": "Unity Catalog > Data Isolation > metastores"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation > metastores"
       }
     ]
   },
@@ -325,30 +291,26 @@
       },
       {
         "id": "b",
-        "text": "catalog.database.table"
+        "text": "`catalog.database.table`"
       },
       {
         "id": "c",
-        "text": "schema.table.column"
+        "text": "`schema.table.column`"
       },
       {
         "id": "d",
-        "text": "database.schema.table"
+        "text": "`database.schema.table`"
       }
     ],
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "The three-part namespace is catalog.schema.table. A schema is also called a database in some interfaces, so those names are not mutually exclusive distractors. Using a fully qualified name avoids dependence on the current catalog and schema.",
+    "explanation": "The three-part namespace is `catalog.schema.table`. A schema is also called a database in some interfaces, so those names are not mutually exclusive distractors. Using a fully qualified name avoids dependence on the current catalog and schema.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/securable-objects"
-        ],
-        "section": "Unity Catalog > Data Isolation"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation"
       }
     ]
   },
@@ -381,13 +343,9 @@
     "explanation": "A row filter determines row visibility at query time using a Boolean function. It can use account group membership or identity attributes. It does not physically delete filtered data, and users still need the necessary object privileges.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
-        ],
-        "section": "Unity Catalog > fine-grained access control"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > fine-grained access control"
       }
     ]
   },
@@ -417,16 +375,12 @@
     "correctOptionIds": [
       "b"
     ],
-    "explanation": "Column masks dynamically transform column values based on the querying user's permissions. Examples: Show NULL for unauthorized users, Show partial data (XXX-XX-1234 for SSN), Show hashed values. Masks are applied automatically in queries without changing the underlying data.",
+    "explanation": "Column masks dynamically transform column values based on the querying user's permissions. Examples: Show `NULL` for unauthorized users, Show partial data (XXX-XX-1234 for SSN), Show hashed values. Masks are applied automatically in queries without changing the underlying data.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
-        ],
-        "section": "Unity Catalog > fine-grained access control"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > fine-grained access control"
       }
     ]
   },
@@ -456,16 +410,12 @@
     "correctOptionIds": [
       "b"
     ],
-    "explanation": "ALL PRIVILEGES expands to applicable privileges with documented exclusions, including MANAGE and external-use privileges. MANAGE is administrative. Reading table data still needs SELECT and the required parent usage privileges.",
+    "explanation": "ALL PRIVILEGES expands to applicable privileges with documented exclusions, including MANAGE and external-use privileges. MANAGE is administrative. Reading table data still needs `SELECT` and the required parent usage privileges.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference"
-        ],
-        "section": "Unity Catalog > Object metadata"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Object metadata"
       }
     ]
   },
@@ -481,7 +431,7 @@
       },
       {
         "id": "b",
-        "text": "is_account_group_member()"
+        "text": "`is_account_group_member()`"
       },
       {
         "id": "c",
@@ -495,16 +445,12 @@
     "correctOptionIds": [
       "b"
     ],
-    "explanation": "is_account_group_member checks account-level group membership. is_member is associated with workspace-local groups and is not interchangeable for every Unity Catalog account group. Define the view predicate using the intended identity model.",
+    "explanation": "`is_account_group_member` checks account-level group membership. `is_member` is associated with workspace-local groups and is not interchangeable for every Unity Catalog account group. Define the view predicate using the intended identity model.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
-        ],
-        "section": "Unity Catalog > row filters and column masks"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > row filters and column masks"
       }
     ]
   },
@@ -537,13 +483,9 @@
     "explanation": "Volumes govern access to non-tabular files. The path convention is /Volumes/catalog/schema/volume/..., with appropriate parent usage and volume privileges. A volume is not a replacement for registering a managed Delta table through its table name.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/volumes/"
-        ],
-        "section": "Unity Catalog > Data Isolation > volumes"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation > volumes"
       }
     ]
   },
@@ -559,7 +501,7 @@
       },
       {
         "id": "b",
-        "text": "CREATE TABLE main.bronze.events USING DELTA LOCATION 's3://example-bucket/events/'"
+        "text": "`CREATE TABLE` `main.bronze.events` `USING DELTA` LOCATION 's3://example-bucket/events/'"
       },
       {
         "id": "c",
@@ -576,14 +518,9 @@
     "explanation": "An explicit supported external LOCATION creates an external table over data at that location. The creator needs the required parent and external-location privileges. A managed table without LOCATION uses managed storage; a volume governs files rather than registering a table.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/types",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/object-storage-lifecycle"
-        ],
-        "section": "Unity Catalog > Data Isolation"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation"
       }
     ]
   },
@@ -613,17 +550,12 @@
     "correctOptionIds": [
       "b"
     ],
-    "explanation": "PII handling: Tag columns with PII classification, Apply column masks to limit visibility (show NULL or masked values for unauthorized users), Restrict access through RLS or table permissions, Use encryption for storage, Consider pseudonymization/anonymization for analytics, Audit access to PII columns.",
+    "explanation": "PII handling: Tag columns with PII classification, Apply column masks to limit visibility (show `NULL` or masked values for unauthorized users), Restrict access through RLS or table permissions, Use encryption for storage, Consider pseudonymization/anonymization for analytics, Audit access to PII columns.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification/",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
-        ],
-        "section": "PII Data Security"
+        "label": "Databricks Academy learning plan: Data Privacy — PII Data Security"
       }
     ]
   },
@@ -631,7 +563,7 @@
     "id": "dea26-baseline-160",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "What is the purpose of the table constraints CHECK and NOT NULL in the context of data governance?",
+    "prompt": "What is the purpose of the table constraints CHECK and NOT `NULL` in the context of data governance?",
     "options": [
       {
         "id": "a",
@@ -653,15 +585,12 @@
     "correctOptionIds": [
       "b"
     ],
-    "explanation": "CHECK and NOT NULL constraints enforce data quality at write time. Row filters and dynamic views govern which stored rows readers can see. Quality validation and security policies solve different requirements and can be used together.",
+    "explanation": "CHECK and NOT `NULL` constraints enforce data quality at write time. Row filters and dynamic views govern which stored rows readers can see. Quality validation and security policies solve different requirements and can be used together.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/constraints"
-        ]
+        "label": "Databricks Academy learning plan: Data Privacy"
       }
     ]
   },
@@ -669,7 +598,7 @@
     "id": "dea26-baseline-170",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "When you run DROP TABLE on a Unity Catalog managed table, what happens to the underlying data files?",
+    "prompt": "When you run `DROP TABLE` on a Unity Catalog managed table, what happens to the underlying data files?",
     "options": [
       {
         "id": "a",
@@ -694,13 +623,9 @@
     "explanation": "Managed tables include lifecycle handling and support recovery of recently dropped tables. Purge happens after the recovery period; do not assume immediate physical erasure. External table drops leave the external data files.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/object-storage-lifecycle"
-        ],
-        "section": "Unity Catalog > Data Isolation"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation"
       }
     ]
   },
@@ -708,15 +633,15 @@
     "id": "dea26-governance-read-parent-privileges",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "An account group has SELECT on main.silver.orders but cannot query it. It lacks privileges on the parents. Which privileges are also required?",
+    "prompt": "An account group has `SELECT` on `main.silver.orders` but cannot query it. It lacks privileges on the parents. Which privileges are also required?",
     "options": [
       {
         "id": "a",
-        "text": "USE CATALOG on main and USE SCHEMA on main.silver"
+        "text": "`USE CATALOG` on main and `USE SCHEMA` on `main.silver`"
       },
       {
         "id": "b",
-        "text": "CREATE CATALOG and CREATE SHARE on the metastore"
+        "text": "`CREATE CATALOG` and `CREATE SHARE` on the metastore"
       },
       {
         "id": "c",
@@ -724,7 +649,7 @@
       },
       {
         "id": "d",
-        "text": "MODIFY on the table instead of SELECT"
+        "text": "MODIFY on the table instead of `SELECT`"
       }
     ],
     "correctOptionIds": [
@@ -733,14 +658,9 @@
     "explanation": "Reading a Unity Catalog table requires the table read privilege and usage of its containing catalog and schema. Grant to the intended account group or execution principal.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/securable-objects"
-        ],
-        "section": "Unity Catalog > ACL grant answers three questions"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > ACL grant answers three questions"
       }
     ]
   },
@@ -748,7 +668,7 @@
     "id": "dea26-governance-revoke-inherited",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "A user can query a table through an account group that has SELECT on the parent schema. Removing a direct table grant did not remove access. Why?",
+    "prompt": "A user can query a table through an account group that has `SELECT` on the parent schema. Removing a direct table grant did not remove access. Why?",
     "options": [
       {
         "id": "a",
@@ -756,7 +676,7 @@
       },
       {
         "id": "b",
-        "text": "REVOKE always creates a stronger SELECT grant"
+        "text": "`REVOKE` always creates a stronger `SELECT` grant"
       },
       {
         "id": "c",
@@ -773,13 +693,9 @@
     "explanation": "Evaluate all effective grants, group membership, and privilege inheritance. Removing one direct grant does not cancel separate group or parent access. Adjust access at the level that supplies it.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/privileges-reference"
-        ],
-        "section": "Unity Catalog > Object metadata"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Object metadata"
       }
     ]
   },
@@ -787,15 +703,15 @@
     "id": "dea26-governance-deny-scope",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "A proposed script uses the standalone DENY SELECT ON TABLE statement on a Unity Catalog table. Which statement is correct?",
+    "prompt": "A proposed script uses the standalone `DENY SELECT` ON TABLE statement on a Unity Catalog table. Which statement is correct?",
     "options": [
       {
         "id": "a",
-        "text": "That standalone DENY statement is documented for hive_metastore objects, not Unity Catalog tables"
+        "text": "That standalone DENY statement is documented for `hive_metastore` objects, not Unity Catalog tables"
       },
       {
         "id": "b",
-        "text": "Standalone DENY SELECT is the standard Unity Catalog replacement for every REVOKE"
+        "text": "Standalone `DENY SELECT` is the standard Unity Catalog replacement for every `REVOKE`"
       },
       {
         "id": "c",
@@ -809,16 +725,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "The SQL DENY statement is not supported on Unity Catalog tables. Manage effective UC grants and use applicable security policies. ABAC DENY policies are a separate mechanism with their own supported scope; do not conflate them with standalone DENY SELECT.",
+    "explanation": "The SQL DENY statement is not supported on Unity Catalog tables. Manage effective UC grants and use applicable security policies. ABAC DENY policies are a separate mechanism with their own supported scope; do not conflate them with standalone `DENY SELECT`.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/sql/language-manual/security-deny",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts"
-        ]
+        "label": "Databricks Academy learning plan: Data Privacy"
       }
     ]
   },
@@ -851,13 +763,9 @@
     "explanation": "Column masks apply a function to values exposed during query evaluation. Stored original values and their lifecycle require separate controls. Users still need table access, and other access paths must be governed.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
-        ],
-        "section": "Unity Catalog > fine-grained access control"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > fine-grained access control"
       }
     ]
   },
@@ -890,13 +798,9 @@
     "explanation": "A row filter function evaluates a predicate for each row, potentially using identity or group information. Rows not permitted by the filter are excluded from query results.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/"
-        ],
-        "section": "Unity Catalog > row filters and column masks"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > row filters and column masks"
       }
     ]
   },
@@ -929,14 +833,9 @@
     "explanation": "ABAC uses governed tags and policies to apply consistent row or column security to matching objects within scope. A tag alone describes an attribute; a configured policy supplies the enforcement behavior.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/requirements"
-        ],
-        "section": "PII Data Security"
+        "label": "Databricks Academy learning plan: Data Privacy — PII Data Security"
       }
     ]
   },
@@ -960,7 +859,7 @@
       },
       {
         "id": "d",
-        "text": "A tag always grants SELECT by itself"
+        "text": "A tag always grants `SELECT` by itself"
       }
     ],
     "correctOptionIds": [
@@ -969,14 +868,9 @@
     "explanation": "Governed tags standardize policy attributes and their assignment. Manage assignment rights so classification remains trustworthy. Policies and privileges establish enforcement; tagging is not itself a blanket data grant.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/admin/governed-tags/",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts"
-        ],
-        "section": "PII Data Security"
+        "label": "Databricks Academy learning plan: Data Privacy — PII Data Security"
       }
     ]
   },
@@ -1009,14 +903,9 @@
     "explanation": "Policies are evaluated for objects within their configured scope and matching conditions. Central scope can include newly matching data. It is not automatically global to unrelated catalogs or schemas.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/core-concepts",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/policy-evaluation"
-        ],
-        "section": "PII Data Security"
+        "label": "Databricks Academy learning plan: Data Privacy — PII Data Security"
       }
     ]
   },
@@ -1049,14 +938,9 @@
     "explanation": "External table lifecycle management does not delete source files when table metadata is dropped. Manage external data lifecycle separately and preserve required storage permissions.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/external",
-          "https://docs.databricks.com/aws/en/data-governance/unity-catalog/object-storage-lifecycle"
-        ],
-        "section": "Unity Catalog > Data Isolation"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation"
       }
     ]
   },
@@ -1068,33 +952,30 @@
     "options": [
       {
         "id": "a",
-        "text": "ALTER TABLE main.silver.orders SET MANAGED"
+        "text": "`ALTER TABLE` `main.silver.orders` `SET MANAGED`"
       },
       {
         "id": "b",
-        "text": "CONVERT TO DELTA as a managed-lifecycle switch"
+        "text": "`CONVERT TO DELTA` as a managed-lifecycle switch"
       },
       {
         "id": "c",
-        "text": "GRANT SELECT ON TABLE main.silver.orders"
+        "text": "`GRANT SELECT` ON TABLE `main.silver.orders`"
       },
       {
         "id": "d",
-        "text": "CREATE TEMP VIEW orders AS SELECT 1"
+        "text": "`CREATE TEMP VIEW` orders AS `SELECT` 1"
       }
     ],
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "SET MANAGED converts eligible external Delta tables to managed storage with documented runtime, ownership, and compatibility prerequisites. CONVERT TO DELTA changes a file or table format and is not the same lifecycle operation.",
+    "explanation": "`SET MANAGED` converts eligible external Delta tables to managed storage with documented runtime, ownership, and compatibility prerequisites. `CONVERT TO DELTA` changes a file or table format and is not the same lifecycle operation.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/convert-to-managed"
-        ]
+        "label": "Databricks Academy learning plan: Data Privacy"
       }
     ]
   },
@@ -1102,19 +983,19 @@
     "id": "dea26-governance-managed-conversion-rollback",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "A table was converted from external to managed using SET MANAGED. A rollback is required while the documented rollback conditions remain satisfied. Which operation applies?",
+    "prompt": "A table was converted from external to managed using `SET MANAGED`. A rollback is required while the documented rollback conditions remain satisfied. Which operation applies?",
     "options": [
       {
         "id": "a",
-        "text": "The supported UNSET MANAGED rollback workflow for that converted table"
+        "text": "The supported `UNSET MANAGED` rollback workflow for that converted table"
       },
       {
         "id": "b",
-        "text": "A universal ALTER TABLE SET EXTERNAL for every managed table regardless of origin"
+        "text": "A universal `ALTER TABLE` `SET EXTERNAL` for every managed table regardless of origin"
       },
       {
         "id": "c",
-        "text": "VACUUM as a lifecycle conversion command"
+        "text": "`VACUUM` as a lifecycle conversion command"
       },
       {
         "id": "d",
@@ -1124,15 +1005,12 @@
     "correctOptionIds": [
       "a"
     ],
-    "explanation": "UNSET MANAGED is a conditional rollback of a prior supported conversion. It is not a universal conversion of arbitrary managed tables. Follow the documented eligibility and retained external-copy requirements.",
+    "explanation": "`UNSET MANAGED` is a conditional rollback of a prior supported conversion. It is not a universal conversion of arbitrary managed tables. Follow the documented eligibility and retained external-copy requirements.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/convert-to-managed"
-        ]
+        "label": "Databricks Academy learning plan: Data Privacy"
       }
     ]
   },
@@ -1140,7 +1018,7 @@
     "id": "dea26-governance-managed-create",
     "type": "single_choice",
     "domainId": "governance",
-    "prompt": "A team creates main.silver.customers USING DELTA without LOCATION in a schema with configured managed storage. What kind of table is created?",
+    "prompt": "A team creates `main.silver.customers` `USING DELTA` without LOCATION in a schema with configured managed storage. What kind of table is created?",
     "options": [
       {
         "id": "a",
@@ -1165,14 +1043,9 @@
     "explanation": "Omitting an external LOCATION creates a managed table using the applicable managed storage. Both managed and external tables can have cloud-backed files; lifecycle ownership and registration determine the table type.",
     "sources": [
       {
-        "kind": "academy_note",
+        "kind": "local_note",
         "path": "data-privacy/notes.md",
-        "label": "Databricks Academy learning plan: Data Privacy",
-        "documentationUrls": [
-          "https://docs.databricks.com/aws/en/tables/managed",
-          "https://docs.databricks.com/aws/en/tables/types"
-        ],
-        "section": "Unity Catalog > Data Isolation"
+        "label": "Databricks Academy learning plan: Data Privacy — Unity Catalog > Data Isolation"
       }
     ]
   }
