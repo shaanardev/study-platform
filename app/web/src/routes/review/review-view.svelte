@@ -2,6 +2,8 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
 
+  import InlineCode from '#lib/components/inline-code.svelte';
+
   import { filterReviewQuestions } from './review-filters';
   import { correctReviewQuestion, flagReviewQuestion, retireReviewQuestion } from './review.remote';
   import type { ReviewData } from './review.remote';
@@ -240,7 +242,7 @@
                     · {question.type} · {question.id}
                   </p>
                   <h2 class="mb-0 text-xl/snug font-semibold sm:text-2xl">
-                    {question.prompt}
+                    <InlineCode text={question.prompt} />
                   </h2>
                 </div>
                 {#if feedbackByQuestion.get(question.id)?.retired}
@@ -250,7 +252,7 @@
               <ul class="mb-4 list-disc space-y-2 pl-6 text-sm/relaxed">
                 {#each question.options as option (option.id)}
                   <li>
-                    {option.text}
+                    <InlineCode text={option.text} />
                     {#if question.answerIds.includes(option.id)}
                       <strong>(current answer)</strong>
                     {/if}
@@ -258,7 +260,7 @@
                 {/each}
               </ul>
               <p class="text-surface-600-400 mb-5 text-sm/relaxed">
-                {question.explanation}
+                <InlineCode text={question.explanation} />
               </p>
               <fieldset
                 class="border-surface-200-800 flex min-w-0 flex-wrap items-start gap-x-5 gap-y-3 border-0 border-t p-0 pt-4"

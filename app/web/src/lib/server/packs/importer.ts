@@ -13,12 +13,14 @@ import { workspacePath } from '#lib/server/workspace-paths.js';
 export interface ImportResult {
   imported: string[];
   refreshed: string[];
+  unchanged: string[];
   errors: string[];
 }
 
 export interface ImportOptions {
   folder?: string;
   approvedSourceRoot?: string;
+  refreshOnly?: boolean;
 }
 
 const defaultFolder = workspacePath('packs/incoming');
@@ -45,7 +47,8 @@ type SourceResolution = ResolvedSource | { error: string };
 type FileImportResult =
   | { kind: 'error'; error: string }
   | { kind: 'imported'; packKey: string }
-  | { kind: 'refreshed'; packKey: string };
+  | { kind: 'refreshed'; packKey: string }
+  | { kind: 'unchanged'; packKey: string };
 
 interface PreparedPackImport {
   entryName: string;
@@ -231,8 +234,31 @@ const preparePackFile = async (
 const storePreparedPack = async (
   prepared: PreparedPackImport,
   approvedSourceRoot: string | undefined,
+  refreshOnly: boolean,
 ): Promise<FileImportResult> => {
   const { entryName, pack, packKey, sourceAssets } = prepared;
+
+  if (refreshOnly) {
+    if (approvedSourceRoot === undefined) {
+      return {
+        error: 'Choose and approve a local source folder to refresh citations.',
+        kind: 'error',
+      };
+    }
+
+    try {
+      const refreshed = await refreshApprovedLocalSources(pack, sourceAssets, approvedSourceRoot);
+
+      return refreshed ? { kind: 'refreshed', packKey } : { kind: 'unchanged', packKey };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'unknown database error';
+
+      return {
+        error: `${entryName}: could not refresh approved local citations (${reason}).`,
+        kind: 'error',
+      };
+    }
+  }
 
   try {
     await saveImportedPack(pack, sourceAssets, approvedSourceRoot);
@@ -250,12 +276,7 @@ const storePreparedPack = async (
         approvedSourceRoot !== undefined &&
         (await refreshApprovedLocalSources(pack, sourceAssets, approvedSourceRoot));
 
-      return refreshed
-        ? { kind: 'refreshed', packKey }
-        : {
-            error: `${entryName}: this exam, pack, and pack version are already imported.`,
-            kind: 'error',
-          };
+      return refreshed ? { kind: 'refreshed', packKey } : { kind: 'unchanged', packKey };
     } catch (refreshError) {
       const reason =
         refreshError instanceof Error ? refreshError.message : 'unknown database error';
@@ -295,6 +316,7 @@ const importPackFilesInBatches = async (
   files: Dirent[],
   folder: string,
   approvedSourceRoot: string | undefined,
+  refreshOnly: boolean,
   result: ImportResult,
 ): Promise<void> => {
   for (let offset = 0; offset < files.length; offset += importPreparationBatchSize) {
@@ -318,7 +340,7 @@ const importPackFilesInBatches = async (
         const importResult: FileImportResult =
           'error' in preparation
             ? { error: preparation.error, kind: 'error' }
-            : await storePreparedPack(preparation.prepared, approvedSourceRoot);
+            : await storePreparedPack(preparation.prepared, approvedSourceRoot, refreshOnly);
 
         results.push(importResult);
 
@@ -332,8 +354,12 @@ const importPackFilesInBatches = async (
         result.errors.push(importResult.error);
       } else if (importResult.kind === 'imported') {
         result.imported.push(importResult.packKey);
-      } else {
+      } else if (importResult.kind === 'refreshed') {
         result.refreshed.push(importResult.packKey);
+      }
+
+      if (importResult.kind === 'unchanged') {
+        result.unchanged.push(importResult.packKey);
       }
     });
   }
@@ -343,6 +369,7 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
   const folder = path.resolve(options.folder ?? defaultFolder);
   const imported: string[] = [];
   const refreshed: string[] = [];
+  const unchanged: string[] = [];
   const errors: string[] = [];
   let approvedSourceRoot: string | undefined;
 
@@ -355,6 +382,7 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
       ],
       imported,
       refreshed,
+      unchanged,
     };
   }
 
@@ -367,6 +395,7 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
       errors: [`Import folder does not exist or cannot be read: ${folder}`],
       imported,
       refreshed,
+      unchanged,
     };
   }
 
@@ -374,11 +403,12 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
     errors.push(`No .json exam packs found in ${folder}.`);
   }
 
-  await importPackFilesInBatches(files, folder, approvedSourceRoot, {
+  await importPackFilesInBatches(files, folder, approvedSourceRoot, options.refreshOnly ?? false, {
     errors,
     imported,
     refreshed,
+    unchanged,
   });
 
-  return { errors, imported, refreshed };
+  return { errors, imported, refreshed, unchanged };
 };

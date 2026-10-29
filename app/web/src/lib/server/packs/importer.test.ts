@@ -55,6 +55,7 @@ describe('pack imports', () => {
       errors: [],
       imported: [`${pack.exam.id}/${pack.pack.id}@${pack.pack.version}`],
       refreshed: [],
+      unchanged: [],
     });
     await expect(listImportedPacks()).resolves.toMatchObject([
       {
@@ -66,13 +67,16 @@ describe('pack imports', () => {
     ]);
   });
 
-  it('rejects a duplicate exam, pack, and version', async () => {
+  it('reports an already imported exam, pack, and version as unchanged', async () => {
     await importPacksFromFolder({ folder: incoming });
     const duplicate = await importPacksFromFolder({ folder: incoming });
 
     expect(duplicate.imported).toStrictEqual([]);
     expect(duplicate.refreshed).toStrictEqual([]);
-    expect(duplicate.errors[0]).toContain('already imported');
+    expect(duplicate.unchanged).toStrictEqual([
+      `${pack.exam.id}/${pack.pack.id}@${pack.pack.version}`,
+    ]);
+    expect(duplicate.errors).toStrictEqual([]);
   });
 
   it('rejects a citation whose local file is missing', async () => {
@@ -127,6 +131,7 @@ describe('pack imports', () => {
       errors: [],
       imported: [],
       refreshed: [`${pack.exam.id}/${pack.pack.id}@${pack.pack.version}`],
+      unchanged: [],
     });
     await expect(
       getApprovedSourceRoot(pack.exam.id, pack.pack.id, pack.pack.version),
@@ -140,6 +145,22 @@ describe('pack imports', () => {
         citation.path,
       ),
     ).resolves.toStrictEqual({ excerpt: 'Updated excerpt.', label: citation.label });
+  });
+
+  it('does not import new packs during an approved citation-only refresh', async () => {
+    const result = await importPacksFromFolder({
+      approvedSourceRoot: fixture.directory,
+      folder: incoming,
+      refreshOnly: true,
+    });
+
+    expect(result).toStrictEqual({
+      errors: [],
+      imported: [],
+      refreshed: [],
+      unchanged: [`${pack.exam.id}/${pack.pack.id}@${pack.pack.version}`],
+    });
+    await expect(listImportedPacks()).resolves.toStrictEqual([]);
   });
 
   it.each([

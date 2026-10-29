@@ -1,12 +1,18 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
 
+  import InlineCode from '#lib/components/inline-code.svelte';
   import { DEFAULT_QUESTION_COUNT, MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
 
   import { answerPractice, startPractice } from './practice.remote';
   import type { PracticePageData } from './practice.remote';
 
   let { data }: { data: PracticePageData } = $props();
+  let clientReady = $state(false);
+
+  const markClientReady = () => {
+    clientReady = true;
+  };
 
   let selectedPackKey = $state('');
   let selectedDomainIds = $state<string[]>([]);
@@ -60,6 +66,7 @@
     selectedDomainIds = checked
       ? [...selectedDomainIds, domainId]
       : selectedDomainIds.filter((selectedDomainId) => selectedDomainId !== domainId);
+    startPractice.fields.domainIds.set(selectedDomainIds);
   };
 </script>
 
@@ -68,12 +75,12 @@
   <meta name="description" content="Choose an exam pack and resume a saved practice quiz." />
 </svelte:head>
 
-<main class="bg-app-canvas text-app-ink min-h-screen px-4 py-8 pb-20 font-sans sm:px-6">
+<main
+  {@attach markClientReady}
+  class="app-page px-4 py-8 pb-20 sm:px-6"
+  data-client-ready={clientReady ? 'true' : 'false'}
+>
   <div class="mx-auto w-full max-w-205">
-    <a
-      class="text-brand inline-block font-semibold underline-offset-4 hover:underline"
-      href={resolve('/')}>← Exam pack library</a
-    >
     <header class="my-8 max-w-162.5">
       <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">Practice</p>
       <h1 class="text-page-title-medium leading-page-title tracking-page-title mb-3 font-bold">
@@ -133,7 +140,7 @@
           <label class="font-bold" for="pack">Exam pack version</label>
           <select
             id="pack"
-            class="select focus-visible:outline-focus-gold min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-3"
+            class="select app-control-focus min-h-11 w-full"
             onchange={resetDomains}
             bind:value={selectedPackKey}
           >
@@ -164,7 +171,7 @@
                 >
                   <input
                     {...startPractice.fields.domainIds.as('checkbox', domain.id)}
-                    class="accent-brand mt-0.5 size-4"
+                    class="checkbox app-control-focus mt-0.5"
                     onchange={(event) =>
                       updateDomainSelection(domain.id, event.currentTarget.checked)}
                   />
@@ -181,7 +188,7 @@
                 Math.min(DEFAULT_QUESTION_COUNT, availableQuestionCount),
               )}
               id="question-count"
-              class="input focus-visible:outline-focus-gold min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-3"
+              class="input app-control-focus min-h-11 w-full"
               max={availableQuestionCount}
               min="1"
               required
@@ -229,12 +236,14 @@
             </h2>
             <p class="mb-3">
               <strong>Correct answer:</strong>
-              {latestQuestion.options
-                .filter((option) => latestAnswer.answerIdsCorrect.includes(option.id))
-                .map((option) => option.text)
-                .join('; ')}
+              <InlineCode
+                text={latestQuestion.options
+                  .filter((option) => latestAnswer.answerIdsCorrect.includes(option.id))
+                  .map((option) => option.text)
+                  .join('; ')}
+              />
             </p>
-            <p class="mb-4">{latestAnswer.explanation}</p>
+            <p class="mb-4"><InlineCode text={latestAnswer.explanation} /></p>
             <div class="flex flex-wrap gap-x-5 gap-y-3">
               {#each latestAnswer.sources as source (source.path)}
                 <a
@@ -259,7 +268,7 @@
                 ?.domainId}
             </p>
             <h2 id="quiz-heading" class="mb-5 text-xl/relaxed font-semibold">
-              {activeQuestion.prompt}
+              <InlineCode text={activeQuestion.prompt} />
             </h2>
             <form {...answerForm} class="grid gap-3">
               <input {...answerForm.fields.sessionId.as('hidden', data.session.id)} />
@@ -276,11 +285,14 @@
                   >
                     <input
                       {...answerForm.fields.answerIds.as('checkbox', option.id)}
-                      class="accent-brand mt-0.5 size-4"
+                      class={[
+                        activeQuestion.type === 'multiple_choice' ? 'checkbox' : 'radio',
+                        'app-control-focus mt-0.5',
+                      ]}
                       required={activeQuestion.type === 'single_choice'}
                       type={activeQuestion.type === 'multiple_choice' ? 'checkbox' : 'radio'}
                     />
-                    <span>{option.text}</span>
+                    <span><InlineCode text={option.text} /></span>
                   </label>
                 {/each}
               </fieldset>

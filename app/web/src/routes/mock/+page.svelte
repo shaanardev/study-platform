@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
 
+  import InlineCode from '#lib/components/inline-code.svelte';
   import {
     DEFAULT_MOCK_DURATION_MINUTES,
     MILLISECONDS_PER_MINUTE,
@@ -67,12 +68,8 @@
   <meta name="description" content="Take a timed mock exam from an imported exam pack." />
 </svelte:head>
 
-<main class="bg-app-canvas text-app-ink min-h-screen px-4 pt-8 pb-20 sm:px-6">
+<main class="app-page px-4 pt-8 pb-20 sm:px-6">
   <div class="mx-auto w-full max-w-215">
-    <a
-      class="text-brand focus-visible:outline-focus-gold inline-block font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
-      href={resolve('/')}>← Exam pack library</a
-    >
     <header class="my-8 max-w-175">
       <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">Timed mock</p>
       <h1 class="text-page-title-medium leading-page-title tracking-page-title mb-3 font-bold">
@@ -133,7 +130,7 @@
             <select
               id="pack-preview"
               name="packChoice"
-              class="select border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
+              class="select app-control-focus min-h-11 w-full"
               onchange={(event) => (selectedPackKey = event.currentTarget.value)}
               value={effectivePackKey}
             >
@@ -148,7 +145,7 @@
             <input
               id="count-preview"
               name="count"
-              class="input border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
+              class="input app-control-focus min-h-11 w-full"
               max="100"
               min="1"
               onchange={(event) => (selectedQuestionCount = Number(event.currentTarget.value))}
@@ -209,7 +206,7 @@
             <input
               {...startMock.fields.durationMinutes.as('text')}
               id="duration"
-              class="input border-control-border focus-visible:outline-focus-gold min-h-12 w-full rounded-lg border bg-white px-3 py-2 text-inherit focus-visible:outline-3 focus-visible:outline-offset-3"
+              class="input app-control-focus min-h-11 w-full"
               max="600"
               min="1"
               required
@@ -280,7 +277,9 @@
               {index + 1}
               of {data.attempt.questions.length} · {question.domainId}
             </p>
-            <h2 class="mb-4 text-xl/relaxed font-semibold">{question.prompt}</h2>
+            <h2 class="mb-4 text-xl/relaxed font-semibold">
+              <InlineCode text={question.prompt} />
+            </h2>
             {#if data.attempt.status === 'in_progress'}
               {const answerForm = $derived(saveMockAnswerForm.for(question.id))}
               <form {...answerForm} class="grid gap-3">
@@ -303,7 +302,7 @@
                             option.id,
                             savedAnswers.get(question.id)?.includes(option.id) ?? false,
                           )}
-                          class="size-answer-control accent-brand focus-visible:outline-focus-gold mt-0.5 focus-visible:outline-2"
+                          class="checkbox app-control-focus mt-0.5"
                         />
                       {:else}
                         <input
@@ -312,11 +311,11 @@
                             option.id,
                             savedAnswers.get(question.id)?.includes(option.id) ?? false,
                           )}
-                          class="size-answer-control accent-brand focus-visible:outline-focus-gold mt-0.5 focus-visible:outline-2"
+                          class="radio app-control-focus mt-0.5"
                           required
                         />
                       {/if}
-                      <span>{option.text}</span>
+                      <span><InlineCode text={option.text} /></span>
                     </label>
                   {/each}
                 </fieldset>
@@ -344,7 +343,7 @@
                         'text-error-text',
                     ]}
                   >
-                    {option.text}
+                    <InlineCode text={option.text} />
                     {#if question.answerIds?.includes(option.id)}
                       <strong>Correct answer</strong>
                     {/if}
@@ -356,7 +355,7 @@
                   </li>
                 {/each}
               </ul>
-              <p class="mt-4">{question.explanation}</p>
+              <p class="mt-4"><InlineCode text={question.explanation ?? ''} /></p>
             {/if}
           </article>
         {/each}

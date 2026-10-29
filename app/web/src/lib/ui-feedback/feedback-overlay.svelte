@@ -3,10 +3,10 @@
 
   import {
     boundsFromPoints,
-    captureViewport as captureViewportFromClient,
+    captureViewport,
     formatShortcut,
     isAppElement,
-    loadScreenshot as loadScreenshotFromClient,
+    loadScreenshot,
     makeElementSelection,
     makeRectangleSelection,
     QUEUE_STORAGE_KEY,
@@ -20,7 +20,7 @@
     snapshotFeedback,
     viewportChanged,
   } from './client';
-  import type { submitFeedback as submitFeedbackCommand } from './feedback.remote';
+  import { submitFeedback } from './feedback.remote';
   import {
     CaptureStatus,
     DeliveryPhase,
@@ -30,18 +30,6 @@
     RetryAction,
   } from './schema';
   import type { FeedbackTarget, QueueItem, Shortcut } from './schema';
-
-  interface FeedbackOverlayProps {
-    captureViewport?: typeof captureViewportFromClient;
-    loadScreenshot?: typeof loadScreenshotFromClient;
-    submitFeedback: typeof submitFeedbackCommand;
-  }
-
-  let {
-    captureViewport = captureViewportFromClient,
-    loadScreenshot = loadScreenshotFromClient,
-    submitFeedback,
-  }: FeedbackOverlayProps = $props();
 
   interface Drag {
     x: number;
@@ -572,7 +560,7 @@
         </p>
         <label class="font-semibold" for="feedback-note">What should we know?</label>
         <textarea
-          class="textarea min-h-24 w-full resize-y"
+          class="textarea app-control-focus min-h-24 w-full resize-y"
           id="feedback-note"
           bind:value={note}
           rows="4"
@@ -642,7 +630,7 @@
                   >Session</label
                 >
                 <select
-                  class="select w-full"
+                  class="select app-control-focus min-h-11 w-full"
                   id={`session-${item.feedback.id}`}
                   value={selectedSessionId[item.feedback.id] ?? ''}
                   disabled={sending}

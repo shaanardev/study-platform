@@ -1,33 +1,36 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/forms' {
+  strategy: 'base';
+}
 @import '@skeletonlabs/skeleton';
 @import '@skeletonlabs/skeleton-svelte';
 @import '@skeletonlabs/skeleton/themes/crimson';
 
 @theme {
-  --color-app-canvas: #f4f5f2;
-  --color-app-ink: #20251f;
-  --color-brand: #28553a;
-  --color-brand-hover: #1e432d;
-  --color-brand-hover-deep: #20452f;
-  --color-brand-hover-progress: #214930;
-  --color-brand-label: #536c57;
-  --color-body-muted: #5e665e;
-  --color-meta-muted: #687168;
-  --color-card-border: #dce1d9;
-  --color-panel-tint: #edf3eb;
-  --color-control-border: #aeb9ad;
-  --color-control-muted: #b8c3b5;
-  --color-control-fill: #f4f6f2;
-  --color-divider: #e2e6df;
-  --color-feedback-positive-border: #34734b;
-  --color-feedback-positive-fill: #edf7ef;
-  --color-feedback-warning-border: #ad7726;
-  --color-feedback-warning-fill: #fff7e8;
-  --color-error-text: #9d3028;
-  --color-progress-alert: #8a321f;
-  --color-mock-muted: #536153;
-  --color-focus-gold: #d29537;
-  --text-page-title-large: clamp(2.25rem, 6vw, 3.5rem);
+  --color-app-canvas: var(--color-root-bg-light);
+  --color-app-ink: var(--color-surface-950);
+  --color-brand: var(--color-primary-500);
+  --color-brand-hover: var(--color-primary-600);
+  --color-brand-hover-deep: var(--color-primary-700);
+  --color-brand-hover-progress: var(--color-primary-700);
+  --color-brand-label: var(--color-primary-700);
+  --color-body-muted: var(--color-surface-600);
+  --color-meta-muted: var(--color-surface-700);
+  --color-card-border: var(--color-surface-200);
+  --color-panel-tint: var(--color-surface-100);
+  --color-control-border: var(--color-surface-400);
+  --color-control-muted: var(--color-surface-300);
+  --color-control-fill: var(--color-surface-50);
+  --color-divider: var(--color-surface-200);
+  --color-feedback-positive-border: var(--color-success-700);
+  --color-feedback-positive-fill: var(--color-success-50);
+  --color-feedback-warning-border: var(--color-warning-700);
+  --color-feedback-warning-fill: var(--color-warning-50);
+  --color-error-text: var(--color-error-700);
+  --color-progress-alert: var(--color-error-700);
+  --color-mock-muted: var(--color-surface-600);
+  --color-focus-gold: var(--color-warning-500);
+  --text-page-title-large: clamp(2.2rem, 6vw, 3.3rem);
   --text-page-title-medium: clamp(2.2rem, 6vw, 3.3rem);
   --text-section-heading: 1.35rem;
   --spacing-answer-control: 1.1rem;
@@ -35,7 +38,51 @@
 }
 
 @theme inline {
-  --color-focus-amber: var(--color-amber-500);
+  --color-focus-amber: var(--color-focus-gold);
+}
+
+:root {
+  color-scheme: light;
+}
+
+@utility app-page {
+  min-height: 100vh;
+  background-color: var(--color-app-canvas);
+  color: var(--color-app-ink);
+  font-family: var(--font-sans);
+}
+
+@utility app-control-focus {
+  &:focus-visible {
+    outline: 3px solid var(--color-focus-gold);
+    outline-offset: 2px;
+  }
+}
+
+@layer base {
+  a:not(.btn) {
+    color: var(--color-brand);
+    text-underline-offset: 0.25rem;
+  }
+
+  a:not(.btn):hover {
+    text-decoration: underline;
+  }
+
+  a:not(.btn):focus-visible {
+    outline: 3px solid var(--color-focus-gold);
+    outline-offset: 3px;
+  }
+
+  code {
+    overflow-wrap: anywhere;
+    border-radius: 0.25rem;
+    background-color: var(--color-panel-tint);
+    color: var(--color-app-ink);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding-inline: 0.25em;
+  }
 }
 
 @utility tracking-eyebrow {

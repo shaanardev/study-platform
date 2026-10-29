@@ -36,7 +36,7 @@
   />
 </svelte:head>
 
-<main class="bg-app-canvas text-app-ink min-h-screen font-sans">
+<main class="app-page">
   <div class="content-width-progress mx-auto py-12 pb-20">
     <header class="mb-10 max-w-162.5">
       <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
@@ -48,16 +48,6 @@
       <p class="text-body-muted mb-0 leading-relaxed">
         Results stay tied to the exam pack version used for each attempt.
       </p>
-      <nav class="mt-4 flex flex-wrap gap-x-4 gap-y-3" aria-label="Study navigation">
-        <a
-          class="text-brand focus-visible:outline-focus-amber font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
-          href={resolve('/')}>Exam packs</a
-        >
-        <a
-          class="text-brand focus-visible:outline-focus-amber font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-3"
-          href={resolve('/practice')}>Practice quiz</a
-        >
-      </nav>
     </header>
 
     <section class="mt-10" aria-labelledby="recent-heading">
@@ -186,7 +176,7 @@
                 <label class="flex cursor-pointer items-start gap-3">
                   <input
                     {...missedForm.fields.questionIds.as('checkbox', question.questionId)}
-                    class="accent-brand mt-1"
+                    class="checkbox app-control-focus mt-1"
                   />
                   <span class="grid gap-1">
                     <strong>{question.prompt}</strong>
