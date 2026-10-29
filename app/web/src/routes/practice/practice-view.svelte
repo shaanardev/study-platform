@@ -3,6 +3,7 @@
 
   import InlineCode from '#lib/components/inline-code.svelte';
   import { DEFAULT_QUESTION_COUNT, MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
+  import { practiceSourcePath } from '#lib/route-urls.js';
 
   import { answerPractice, startPractice } from './practice.remote';
   import type { PracticePageData } from './practice.remote';
@@ -249,7 +250,13 @@
                 <a
                   class="text-brand font-semibold underline-offset-4 hover:underline"
                   href={resolve(
-                    `/practice/source?examId=${encodeURIComponent(data.session.examId)}&packId=${encodeURIComponent(data.session.packId)}&packVersion=${encodeURIComponent(data.session.packVersion)}&questionId=${encodeURIComponent(latestAnswer.questionId)}&path=${encodeURIComponent(source.path)}`,
+                    practiceSourcePath({
+                      examId: data.session.examId,
+                      packId: data.session.packId,
+                      packVersion: data.session.packVersion,
+                      path: source.path,
+                      questionId: latestAnswer.questionId,
+                    }),
                   )}
                   rel="noopener noreferrer"
                   target="_blank">{source.label} <span aria-hidden="true">↗</span></a

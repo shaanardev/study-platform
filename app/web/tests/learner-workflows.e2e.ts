@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -33,6 +34,17 @@ const pipelineSecondCorrectAnswer = 'Track pipeline failures and execution statu
 const primaryNavigationLinkCount = 5;
 
 const reviewUrl = `/review?${new URLSearchParams(samplePack).toString()}`;
+const inlineCodePackPath = '../../packs/incoming/databricks-dea-may-2026-v1.2.2.json';
+
+const getE2eBaseUrl = (): string => {
+  const baseURL = process.env['E2E_BASE_URL'];
+
+  if (baseURL === undefined || baseURL === '') {
+    throw new Error('The Playwright global setup did not provide E2E_BASE_URL.');
+  }
+
+  return baseURL;
+};
 
 const seedAlternatePackVersion = (): void => {
   const databasePath = process.env['DB_PATH'];
@@ -91,6 +103,41 @@ const seedAlternatePackVersion = (): void => {
   }
 };
 
+const seedInlineCodePack = (): void => {
+  const databasePath = process.env['DB_PATH'];
+
+  if (databasePath === undefined || databasePath === '') {
+    throw new Error('The Playwright global setup did not provide DB_PATH.');
+  }
+
+  const validation = validateExamPack(JSON.parse(readFileSync(inlineCodePackPath, 'utf-8')));
+
+  if (!validation.valid) {
+    throw new Error(validation.errors.join('\n'));
+  }
+
+  const database = new Database(databasePath);
+
+  try {
+    const { pack } = validation;
+
+    database
+      .prepare(
+        'INSERT INTO imported_packs (exam_id, pack_id, pack_version, content, approved_source_root, imported_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        pack.exam.id,
+        pack.pack.id,
+        pack.pack.version,
+        JSON.stringify(pack),
+        null,
+        new Date().toISOString(),
+      );
+  } finally {
+    database.close();
+  }
+};
+
 const expectEmptyStudyViews = async (page: Page): Promise<void> => {
   await page.goto('/progress');
   await expect(page.getByRole('heading', { name: 'No attempts yet' })).toBeVisible();
@@ -133,9 +180,7 @@ const expectReviewFiltersPreserveContext = async (page: Page): Promise<void> => 
   await reviewFilters.getByLabel('Flagged questions').check();
   await reviewFilters.getByLabel('Retired questions').check();
   await reviewFilters.getByRole('button', { name: 'Apply filters' }).click();
-  await expect(page).toHaveURL(
-    /q=delta-transaction-basics.*domain=delta-lake.*flagged=1.*retired=1/u,
-  );
+  await expect(page).toHaveURL(/q=delta-transaction-basics.*domain=delta-lake.*flagged=&retired=/u);
   await expect(page.getByRole('status')).toContainText('Showing 1 of 2 questions');
   await expect(page.getByRole('status')).toContainText('pack v1.0.0');
   await expect(
@@ -360,17 +405,13 @@ test.describe('learner workflows', () => {
 
       await flagForm.getByLabel('Flag this question').fill('Check the wording');
       await flagForm.getByRole('button', { name: 'Save flag' }).click();
-      await expect(page).toHaveURL(new RegExp(`/review\\?examId=${samplePack.examId}.*`, 'u'));
+      await expect(page).toHaveURL(
+        /\/review\?examId=sample-engineer-exam&packId=synthetic-foundations&packVersion=1\.0\.0&reviewAction=flagged.*#question-delta-transaction-basics$/u,
+      );
+      await expect(page.getByText('Question flag saved.', { exact: true })).toBeVisible();
       await expect(question.getByRole('list', { name: 'Existing flags' })).toContainText(
         'Flagged: Check the wording',
       );
-      await page.reload();
-      await expect(
-        page
-          .locator('article')
-          .filter({ has: page.getByRole('heading', { name: practiceQuestion }) })
-          .getByText('Flagged: Check the wording'),
-      ).toBeVisible();
 
       const refreshedQuestion = page.locator('article').filter({
         has: page.getByRole('heading', { name: practiceQuestion }),
@@ -390,18 +431,15 @@ test.describe('learner workflows', () => {
       await correctionForm.getByRole('button', { name: 'Save correction' }).click();
       await expect(page.getByRole('alert')).toContainText('Correction must be valid JSON.');
       await expect(page).toHaveURL(
-        new RegExp(
-          `/review\\?examId=${samplePack.examId}&packId=${samplePack.packId}&packVersion=${samplePack.packVersion}`,
-          'u',
-        ),
+        /\/review\?examId=sample-engineer-exam&packId=synthetic-foundations&packVersion=1\.0\.0&reviewAction=flagged.*#question-/u,
       );
 
       await correctionField.fill(JSON.stringify(correction));
       await correctionForm.getByRole('button', { name: 'Save correction' }).click();
-      await expect(page).toHaveURL(new RegExp(`/review\\?examId=${samplePack.examId}.*`, 'u'));
-      await expect(correctionField).toHaveValue(
-        /Saved synthetic correction for the browser baseline\./u,
+      await expect(page).toHaveURL(
+        /\/review\?examId=sample-engineer-exam&packId=synthetic-foundations&packVersion=1\.0\.0&reviewAction=corrected.*#question-/u,
       );
+      await expect(page.getByText('Correction saved.', { exact: true })).toBeVisible();
       await page.reload();
 
       const savedCorrection = page
@@ -592,5 +630,103 @@ test.describe('learner workflows', () => {
     }
 
     await expect(page.getByText(pack.pack.title)).toBeVisible();
+  });
+
+  test('review actions preserve filtered question state without JavaScript', async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      baseURL: getE2eBaseUrl(),
+      javaScriptEnabled: false,
+    });
+
+    const page = await context.newPage();
+
+    const query = new URLSearchParams({
+      ...samplePack,
+      domain: 'delta-lake',
+      flagged: '1',
+      q: 'delta-transaction-basics',
+      retired: '1',
+    });
+
+    const question = page.getByRole('article').filter({
+      has: page.getByRole('heading', { name: practiceQuestion }),
+    });
+
+    await page.goto(`/review?${query.toString()}`);
+    await expect(question.getByRole('button', { name: 'Restore question' })).toBeVisible();
+
+    const retirementForm = question.locator('form').filter({
+      has: page.getByRole('button', { name: 'Restore question' }),
+    });
+
+    const restoreButton = retirementForm.getByRole('button', { name: 'Restore question' });
+
+    await restoreButton.focus();
+    await expect(restoreButton).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(
+      /\/review\?examId=sample-engineer-exam&packId=synthetic-foundations&packVersion=1\.0\.0&q=delta-transaction-basics&domain=delta-lake&flagged=&retired=&reviewAction=restored.*#question-delta-transaction-basics$/u,
+    );
+    await expect(question.getByText('Question restored for new sessions.')).toBeVisible();
+    await expect(
+      page.getByText('The question you just updated is also shown outside these filters.'),
+    ).toBeVisible();
+
+    const flagForm = question.locator('form').filter({
+      has: page.getByRole('button', { name: 'Save flag' }),
+    });
+
+    const reasonField = flagForm.getByLabel('Flag this question');
+
+    await reasonField.fill('  ');
+    await flagForm.getByRole('button', { name: 'Save flag' }).click();
+    await expect(flagForm.getByRole('alert')).toContainText('A flag reason is required.');
+    await expect(reasonField).toHaveValue('  ');
+    await expect(page).toHaveURL(
+      /\/review\?.*retired=&reviewAction=restored.*#question-delta-transaction-basics$/u,
+    );
+    await expect(question).toBeVisible();
+
+    await context.close();
+    expect(page.isClosed()).toBe(true);
+  });
+
+  test('review renders technical terms from pack version 1.2.2 as inline code', async ({
+    page,
+  }) => {
+    seedInlineCodePack();
+
+    const packChoice = 'databricks-data-engineer-associate|databricks-dea-may-2026-reviewed|1.2.2';
+
+    await page.goto(
+      `/review?${new URLSearchParams({ packChoice, q: 'schemaLocation' }).toString()}`,
+    );
+
+    const schemaQuestion = page.getByRole('article').filter({
+      has: page.getByRole('heading', { name: /cloudFiles\.schemaLocation/u }),
+    });
+
+    await expect(page.getByRole('status')).toContainText('pack v1.2.2');
+    await expect(
+      schemaQuestion.getByRole('heading').getByText('cloudFiles.schemaLocation', { exact: true }),
+    ).toHaveJSProperty('tagName', 'CODE');
+    await expect(schemaQuestion.getByText('checkpointLocation', { exact: true })).toHaveJSProperty(
+      'tagName',
+      'CODE',
+    );
+
+    await page.goto(
+      `/review?${new URLSearchParams({ packChoice, q: 'dea26-ingestion-auto-rescue' }).toString()}`,
+    );
+
+    const optionQuestion = page.getByRole('article').filter({
+      has: page.getByRole('heading', { name: /Unexpected JSON fields/u }),
+    });
+
+    await expect(
+      optionQuestion.getByText('cloudFiles.schemaEvolutionMode="rescue"', { exact: true }),
+    ).toHaveJSProperty('tagName', 'CODE');
   });
 });

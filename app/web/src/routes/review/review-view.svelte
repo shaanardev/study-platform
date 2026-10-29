@@ -3,6 +3,7 @@
   import { page } from '$app/state';
 
   import InlineCode from '#lib/components/inline-code.svelte';
+  import { practiceSourcePath, reviewPackSelectionPath } from '#lib/route-urls.js';
 
   import { filterReviewQuestions } from './review-filters';
   import { correctReviewQuestion, flagReviewQuestion, retireReviewQuestion } from './review.remote';
@@ -11,19 +12,86 @@
   let { data }: { data: ReviewData } = $props();
 
   const JSON_INDENT_SPACES = 2;
+
+  const REVIEW_ACTION_MESSAGES = {
+    corrected: 'Correction saved.',
+    flagged: 'Question flag saved.',
+    restored: 'Question restored for new sessions.',
+    retired: 'Question retired from new sessions.',
+  } as const;
+
+  const reviewActionMessage = (action: string | null): string | undefined => {
+    switch (action) {
+      case 'corrected': {
+        return REVIEW_ACTION_MESSAGES.corrected;
+      }
+
+      case 'flagged': {
+        return REVIEW_ACTION_MESSAGES.flagged;
+      }
+
+      case 'restored': {
+        return REVIEW_ACTION_MESSAGES.restored;
+      }
+
+      case 'retired': {
+        return REVIEW_ACTION_MESSAGES.retired;
+      }
+
+      default: {
+        return undefined;
+      }
+    }
+  };
+
   let selectedPack = $derived(data.pack);
   let feedbackByQuestion = $derived(new Map(data.feedback.map((item) => [item.questionId, item])));
+  let domainFilter = $derived(page.url.searchParams.get('domain') ?? '');
+  let flaggedFilter = $derived(page.url.searchParams.has('flagged'));
+  let retiredFilter = $derived(page.url.searchParams.has('retired'));
+  let searchFilter = $derived(page.url.searchParams.get('q') ?? '');
 
   let filters = $derived({
-    domainId: page.url.searchParams.get('domain') ?? '',
-    flagged: page.url.searchParams.get('flagged') === '1',
-    retired: page.url.searchParams.get('retired') === '1',
-    search: page.url.searchParams.get('q') ?? '',
+    domainId: domainFilter,
+    flagged: flaggedFilter,
+    retired: retiredFilter,
+    search: searchFilter,
   });
 
   let filteredQuestions = $derived(
     selectedPack ? filterReviewQuestions(selectedPack.questions, data.feedback, filters) : [],
   );
+
+  let reviewActionNotice = $derived.by(() => {
+    const action = page.url.searchParams.get('reviewAction');
+    const questionId = page.url.searchParams.get('reviewQuestion');
+    const message = reviewActionMessage(action);
+
+    if (
+      message === undefined ||
+      questionId === null ||
+      !selectedPack?.questions.some((question) => question.id === questionId)
+    ) {
+      return;
+    }
+
+    return { message, questionId };
+  });
+
+  let visibleQuestions = $derived.by(() => {
+    const actionQuestion = selectedPack?.questions.find(
+      (question) => question.id === reviewActionNotice?.questionId,
+    );
+
+    if (
+      !actionQuestion ||
+      filteredQuestions.some((question) => question.id === actionQuestion.id)
+    ) {
+      return filteredQuestions;
+    }
+
+    return [...filteredQuestions, actionQuestion];
+  });
 
   const correctionJson = (questionId: string) => {
     const question = selectedPack?.questions.find((item) => item.id === questionId);
@@ -128,7 +196,7 @@
                 class="input focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
                 name="q"
                 type="search"
-                value={filters.search}
+                bind:value={searchFilter}
                 placeholder="Search this pack version"
               />
             </div>
@@ -138,7 +206,7 @@
                 id="question-domain"
                 class="select focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
                 name="domain"
-                value={filters.domainId}
+                bind:value={domainFilter}
               >
                 <option value="">All domains</option>
                 {#each selectedPack?.domains ?? [] as domain (domain.id)}
@@ -155,7 +223,7 @@
                 type="checkbox"
                 name="flagged"
                 value="1"
-                checked={filters.flagged}
+                bind:checked={flaggedFilter}
               />
               Flagged questions
             </label>
@@ -165,7 +233,7 @@
                 type="checkbox"
                 name="retired"
                 value="1"
-                checked={filters.retired}
+                bind:checked={retiredFilter}
               />
               Retired questions
             </label>
@@ -181,7 +249,11 @@
               <a
                 class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
                 href={resolve(
-                  `/review?packChoice=${encodeURIComponent(`${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`)}`,
+                  reviewPackSelectionPath({
+                    examId: selectedPack.exam.id,
+                    packId: selectedPack.pack.id,
+                    packVersion: selectedPack.pack.version,
+                  }),
                 )}>Clear filters</a
               >
             {/if}
@@ -196,6 +268,9 @@
         <p class="text-surface-600-400 my-4" role="status" aria-live="polite">
           Showing {filteredQuestions.length} of {selectedPack.questions.length} questions for
           {selectedPack.exam.title} · {selectedPack.pack.title} · pack v{selectedPack.pack.version}.
+          {#if visibleQuestions.length > filteredQuestions.length}
+            The question you just updated is also shown outside these filters.
+          {/if}
         </p>
         {#if selectedPack.questions.length === 0}
           <section
@@ -204,7 +279,7 @@
             <h2 class="mb-2 text-xl font-semibold">No questions in this pack version</h2>
             <p>This imported pack version does not contain any questions to review.</p>
           </section>
-        {:else if filteredQuestions.length === 0}
+        {:else if filteredQuestions.length === 0 && visibleQuestions.length === 0}
           <section
             class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-6"
           >
@@ -213,7 +288,11 @@
             <a
               class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
               href={resolve(
-                `/review?packChoice=${encodeURIComponent(`${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`)}`,
+                reviewPackSelectionPath({
+                  examId: selectedPack.exam.id,
+                  packId: selectedPack.pack.id,
+                  packVersion: selectedPack.pack.version,
+                }),
               )}>Clear filters</a
             >
           </section>
@@ -221,13 +300,15 @@
         <section
           class="grid gap-5"
           aria-label="Filtered imported questions"
-          aria-hidden={filteredQuestions.length === 0}
+          aria-hidden={visibleQuestions.length === 0}
         >
-          {#each filteredQuestions as question (question.id)}
+          {#each visibleQuestions as question (question.id)}
             {const flagForm = $derived(flagReviewQuestion.for(question.id))}
             {const correctionForm = $derived(correctReviewQuestion.for(question.id))}
             {const retirementForm = $derived(retireReviewQuestion.for(question.id))}
             <article
+              id="question-{question.id}"
+              tabindex="-1"
               class={[
                 'card rounded-2xl border p-5 sm:p-6',
                 feedbackByQuestion.get(question.id)?.retired
@@ -235,6 +316,11 @@
                   : 'border-surface-200-800 bg-surface-50-950',
               ]}
             >
+              {#if reviewActionNotice?.questionId === question.id}
+                <p class="text-success-700-300 mb-4" role="status" aria-live="polite">
+                  {reviewActionNotice.message}
+                </p>
+              {/if}
               <div class="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div>
                   <p class="tracking-eyebrow text-primary-700-300 mb-2 text-xs font-bold uppercase">
@@ -272,7 +358,13 @@
                   <a
                     class="text-primary-700-300 grid gap-1 font-semibold underline-offset-4 hover:underline"
                     href={resolve(
-                      `/practice/source?examId=${encodeURIComponent(selectedPack.exam.id)}&packId=${encodeURIComponent(selectedPack.pack.id)}&packVersion=${encodeURIComponent(selectedPack.pack.version)}&questionId=${encodeURIComponent(question.id)}&path=${encodeURIComponent(source.path)}`,
+                      practiceSourcePath({
+                        examId: selectedPack.exam.id,
+                        packId: selectedPack.pack.id,
+                        packVersion: selectedPack.pack.version,
+                        path: source.path,
+                        questionId: question.id,
+                      }),
                     )}
                     rel="noopener noreferrer"
                     target="_blank">{source.label} <span aria-hidden="true">↗</span></a
@@ -287,11 +379,18 @@
                 </ul>
               {/if}
               <div class="lg:grid-cols-review-question-grid mt-5 grid items-start gap-5">
-                <form {...flagForm} class="grid gap-3">
+                <form
+                  {...flagForm}
+                  action={`${flagForm.action}#question-${encodeURIComponent(question.id)}`}
+                  class="grid gap-3"
+                >
                   <input {...flagForm.fields.examId.as('hidden', selectedPack.exam.id)} />
                   <input {...flagForm.fields.packId.as('hidden', selectedPack.pack.id)} />
                   <input {...flagForm.fields.packVersion.as('hidden', selectedPack.pack.version)} />
                   <input {...flagForm.fields.questionId.as('hidden', question.id)} />
+                  <input
+                    {...flagForm.fields.returnQuery.as('hidden', page.url.searchParams.toString())}
+                  />
                   <label class="font-semibold" for="flag-{question.id}">Flag this question</label>
                   <input
                     {...flagForm.fields.reason.as('text')}
@@ -313,18 +412,30 @@
                   {/if}
                   <button
                     class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+                    aria-busy={flagForm.pending > 0}
+                    disabled={flagForm.pending > 0}
                     type="submit"
                   >
-                    Save flag
+                    {flagForm.pending > 0 ? 'Saving flag…' : 'Save flag'}
                   </button>
                 </form>
-                <form {...correctionForm} class="grid gap-3">
+                <form
+                  {...correctionForm}
+                  action={`${correctionForm.action}#question-${encodeURIComponent(question.id)}`}
+                  class="grid gap-3"
+                >
                   <input {...correctionForm.fields.examId.as('hidden', selectedPack.exam.id)} />
                   <input {...correctionForm.fields.packId.as('hidden', selectedPack.pack.id)} />
                   <input
                     {...correctionForm.fields.packVersion.as('hidden', selectedPack.pack.version)}
                   />
                   <input {...correctionForm.fields.questionId.as('hidden', question.id)} />
+                  <input
+                    {...correctionForm.fields.returnQuery.as(
+                      'hidden',
+                      page.url.searchParams.toString(),
+                    )}
+                  />
                   <label class="font-semibold" for="correction-{question.id}">Correction JSON</label
                   >
                   <p class="text-surface-600-400 m-0 text-sm/relaxed">
@@ -352,18 +463,30 @@
                   {/if}
                   <button
                     class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+                    aria-busy={correctionForm.pending > 0}
+                    disabled={correctionForm.pending > 0}
                     type="submit"
                   >
-                    Save correction
+                    {correctionForm.pending > 0 ? 'Saving correction…' : 'Save correction'}
                   </button>
                 </form>
-                <form {...retirementForm} class="grid gap-3 lg:pt-8">
+                <form
+                  {...retirementForm}
+                  action={`${retirementForm.action}#question-${encodeURIComponent(question.id)}`}
+                  class="grid gap-3 lg:pt-8"
+                >
                   <input {...retirementForm.fields.examId.as('hidden', selectedPack.exam.id)} />
                   <input {...retirementForm.fields.packId.as('hidden', selectedPack.pack.id)} />
                   <input
                     {...retirementForm.fields.packVersion.as('hidden', selectedPack.pack.version)}
                   />
                   <input {...retirementForm.fields.questionId.as('hidden', question.id)} />
+                  <input
+                    {...retirementForm.fields.returnQuery.as(
+                      'hidden',
+                      page.url.searchParams.toString(),
+                    )}
+                  />
                   <input
                     {...retirementForm.fields.retired.as(
                       'hidden',
@@ -383,11 +506,15 @@
                   {/if}
                   <button
                     class="btn preset-outlined-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+                    aria-busy={retirementForm.pending > 0}
+                    disabled={retirementForm.pending > 0}
                     type="submit"
                   >
-                    {feedbackByQuestion.get(question.id)?.retired
-                      ? 'Restore question'
-                      : 'Retire from new sessions'}
+                    {retirementForm.pending > 0
+                      ? 'Saving retirement…'
+                      : feedbackByQuestion.get(question.id)?.retired
+                        ? 'Restore question'
+                        : 'Retire from new sessions'}
                   </button>
                 </form>
               </div>
