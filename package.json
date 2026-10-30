@@ -21,6 +21,7 @@
     "pack:verify": "tsx app/pack-cli/src/index.ts verify",
     "pack:schema:generate": "pnpm --dir app/pack-cli packs schema generate",
     "pack:schema:check": "pnpm --dir app/pack-cli packs schema check",
+    "wt:remove": "bash scripts/wt-remove-keep-branch.sh",
     "prepare": "effect-tsgo patch --no-typescript --oxlint"
   },
   "devDependencies": {

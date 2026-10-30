@@ -6,4 +6,11 @@ prefix_rule(pattern=["git", ["add", "commit", "diff", "log", "rebase", "show", "
 
 # Worktree creation/merging and review commands used in this repository.
 prefix_rule(pattern=["wt"], decision="allow")
+# Prefix rules cannot test for an option later in the argument list, so block all
+# direct removals and use the wrapper, which always preserves the local branch.
+prefix_rule(
+    pattern=["wt", "remove"],
+    decision="forbidden",
+    justification="Codex prefix rules block every direct `wt remove`, including flagged forms. Use `pnpm wt:remove <branch-or-path>` to remove the worktree while preserving its branch.",
+)
 prefix_rule(pattern=["plannotator"], decision="allow")
