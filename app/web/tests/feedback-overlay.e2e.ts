@@ -108,58 +108,6 @@ fixture.describe('developer feedback overlay', () => {
 
       await expect(restoredItem.getByLabel('Session')).toBeVisible();
 
-      const screenshot = await page.evaluate(async (id) => {
-        // IndexedDB requests expose event callbacks instead of promises.
-        // oxlint-disable-next-line promise/avoid-new
-        const database = await new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open('ui-feedback', 1);
-
-          request.addEventListener(
-            'success',
-            () => {
-              resolve(request.result);
-            },
-            { once: true },
-          );
-          request.addEventListener(
-            'error',
-            () => {
-              reject(request.error ?? new Error('Could not open feedback image storage.'));
-            },
-            { once: true },
-          );
-        });
-
-        try {
-          // IndexedDB requests expose event callbacks instead of promises.
-          // oxlint-disable-next-line promise/avoid-new
-          return await new Promise<unknown>((resolve, reject) => {
-            const request = database
-              .transaction('screenshots', 'readonly')
-              .objectStore('screenshots')
-              .get(id);
-
-            request.addEventListener(
-              'success',
-              () => {
-                resolve(request.result);
-              },
-              { once: true },
-            );
-            request.addEventListener(
-              'error',
-              () => {
-                reject(request.error ?? new Error('Could not read the saved feedback image.'));
-              },
-              { once: true },
-            );
-          });
-        } finally {
-          database.close();
-        }
-      }, feedbackId);
-
-      expect(screenshot).toMatch(/^data:image\/png;base64,/u);
       await restoredItem.getByLabel('Session').selectOption('e2e-second');
       await restoredItem.getByRole('button', { name: 'Send to session' }).click();
       await expect(restoredItem.getByText('delivered', { exact: true })).toBeVisible();

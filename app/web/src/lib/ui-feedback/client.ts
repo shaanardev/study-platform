@@ -1,4 +1,6 @@
 import * as Schema from 'effect/Schema';
+import { openDB } from 'idb';
+import type { DBSchema, IDBPDatabase, IDBPObjectStore } from 'idb';
 
 import { QueueItemSchema, ScreenshotSchema, SvelteMetadataSchema, ShortcutSchema } from './schema';
 import type {
@@ -44,6 +46,12 @@ const INVALID_QUEUE =
 
 const VENDOR_PATH = /(?:^|[/\\])node_modules(?:[/\\]|$)/u;
 const SCREENSHOT_CACHE = new Map<string, string>();
+
+interface ScreenshotDatabase extends DBSchema {
+  screenshots: { key: string; value: unknown };
+}
+
+type ScreenshotMode = 'readonly' | 'readwrite';
 
 type StorageReader = (key: string) => string | null;
 
@@ -235,72 +243,66 @@ export const captureViewport = async (signal?: AbortSignal): Promise<string> => 
 };
 
 // Screenshots stay in an in-memory cache and IndexedDB; localStorage holds only metadata.
-const openScreenshotDatabase = async (signal?: AbortSignal): Promise<IDBDatabase> => {
+const waitForAbort = async <T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> => {
   signal?.throwIfAborted();
-  const { promise, resolve, reject } = Promise.withResolvers<IDBDatabase>();
-  let settled = false;
-  const request = indexedDB.open('ui-feedback', 1);
+
+  if (!signal) {
+    return await promise;
+  }
+
+  const { promise: abortPromise, reject } = Promise.withResolvers<never>();
 
   const onAbort = () => {
-    settled = true;
-    signal?.removeEventListener('abort', onAbort);
-    reject(signal?.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
+    reject(signal.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
   };
 
-  signal?.addEventListener('abort', onAbort, { once: true });
-  request.addEventListener(
-    'upgradeneeded',
-    () => {
-      if (!request.result.objectStoreNames.contains('screenshots')) {
-        request.result.createObjectStore('screenshots');
-      }
-    },
-    { once: true },
-  );
-  request.addEventListener(
-    'success',
-    () => {
-      if (settled || signal?.aborted === true) {
-        request.result.close();
-      } else {
-        settled = true;
-        signal?.removeEventListener('abort', onAbort);
-        resolve(request.result);
-      }
-    },
-    { once: true },
-  );
-  request.addEventListener(
-    'error',
-    () => {
-      if (!settled) {
-        settled = true;
-        signal?.removeEventListener('abort', onAbort);
-        reject(request.error ?? new Error('Screenshot storage unavailable.'));
-      }
-    },
-    { once: true },
-  );
+  signal.addEventListener('abort', onAbort, { once: true });
+
+  if (signal.aborted) {
+    onAbort();
+  }
 
   try {
-    return await promise;
+    return await Promise.race([promise, abortPromise]);
   } finally {
-    signal?.removeEventListener('abort', onAbort);
+    signal.removeEventListener('abort', onAbort);
   }
 };
 
-const screenshotRequest = async <T>(
-  mode: IDBTransactionMode,
-  operation: (store: IDBObjectStore) => IDBRequest<T>,
+const openScreenshotDatabase = async (
   signal?: AbortSignal,
-): Promise<T> => {
+): Promise<IDBPDatabase<ScreenshotDatabase>> => {
+  signal?.throwIfAborted();
+
+  const databasePromise = openDB<ScreenshotDatabase>('ui-feedback', 1, {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('screenshots')) {
+        database.createObjectStore('screenshots');
+      }
+    },
+  }).then((database) => {
+    if (signal?.aborted === true) {
+      database.close();
+    }
+
+    return database;
+  });
+
+  return await waitForAbort(databasePromise, signal);
+};
+
+const screenshotRequest = async <Mode extends ScreenshotMode, Result>(
+  mode: Mode,
+  operation: (
+    store: IDBPObjectStore<ScreenshotDatabase, ['screenshots'], 'screenshots', Mode>,
+  ) => Promise<Result> | Result,
+  signal?: AbortSignal,
+): Promise<Awaited<Result>> => {
   const database = await openScreenshotDatabase(signal);
 
   try {
     signal?.throwIfAborted();
-    const { promise, resolve, reject } = Promise.withResolvers<T>();
     const transaction = database.transaction('screenshots', mode);
-    let settled = false;
 
     const onAbort = () => {
       try {
@@ -308,74 +310,33 @@ const screenshotRequest = async <T>(
       } catch {
         // The transaction has already completed or aborted.
       }
-
-      if (!settled) {
-        settled = true;
-        signal?.removeEventListener('abort', onAbort);
-        reject(signal?.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
-      }
-    };
-
-    const fail = () => {
-      if (!settled) {
-        settled = true;
-        signal?.removeEventListener('abort', onAbort);
-        reject(transaction.error ?? new Error('Screenshot storage failed.'));
-      }
     };
 
     signal?.addEventListener('abort', onAbort, { once: true });
-    let request: IDBRequest<T>;
 
     try {
-      request = operation(transaction.objectStore('screenshots'));
-    } catch (error) {
-      signal?.removeEventListener('abort', onAbort);
+      if (signal?.aborted === true) {
+        onAbort();
+        signal.throwIfAborted();
+      }
 
+      const resultPromise = Promise.resolve(operation(transaction.store));
+      const transactionPromise = transaction.done;
+
+      const [result] = await waitForAbort(Promise.all([resultPromise, transactionPromise]), signal);
+
+      return result;
+    } catch (error) {
       try {
         transaction.abort();
       } catch {
-        // The transaction has already ended.
+        // The transaction has already completed or aborted.
       }
 
       throw error;
+    } finally {
+      signal?.removeEventListener('abort', onAbort);
     }
-
-    transaction.addEventListener(
-      'complete',
-      () => {
-        if (!settled) {
-          settled = true;
-          signal?.removeEventListener('abort', onAbort);
-          resolve(request.result);
-        }
-      },
-      { once: true },
-    );
-    transaction.addEventListener(
-      'error',
-      () => {
-        fail();
-      },
-      { once: true },
-    );
-    transaction.addEventListener(
-      'abort',
-      () => {
-        if (!settled) {
-          settled = true;
-          signal?.removeEventListener('abort', onAbort);
-          reject(
-            signal?.aborted === true
-              ? signal.reason
-              : (transaction.error ?? new Error('Screenshot storage aborted.')),
-          );
-        }
-      },
-      { once: true },
-    );
-
-    return await promise;
   } finally {
     database.close();
   }
@@ -388,7 +349,7 @@ export const saveScreenshot = async (
 ): Promise<void> => {
   signal?.throwIfAborted();
   SCREENSHOT_CACHE.set(id, screenshot);
-  await screenshotRequest('readwrite', (store) => store.put(screenshot, id), signal);
+  await screenshotRequest('readwrite', async (store) => await store.put(screenshot, id), signal);
 };
 
 export const loadScreenshot = async (
@@ -402,9 +363,9 @@ export const loadScreenshot = async (
     return cached;
   }
 
-  const screenshot: unknown = await screenshotRequest<unknown>(
+  const screenshot: unknown = await screenshotRequest(
     'readonly',
-    (store) => store.get(id),
+    async (store) => await store.get(id),
     signal,
   );
 
@@ -419,7 +380,13 @@ export const loadScreenshot = async (
 
 export const removeScreenshot = async (id: string, signal?: AbortSignal): Promise<void> => {
   SCREENSHOT_CACHE.delete(id);
-  await screenshotRequest('readwrite', (store) => store.delete(id), signal);
+  await screenshotRequest(
+    'readwrite',
+    async (store) => {
+      await store.delete(id);
+    },
+    signal,
+  );
 };
 
 interface RestoredQueue {
