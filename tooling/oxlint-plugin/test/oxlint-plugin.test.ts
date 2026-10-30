@@ -1,9 +1,9 @@
 import { RuleTester } from 'oxlint/plugins-dev';
 import { describe, expect, test } from 'vitest';
 
-import effectSchemaImport from '../../../tooling/oxlint-plugin/effect-schema-import.js';
-import functionalStyle from '../../../tooling/oxlint-plugin/functional-style.js';
-import arrayMethodThisArgument from '../../../tooling/oxlint-plugin/no-array-method-this-argument.js';
+import effectSchemaImport from '../effect-schema-import.js';
+import functionalStyle from '../functional-style.js';
+import arrayMethodThisArgument from '../no-array-method-this-argument.js';
 
 RuleTester.describe = (name, run) => {
   describe(name, () => {

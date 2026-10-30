@@ -1,6 +1,6 @@
 import type { PackForVerification } from '@learning-platform/exam-pack';
-import { Crypto, Data, Effect, FileSystem, Option, Path, Result, Schema } from 'effect';
-import { Hex } from 'effect/encoding';
+import { Data, Effect, FileSystem, Option, Path, Result, Schema } from 'effect';
+import { Digest } from 'effect/crypto';
 
 import {
   JSON_INDENT_SPACES,
@@ -148,9 +148,9 @@ const readJson = Effect.fn(function* readJson<A>(
 });
 
 const sha256 = Effect.fn(function* sha256(bytes: Uint8Array) {
-  const crypto = yield* Crypto.Crypto;
+  const digest = yield* Digest.Digest;
 
-  const digest = yield* crypto.digest('SHA-256', bytes).pipe(
+  return yield* digest.digestHex(Digest.sha256, bytes).pipe(
     Effect.mapError(
       (error) =>
         new ProfileError({
@@ -159,8 +159,6 @@ const sha256 = Effect.fn(function* sha256(bytes: Uint8Array) {
         }),
     ),
   );
-
-  return Hex.encode(digest);
 });
 
 interface ProfileReportDomain {

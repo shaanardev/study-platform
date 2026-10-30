@@ -22,13 +22,7 @@
     "declarationMap": true,
     "removeComments": false
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "test/**/*.ts",
-    "oxlint.config.ts",
-    "vitest.config.ts"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist", "coverage", "**/*.test-d.ts"],
   "plugins": [
     {

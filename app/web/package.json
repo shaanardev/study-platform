@@ -20,7 +20,7 @@
   "dependencies": {
     "@learning-platform/exam-pack": "workspace:*",
     "better-sqlite3": "^13.0.3",
-    "effect": "4.0.2",
+    "effect": "4.1.0",
     "html-to-image": "^1.11.13",
     "idb": "^8.0.4",
     "kysely": "^0.29.7"

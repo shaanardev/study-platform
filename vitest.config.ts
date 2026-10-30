@@ -12,6 +12,10 @@ export default defineConfig({
       include: ['app/pack-cli/src/**/*.ts', 'app/web/src/**/*.ts'],
       thresholds: { branches: 70, lines: 70 },
     },
-    projects: ['./app/pack-cli/vitest.config.ts', './app/web/vite.config.ts'],
+    projects: [
+      './app/pack-cli/vitest.config.ts',
+      './app/web/vite.config.ts',
+      './tooling/oxlint-plugin/vitest.config.ts',
+    ],
   },
 });

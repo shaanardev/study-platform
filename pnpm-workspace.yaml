@@ -7,7 +7,4 @@ allowBuilds:
   esbuild: true
   unrs-resolver: false
 
-overrides:
-  '@effect/platform-node-shared': 4.0.2
-
 virtualStoreType: global

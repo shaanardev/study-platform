@@ -245,7 +245,7 @@ export const verifyPack = Effect.fn('verifyPack')((packPath: string, profilePath
           (error) =>
             new VerifyError({
               cause: error,
-              message: `Profile verification failed: ${error.message}`,
+              message: `Profile verification failed: ${error instanceof Error ? error.message : String(error)}`,
             }),
         ),
       );

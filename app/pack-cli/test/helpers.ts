@@ -1,11 +1,15 @@
 import pathUtils from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { NodeServices } from '@effect/platform-node';
-import { Effect, FileSystem, Schema } from 'effect';
+import { NodeCrypto, NodeServices } from '@effect/platform-node';
+import { Effect, FileSystem, Layer, Schema } from 'effect';
+import type { Digest } from 'effect/crypto';
 
-export const run = async <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
-  await Effect.runPromise(Effect.provide(effect, NodeServices.layer));
+const nodeLayer = Layer.merge(NodeServices.layer, NodeCrypto.layer);
+
+export const run = async <A, E>(
+  effect: Effect.Effect<A, E, NodeServices.NodeServices | Digest.Digest>,
+) => await Effect.runPromise(Effect.provide(effect, nodeLayer));
 
 export const testPath = (...segments: string[]) =>
   fileURLToPath(new URL(segments.join('/'), import.meta.url));

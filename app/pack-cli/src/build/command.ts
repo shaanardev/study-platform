@@ -25,4 +25,16 @@ export const buildCommand = Command.make(
     yield* buildPack(authoringFile, outputDirectory, Option.getOrUndefined(localNoteRoot));
     yield* Console.log(`Built pack in ${outputDirectory}`);
   }),
-).pipe(Command.withDescription('Build an exam pack from a JSON authoring file'));
+).pipe(
+  Command.withDescription('Build an exam pack from a JSON authoring file'),
+  Command.withExamples(({ commandPath }) => [
+    {
+      command: `${commandPath.join(' ')} packs/example/authoring.json dist/example`,
+      description: 'Build a pack and copy its source assets into the output directory',
+    },
+    {
+      command: `${commandPath.join(' ')} --local-note-root notes packs/example/authoring.json dist/example`,
+      description: 'Resolve local-note citations from a separate notes directory',
+    },
+  ]),
+);
