@@ -1,7 +1,9 @@
-import { expect, test } from './fixtures.js';
+import { expect } from '@playwright/test';
 
-test.describe('crimson Skeleton theme', () => {
-  test('uses the theme primary color for the app brand', async ({ page }) => {
+import { fixture } from './fixtures/index.js';
+
+fixture.describe('crimson Skeleton theme', () => {
+  fixture('uses the theme primary color for the app brand', async ({ page }) => {
     await page.goto('/');
 
     const colors = await page.evaluate(() => {

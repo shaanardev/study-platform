@@ -325,50 +325,55 @@
             <h2 id="quiz-heading" class="mb-5 text-xl/relaxed font-semibold">
               <InlineCode text={activeQuestion.prompt} />
             </h2>
-            <form
-              {...answerForm.enhance(async (form) => {
-                if (await form.submit()) {
-                  await tick();
-                  feedbackElement?.focus();
-                }
-              })}
-              class="grid gap-3"
-            >
-              <input {...answerForm.fields.sessionId.as('hidden', data.session.id)} />
-              <input {...answerForm.fields.questionId.as('hidden', activeQuestion.id)} />
-              <fieldset class="grid gap-1">
-                <legend class="mb-2 font-bold">
-                  {activeQuestion.type === 'multiple_choice'
-                    ? 'Select all that apply'
-                    : 'Select one answer'}
-                </legend>
-                {#each activeQuestion.options as option (option.id)}
-                  <label
-                    class="hover:bg-control-fill flex items-start gap-3 rounded-lg px-2 py-3 font-medium"
-                  >
-                    <input
-                      {...answerForm.fields.answerIds.as('checkbox', option.id)}
-                      class={[
-                        activeQuestion.type === 'multiple_choice' ? 'checkbox' : 'radio',
-                        'app-control-focus mt-0.5',
-                      ]}
-                      required={activeQuestion.type === 'single_choice'}
-                      type={activeQuestion.type === 'multiple_choice' ? 'checkbox' : 'radio'}
-                    />
-                    <span><InlineCode text={option.text} /></span>
-                  </label>
-                {/each}
-              </fieldset>
-              {#each answerForm.fields.answerIds.issues() ?? [] as issue (issue.message)}
-                <span class="text-error-text" role="alert">{issue.message}</span>
-              {/each}
-              <button
-                class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 rounded-lg px-4 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
-                type="submit"
+            {#key activeQuestion.id}
+              <form
+                {...answerForm.enhance(async (form) => {
+                  if (await form.submit()) {
+                    await tick();
+                    feedbackElement?.focus();
+                  }
+                })}
+                class="grid gap-3"
               >
-                Submit answer
-              </button>
-            </form>
+                <input {...answerForm.fields.sessionId.as('hidden', data.session.id)} />
+                <input {...answerForm.fields.questionId.as('hidden', activeQuestion.id)} />
+                <fieldset class="grid gap-1">
+                  <legend class="mb-2 font-bold">
+                    {activeQuestion.type === 'multiple_choice'
+                      ? 'Select all that apply'
+                      : 'Select one answer'}
+                  </legend>
+                  {#each activeQuestion.options as option (option.id)}
+                    <label
+                      class="hover:bg-control-fill flex items-start gap-3 rounded-lg px-2 py-3 font-medium"
+                    >
+                      {#if activeQuestion.type === 'multiple_choice'}
+                        <input
+                          {...answerForm.fields.answerIds.as('checkbox', option.id)}
+                          class="checkbox app-control-focus mt-0.5"
+                        />
+                      {:else}
+                        <input
+                          {...answerForm.fields.answerId.as('radio', option.id)}
+                          class="radio app-control-focus mt-0.5"
+                          required
+                        />
+                      {/if}
+                      <span><InlineCode text={option.text} /></span>
+                    </label>
+                  {/each}
+                </fieldset>
+                {#each [...(answerForm.fields.answerIds.issues() ?? []), ...(answerForm.fields.answerId.issues() ?? [])] as issue (issue.message)}
+                  <span class="text-error-text" role="alert">{issue.message}</span>
+                {/each}
+                <button
+                  class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 rounded-lg px-4 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+                  type="submit"
+                >
+                  Submit answer
+                </button>
+              </form>
+            {/key}
           </article>
         {:else if data.session.status === 'completed'}
           <div

@@ -1,3 +1,5 @@
+import pathUtils from 'node:path';
+
 import { Cause, Effect, Exit, FileSystem, Path, Result } from 'effect';
 import { describe, expect, it } from 'vitest';
 
@@ -7,6 +9,16 @@ import { validPack } from './pack-fixture.js';
 import { makePack, run, writeJson } from './verify-helpers.js';
 
 describe(verifyPack, () => {
+  interface ProfileInput {
+    answerPositions?: Record<string, number>;
+    questionRules?: {
+      explanationMinWords?: number;
+      optionCount?: number;
+      requiredSourcePathFragment?: string;
+      type?: 'multiple_choice' | 'single_choice';
+    };
+  }
+
   it('preserves the profile and filesystem causes when the profile is missing', async () => {
     await run(
       Effect.gen(function* testEffect() {
@@ -51,6 +63,69 @@ describe(verifyPack, () => {
         expect.assert(Result.isFailure(mismatch));
         expect(mismatch.failure.message).toContain('expected 3 questions, got 1');
       }),
+    );
+  });
+
+  it('enforces optional question rules and answer-position expectations', async () => {
+    const { directory, packPath } = await run(makePack);
+    const profilePath = pathUtils.join(directory, 'profile.json');
+
+    const passingProfile: ProfileInput = {
+      answerPositions: { a: 2 },
+      questionRules: {
+        explanationMinWords: 4,
+        optionCount: 2,
+        requiredSourcePathFragment: 'source.md',
+        type: 'single_choice',
+      },
+    };
+
+    await run(writeJson(profilePath, passingProfile));
+    const verified = await run(verifyPack(packPath, profilePath));
+    expect(verified.profileReportPath).toBeDefined();
+
+    const expectProfileFailure = async (profile: ProfileInput, message: string): Promise<void> => {
+      await run(writeJson(profilePath, profile));
+      const result = await run(Effect.result(verifyPack(packPath, profilePath)));
+      expect.assert(Result.isFailure(result));
+      expect(result.failure.message).toContain(message);
+    };
+
+    await expectProfileFailure(
+      {
+        ...passingProfile,
+        questionRules: { ...passingProfile.questionRules, type: 'multiple_choice' },
+      },
+      'expected multiple_choice',
+    );
+    await expectProfileFailure(
+      { ...passingProfile, questionRules: { ...passingProfile.questionRules, optionCount: 3 } },
+      'expected 3 options',
+    );
+    await expectProfileFailure(
+      {
+        ...passingProfile,
+        questionRules: { ...passingProfile.questionRules, explanationMinWords: 100 },
+      },
+      'explanation too short',
+    );
+    await expectProfileFailure(
+      {
+        ...passingProfile,
+        questionRules: {
+          ...passingProfile.questionRules,
+          requiredSourcePathFragment: 'approved-source',
+        },
+      },
+      'missing required source',
+    );
+    await expectProfileFailure(
+      { ...passingProfile, answerPositions: { b: 2 } },
+      'Answer position b: expected 2, got 0',
+    );
+    await expectProfileFailure(
+      { ...passingProfile, answerPositions: { a: 2, z: 0 } },
+      'Unexpected correct answer position',
     );
   });
 

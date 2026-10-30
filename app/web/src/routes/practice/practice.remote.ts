@@ -30,6 +30,7 @@ const StartPracticeSchema = Schema.toStandardSchemaV1(
 
 const AnswerPracticeSchema = Schema.toStandardSchemaV1(
   Schema.Struct({
+    answerId: Schema.optional(Schema.String.check(Schema.isMinLength(1))),
     answerIds: Schema.optional(Schema.mutable(Schema.Array(Schema.String))),
     questionId: Schema.String,
     sessionId: Schema.String,
@@ -112,11 +113,19 @@ export const startPractice = form(StartPracticeSchema, async (input, issue) => {
 });
 
 export const answerPractice = form(AnswerPracticeSchema, async (input, issue) => {
+  const answerIds = input.answerId === undefined ? (input.answerIds ?? []) : [input.answerId];
+
   try {
-    await answerQuestion(input.sessionId, input.questionId, input.answerIds ?? []);
+    await answerQuestion(input.sessionId, input.questionId, answerIds);
   } catch (error) {
     if (isHttpError(error, HTTP_BAD_REQUEST)) {
-      invalid(issue.answerIds('Select a valid answer before continuing.'));
+      const message = 'Select a valid answer before continuing.';
+
+      if (input.answerId === undefined) {
+        invalid(issue.answerIds(message));
+      }
+
+      invalid(issue.answerId(message));
     }
 
     throw error;

@@ -46,10 +46,18 @@ export default defineConfig([
       parser: tsParser,
     },
     rules: {
-      // This end-to-end smoke test intentionally follows several persisted journeys as one case.
-      'playwright/max-expects': ['error', { max: 60 }],
+      'playwright/max-expects': ['error', { max: 20 }],
       // Scope structural container locators to selectors that have no useful accessible role.
       'playwright/no-raw-locators': ['error', { allowed: ['article', 'form'] }],
+      // Let the Playwright hook rule recognize our table-driven test registration helper.
+      'playwright/require-hook': ['error', { allowedFunctionCalls: ['registerTestCases'] }],
+    },
+    settings: {
+      playwright: {
+        globalAliases: {
+          test: ['fixture'],
+        },
+      },
     },
   },
   {

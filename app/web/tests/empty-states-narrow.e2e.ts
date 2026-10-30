@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { expect, test } from './fixtures.js';
+import { fixture } from './fixtures/index.js';
 
 const narrowWidth = 320;
 const narrowHeight = 800;
@@ -13,8 +14,8 @@ const expectNoHorizontalOverflow = async (page: Page): Promise<void> => {
   expect(fits).toBe(true);
 };
 
-test.describe('narrow empty states', () => {
-  test('keeps each primary route readable without horizontal overflow', async ({ page }) => {
+fixture.describe('narrow empty states', () => {
+  fixture('keeps each primary route readable without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ height: narrowHeight, width: narrowWidth });
 
     await page.goto('/');
