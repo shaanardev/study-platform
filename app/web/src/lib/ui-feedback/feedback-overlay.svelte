@@ -508,7 +508,7 @@
 <div data-ui-feedback>
   {#if open}
     <aside
-      class="card border-surface-300-700 bg-surface-50-950 text-surface-900-100 fixed top-3.5 right-3.5 z-50 flex flex-col gap-3 overflow-auto rounded-xl border p-4 text-sm shadow-xl"
+      class="card text-app-ink app-panel-soft fixed top-3.5 right-3.5 z-50 flex flex-col gap-3 overflow-auto rounded-xl p-4 text-sm shadow-xl"
       style:width={`min(${PANEL_WIDTH_REM}rem, calc(100vw - ${PANEL_EDGE_REM}rem))`}
       style:max-height={`calc(100vh - ${PANEL_EDGE_REM}rem)`}
       aria-label="Developer feedback"
@@ -517,7 +517,7 @@
       <header class="flex items-center justify-between gap-2">
         <strong class="text-base">Developer feedback</strong>
         <button
-          class="btn preset-tonal-surface"
+          class="btn app-button-secondary"
           type="button"
           aria-label="Close feedback"
           onclick={() => {
@@ -528,24 +528,22 @@
         >
       </header>
       {#if selecting}
-        <p class="text-surface-600-400 m-0">
+        <p class="text-body-muted m-0">
           Click an element, or drag to select an area. Press Escape to close feedback.
         </p>
       {:else if draft}
-        <p class="text-surface-600-400 m-0 text-xs wrap-break-word">
+        <p class="text-body-muted m-0 text-xs wrap-break-word">
           {draft.selection.kind} · {draft.route} · {draft.viewport.width}×{draft.viewport.height}
         </p>
         {#if draft.selection.dom.kind !== 'unavailable'}
-          <p class="text-surface-600-400 m-0 text-xs wrap-break-word">
+          <p class="text-body-muted m-0 text-xs wrap-break-word">
             DOM: {draft.selection.dom.tag}
             {draft.selection.dom.selector} · {draft.selection.dom.text || '(no text)'}
           </p>
         {:else}
-          <p class="text-surface-600-400 m-0 text-xs">
-            DOM details unavailable for the selected area.
-          </p>
+          <p class="text-body-muted m-0 text-xs">DOM details unavailable for the selected area.</p>
         {/if}
-        <p class="text-surface-600-400 m-0 text-xs wrap-break-word">
+        <p class="text-body-muted m-0 text-xs wrap-break-word">
           Bounds: {draft.selection.bounds.x}, {draft.selection.bounds.y} · {draft.selection.bounds
             .width}×{draft.selection.bounds.height}
           {#if draft.selection.source}
@@ -568,7 +566,7 @@
           placeholder="Describe the issue or idea"></textarea>
         <div class="flex justify-end gap-2">
           <button
-            class="btn preset-outlined-primary-700-300"
+            class="btn app-button-secondary"
             type="button"
             onclick={() => {
               cancelDraft();
@@ -576,52 +574,48 @@
             }}>Cancel</button
           >
           <button
-            class="btn preset-filled-primary-700-300"
+            class="btn app-button-primary"
             type="button"
             disabled={!note.trim() || sending}
             onclick={saveDraft}>{editingId ? 'Save changes' : 'Queue note'}</button
           >
         </div>
       {:else}
-        <p class="text-surface-600-400 m-0">
+        <p class="text-body-muted m-0">
           Click an element or drag across the page to add another feedback note.
         </p>
       {/if}
 
-      <div
-        class="border-surface-200-800 flex items-center justify-between gap-2 border-t pt-3 text-xs"
-      >
+      <div class="border-card-border flex items-center justify-between gap-2 border-t pt-3 text-xs">
         <span
           >Open shortcut: <kbd class="badge preset-tonal-surface">{formatShortcut(shortcut)}</kbd
           ></span
         >
-        <button
-          class="btn preset-outlined-primary-700-300"
-          type="button"
-          onclick={() => (recording = true)}>{recording ? 'Press shortcut…' : 'Change'}</button
+        <button class="btn app-button-secondary" type="button" onclick={() => (recording = true)}
+          >{recording ? 'Press shortcut…' : 'Change'}</button
         >
       </div>
-      {#if queueMessage}<p class="text-error-700-300 m-0" role="status">{queueMessage}</p>{/if}
+      {#if queueMessage}<p class="text-error-text m-0" role="status">{queueMessage}</p>{/if}
       {#if sending}
-        <button class="btn preset-outlined-primary-700-300" type="button" onclick={stopDelivery}>
+        <button class="btn app-button-secondary" type="button" onclick={stopDelivery}>
           {activePhase === DeliveryPhase.Submit ? 'Stop waiting for response' : 'Cancel capture'}
         </button>
       {/if}
       {#if queue.length}
-        <section class="border-surface-200-800 border-t pt-2" aria-label="Feedback queue">
+        <section class="border-card-border border-t pt-2" aria-label="Feedback queue">
           <h2 class="m-0 text-sm font-semibold">Queue</h2>
           {#each queue as item (item.feedback.id)}
-            <article class="border-surface-200-800 my-2 rounded-lg border p-2">
+            <article class="border-card-border my-2 rounded-lg border p-2">
               <div class="flex items-center justify-between gap-2">
                 <strong class="wrap-break-word">{item.feedback.note || 'Feedback'}</strong>
-                <span class="text-surface-600-400 text-xs"
+                <span class="text-body-muted text-xs"
                   >{item.result.status === QueueStatus.NeedsReselection
                     ? 'Select again'
                     : item.result.status}</span
                 >
               </div>
               {#if 'files' in item.result && item.result.files}
-                <p class="text-surface-600-400 my-1 text-xs break-all">
+                <p class="text-body-muted my-1 text-xs break-all">
                   Saved: {item.result.files.feedbackPath} · {item.result.files.screenshotPath}
                 </p>
               {/if}
@@ -645,59 +639,59 @@
                 </select>
               {/if}
               {#if 'message' in item.result && item.result.message}
-                <p class="text-surface-600-400 my-1 text-xs">{item.result.message}</p>
+                <p class="text-body-muted my-1 text-xs">{item.result.message}</p>
               {/if}
               <div class="mt-2 flex flex-wrap justify-end gap-2">
                 {#if item.result.status === DeliveryStatus.Choose}
                   <button
-                    class="btn preset-filled-primary-700-300"
+                    class="btn app-button-primary"
                     type="button"
                     disabled={!selectedSessionId[item.feedback.id] || sending}
                     onclick={() => deliver(item)}>Send to session</button
                   >
                   <button
-                    class="btn preset-outlined-primary-700-300"
+                    class="btn app-button-secondary"
                     type="button"
                     disabled={sending}
                     onclick={() => editItem(item)}>Edit</button
                   >
                 {:else if item.result.status === DeliveryStatus.Failed}
                   <button
-                    class="btn preset-filled-primary-700-300"
+                    class="btn app-button-primary"
                     type="button"
                     disabled={sending}
                     onclick={() => deliver(item)}
                     >{item.result.retry === RetryAction.Check ? 'Check receipt' : 'Retry'}</button
                   >
                   <button
-                    class="btn preset-outlined-primary-700-300"
+                    class="btn app-button-secondary"
                     type="button"
                     disabled={sending}
                     onclick={() => beginSelection(item.feedback.id)}>Reselect</button
                   >
                 {:else if item.result.status === QueueStatus.NeedsReselection}
                   <button
-                    class="btn preset-filled-primary-700-300"
+                    class="btn app-button-primary"
                     type="button"
                     disabled={sending}
                     onclick={() => beginSelection(item.feedback.id)}>Reselect and retry</button
                   >
                 {:else if item.result.status === QueueStatus.Queued}
                   <button
-                    class="btn preset-outlined-primary-700-300"
+                    class="btn app-button-secondary"
                     type="button"
                     disabled={sending}
                     onclick={() => editItem(item)}>Edit</button
                   >
                   <button
-                    class="btn preset-filled-primary-700-300"
+                    class="btn app-button-primary"
                     type="button"
                     disabled={sending}
                     onclick={() => deliver(item)}>Send</button
                   >
                 {/if}
                 <button
-                  class="btn preset-outlined-primary-700-300"
+                  class="btn app-button-secondary"
                   type="button"
                   disabled={sending}
                   onclick={() => removeItem(item.feedback.id)}>Remove</button
@@ -707,7 +701,7 @@
           {/each}
         </section>
       {/if}
-      <footer class="border-surface-200-800 text-surface-600-400 border-t pt-2 text-xs">
+      <footer class="border-card-border text-body-muted border-t pt-2 text-xs">
         Send captures the visible app viewport. The development endpoint saves the screenshot
         locally. Retry images stay in this browser and submitted images remain in the local
         worktree.

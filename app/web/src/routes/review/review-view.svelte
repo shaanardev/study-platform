@@ -3,6 +3,7 @@
   import { page } from '$app/state';
 
   import InlineCode from '#lib/components/inline-code.svelte';
+  import PageHeading from '#lib/components/page-heading.svelte';
   import { practiceSourcePath, reviewPackSelectionPath } from '#lib/route-urls.js';
 
   import { filterReviewQuestions } from './review-filters';
@@ -123,35 +124,32 @@
   />
 </svelte:head>
 
-<main class="preset-filled-surface-100-900 min-h-screen font-sans">
+<main class="app-page">
   <div class="content-width-review mx-auto py-8 pb-20">
     <a
-      class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
+      class="text-brand-label app-control-focus font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
       href={resolve('/')}>← Exam pack library</a
     >
-    <header class="my-8 max-w-175">
-      <p class="tracking-eyebrow text-primary-700-300 mb-2 text-xs font-bold uppercase">
-        Question review
-      </p>
-      <h1 class="mb-3 text-4xl/tight font-bold tracking-tight sm:text-5xl">
-        Improve your imported questions
-      </h1>
-      <p class="text-surface-600-400 leading-relaxed">
+    <PageHeading
+      eyebrow="Question review"
+      title="Improve your imported questions"
+      class="my-8 max-w-175"
+    >
+      <p class="text-body-muted leading-relaxed">
         Feedback stays local to this pack version. Imported source packs and completed attempts
         remain unchanged.
       </p>
-    </header>
+    </PageHeading>
 
     <nav
       class="my-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
       aria-label="Review tools"
     >
-      <a
-        class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 no-underline focus-visible:outline-3 focus-visible:outline-offset-2"
-        href={resolve('/review/export')}>Export feedback JSON</a
+      <a class="btn app-button-primary no-underline" href={resolve('/review/export')}
+        >Export feedback JSON</a
       >
       {#if selectedPack}
-        <span class="text-surface-600-400 text-sm"
+        <span class="text-body-muted text-sm"
           >{selectedPack.exam.title}
           · {selectedPack.pack.title} · pack v{selectedPack.pack.version}</span
         >
@@ -159,23 +157,23 @@
     </nav>
 
     {#if data.packs.length === 0}
-      <section class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-6">
+      <section class="card app-panel-soft my-4 p-6">
         <h2 class="mb-2 text-xl font-semibold">No imported packs</h2>
         <p>Import an exam pack before reviewing questions.</p>
         <a
-          class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
+          class="text-brand-label app-control-focus font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
           href={resolve('/')}>Open exam pack library</a
         >
       </section>
     {:else}
-      <section class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-5">
+      <section class="card app-panel-soft my-4 p-5">
         <form class="grid gap-4" action={resolve('/review')} method="GET">
           <div class="grid gap-2">
             <label class="font-semibold" for="pack-version">Exam pack version</label>
             <select
               id="pack-version"
               name="packChoice"
-              class="select focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+              class="select app-control-focus min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
               value={selectedPack
                 ? `${selectedPack.exam.id}|${selectedPack.pack.id}|${selectedPack.pack.version}`
                 : ''}
@@ -193,7 +191,7 @@
               <label class="font-semibold" for="question-search">Prompt or question ID</label>
               <input
                 id="question-search"
-                class="input focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+                class="input app-control-focus min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
                 name="q"
                 type="search"
                 bind:value={searchFilter}
@@ -204,7 +202,7 @@
               <label class="font-semibold" for="question-domain">Domain</label>
               <select
                 id="question-domain"
-                class="select focus-visible:outline-warning-500 min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+                class="select app-control-focus min-h-11 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
                 name="domain"
                 bind:value={domainFilter}
               >
@@ -219,7 +217,7 @@
             <legend class="sr-only">Additional filters</legend>
             <label class="flex min-h-11 items-center gap-2 font-medium">
               <input
-                class="checkbox"
+                class="checkbox app-control-focus"
                 type="checkbox"
                 name="flagged"
                 value="1"
@@ -229,7 +227,7 @@
             </label>
             <label class="flex min-h-11 items-center gap-2 font-medium">
               <input
-                class="checkbox"
+                class="checkbox app-control-focus"
                 type="checkbox"
                 name="retired"
                 value="1"
@@ -239,15 +237,10 @@
             </label>
           </fieldset>
           <div class="flex flex-wrap items-center gap-4">
-            <button
-              class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
-              type="submit"
-            >
-              Apply filters
-            </button>
+            <button class="btn app-button-primary" type="submit"> Apply filters </button>
             {#if selectedPack}
               <a
-                class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
+                class="text-brand-label app-control-focus font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
                 href={resolve(
                   reviewPackSelectionPath({
                     examId: selectedPack.exam.id,
@@ -261,11 +254,11 @@
         </form>
       </section>
       {#if selectedPack}
-        <p class="text-surface-600-400 my-4 leading-relaxed">
+        <p class="text-body-muted my-4 leading-relaxed">
           Reviewing immutable pack version <strong>{selectedPack.pack.version}</strong>. Corrections
           apply only to future sessions.
         </p>
-        <p class="text-surface-600-400 my-4" role="status" aria-live="polite">
+        <p class="text-body-muted my-4" role="status" aria-live="polite">
           Showing {filteredQuestions.length} of {selectedPack.questions.length} questions for
           {selectedPack.exam.title} · {selectedPack.pack.title} · pack v{selectedPack.pack.version}.
           {#if visibleQuestions.length > filteredQuestions.length}
@@ -273,20 +266,16 @@
           {/if}
         </p>
         {#if selectedPack.questions.length === 0}
-          <section
-            class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-6"
-          >
+          <section class="card app-panel-soft my-4 p-6">
             <h2 class="mb-2 text-xl font-semibold">No questions in this pack version</h2>
             <p>This imported pack version does not contain any questions to review.</p>
           </section>
         {:else if filteredQuestions.length === 0 && visibleQuestions.length === 0}
-          <section
-            class="card border-surface-200-800 bg-surface-50-950 my-4 rounded-2xl border p-6"
-          >
+          <section class="card app-panel-soft my-4 p-6">
             <h2 class="mb-2 text-xl font-semibold">No questions match these filters</h2>
             <p>Try a different prompt or ID, choose another domain, or clear one of the filters.</p>
             <a
-              class="text-primary-700-300 focus-visible:outline-warning-500 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
+              class="text-brand-label app-control-focus font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2"
               href={resolve(
                 reviewPackSelectionPath({
                   examId: selectedPack.exam.id,
@@ -310,10 +299,8 @@
               id="question-{question.id}"
               tabindex="-1"
               class={[
-                'card rounded-2xl border p-5 sm:p-6',
-                feedbackByQuestion.get(question.id)?.retired
-                  ? 'border-error-300 bg-error-50-950'
-                  : 'border-surface-200-800 bg-surface-50-950',
+                'card app-panel p-5 sm:p-6',
+                feedbackByQuestion.get(question.id)?.retired && 'app-panel-retired',
               ]}
             >
               {#if reviewActionNotice?.questionId === question.id}
@@ -323,7 +310,7 @@
               {/if}
               <div class="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
                 <div>
-                  <p class="tracking-eyebrow text-primary-700-300 mb-2 text-xs font-bold uppercase">
+                  <p class="app-eyebrow">
                     {question.domainId}
                     · {question.type} · {question.id}
                   </p>
@@ -332,7 +319,7 @@
                   </h2>
                 </div>
                 {#if feedbackByQuestion.get(question.id)?.retired}
-                  <span class="text-error-700-300 text-sm font-bold">Retired for new sessions</span>
+                  <span class="text-error-text text-sm font-bold">Retired for new sessions</span>
                 {/if}
               </div>
               <ul class="mb-4 list-disc space-y-2 pl-6 text-sm/relaxed">
@@ -345,18 +332,18 @@
                   </li>
                 {/each}
               </ul>
-              <p class="text-surface-600-400 mb-5 text-sm/relaxed">
+              <p class="text-body-muted mb-5 text-sm/relaxed">
                 <InlineCode text={question.explanation} />
               </p>
               <fieldset
-                class="border-surface-200-800 flex min-w-0 flex-wrap items-start gap-x-5 gap-y-3 border-0 border-t p-0 pt-4"
+                class="border-card-border flex min-w-0 flex-wrap items-start gap-x-5 gap-y-3 border-0 border-t p-0 pt-4"
               >
                 <legend class="mb-3 w-full font-semibold">
                   Sources · pack v{selectedPack.pack.version}
                 </legend>
                 {#each question.sources as source (source.path)}
                   <a
-                    class="text-primary-700-300 grid gap-1 font-semibold underline-offset-4 hover:underline"
+                    class="text-brand-label grid gap-1 font-semibold underline-offset-4 hover:underline"
                     href={resolve(
                       practiceSourcePath({
                         examId: selectedPack.exam.id,
@@ -395,13 +382,13 @@
                   <input
                     {...flagForm.fields.reason.as('text')}
                     id="flag-{question.id}"
-                    class="input focus-visible:outline-warning-500 w-full focus-visible:outline-3 focus-visible:outline-offset-2"
+                    class="input app-control-focus w-full focus-visible:outline-3 focus-visible:outline-offset-2"
                     placeholder="What needs review?"
                     required
                   />
                   {#if flagForm.fields.allIssues()?.length}
                     <p
-                      class="border-error-500 bg-error-50-950 text-error-700-300 my-2 border-l-4 p-3"
+                      class="border-error-500 bg-error-50-950 text-error-text my-2 border-l-4 p-3"
                       role="alert"
                     >
                       {flagForm.fields
@@ -411,7 +398,7 @@
                     </p>
                   {/if}
                   <button
-                    class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+                    class="btn app-button-primary"
                     aria-busy={flagForm.pending > 0}
                     disabled={flagForm.pending > 0}
                     type="submit"
@@ -438,21 +425,21 @@
                   />
                   <label class="font-semibold" for="correction-{question.id}">Correction JSON</label
                   >
-                  <p class="text-surface-600-400 m-0 text-sm/relaxed">
+                  <p class="text-body-muted m-0 text-sm/relaxed">
                     Edit prompt, type, domainId, options, answerIds, explanation, or sources. Keep
                     at least one citation.
                   </p>
                   <textarea
                     {...correctionForm.fields.correction.as('text', correctionJson(question.id))}
                     id="correction-{question.id}"
-                    class="textarea focus-visible:outline-warning-500 min-h-52 w-full font-mono text-sm/relaxed focus-visible:outline-3 focus-visible:outline-offset-2"
+                    class="textarea app-control-focus min-h-52 w-full font-mono text-sm/relaxed focus-visible:outline-3 focus-visible:outline-offset-2"
                     rows="12"
                     oninput={(event) =>
                       correctionForm.fields.correction.set(event.currentTarget.value)}
                     spellcheck="false"></textarea>
                   {#if correctionForm.fields.allIssues()?.length}
                     <p
-                      class="border-error-500 bg-error-50-950 text-error-700-300 my-2 border-l-4 p-3"
+                      class="border-error-500 bg-error-50-950 text-error-text my-2 border-l-4 p-3"
                       role="alert"
                     >
                       {correctionForm.fields
@@ -462,7 +449,7 @@
                     </p>
                   {/if}
                   <button
-                    class="btn preset-filled-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+                    class="btn app-button-primary"
                     aria-busy={correctionForm.pending > 0}
                     disabled={correctionForm.pending > 0}
                     type="submit"
@@ -495,7 +482,7 @@
                   />
                   {#if retirementForm.fields.allIssues()?.length}
                     <p
-                      class="border-error-500 bg-error-50-950 text-error-700-300 my-2 border-l-4 p-3"
+                      class="border-error-500 bg-error-50-950 text-error-text my-2 border-l-4 p-3"
                       role="alert"
                     >
                       {retirementForm.fields
@@ -505,7 +492,7 @@
                     </p>
                   {/if}
                   <button
-                    class="btn preset-outlined-primary-700-300 focus-visible:outline-warning-500 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2"
+                    class="btn app-button-secondary"
                     aria-busy={retirementForm.pending > 0}
                     disabled={retirementForm.pending > 0}
                     type="submit"

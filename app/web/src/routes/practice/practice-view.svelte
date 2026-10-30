@@ -2,7 +2,9 @@
   import { resolve } from '$app/paths';
   import { tick } from 'svelte';
 
+  import AnswerOption from '#lib/components/answer-option.svelte';
   import InlineCode from '#lib/components/inline-code.svelte';
+  import PageHeading from '#lib/components/page-heading.svelte';
   import { DEFAULT_QUESTION_COUNT, MAX_QUESTION_COUNT } from '#lib/quiz/constants.js';
   import { practiceSourcePath } from '#lib/route-urls.js';
 
@@ -112,15 +114,11 @@
   data-client-ready={clientReady ? 'true' : 'false'}
 >
   <div class="mx-auto w-full max-w-205">
-    <header class="my-8 max-w-162.5">
-      <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">Practice</p>
-      <h1 class="text-page-title-medium leading-page-title tracking-page-title mb-3 font-bold">
-        Build your exam confidence
-      </h1>
+    <PageHeading eyebrow="Practice" title="Build your exam confidence" class="my-8 max-w-162.5">
       <p class="text-body-muted leading-relaxed">
         Choose an imported exam pack, focus on domains, and your answers will be saved as you go.
       </p>
-    </header>
+    </PageHeading>
 
     {#if data.session?.status === 'in_progress'}
       <section
@@ -128,9 +126,7 @@
         aria-label="Saved practice session"
       >
         <div>
-          <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
-            Saved session
-          </p>
+          <p class="app-eyebrow">Saved session</p>
           <h2 class="mb-2 text-xl font-semibold">
             {data.packs.find(
               (pack) =>
@@ -145,14 +141,14 @@
           </p>
         </div>
         <a
-          class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 rounded-lg px-4 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+          class="btn app-button-primary"
           href={resolve(`/practice?session=${encodeURIComponent(data.session.id)}`)}>Resume quiz</a
         >
       </section>
     {/if}
 
     {#if data.packs.length === 0}
-      <section class="border-card-border my-5 rounded-2xl border bg-white p-5 sm:p-6">
+      <section class="app-panel my-5 p-5 sm:p-6">
         <h2 class="mb-3 text-xl font-semibold">No exam packs are available yet</h2>
         <p class="text-body-muted mb-4">
           Import a pack from the exam pack library to begin a practice quiz.
@@ -162,10 +158,7 @@
         >
       </section>
     {:else}
-      <section
-        class="border-card-border my-5 rounded-2xl border bg-white p-5 sm:p-6"
-        aria-labelledby="setup-heading"
-      >
+      <section class="app-panel my-5 p-5 sm:p-6" aria-labelledby="setup-heading">
         <h2 id="setup-heading" class="mb-5 text-xl font-semibold">Start a practice quiz</h2>
         <form {...startPractice} class="grid gap-3">
           <label class="font-bold" for="pack">Exam pack version</label>
@@ -244,7 +237,7 @@
               <span class="text-error-text" role="alert">{issue.message}</span>
             {/each}
             <button
-              class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 rounded-lg px-4 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
+              class="btn app-button-primary"
               disabled={eligibleQuestionCount === 0}
               type="submit"
             >
@@ -256,11 +249,8 @@
     {/if}
 
     {#if data.session}
-      <section
-        class="border-card-border my-5 rounded-2xl border bg-white p-5 sm:p-6"
-        aria-labelledby="quiz-heading"
-      >
-        <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
+      <section class="app-panel my-5 p-5 sm:p-6" aria-labelledby="quiz-heading">
+        <p class="app-eyebrow">
           {data.session.answers.length}
           / {data.session.questionIds.length} answered ·
           {data.session.packId}
@@ -316,7 +306,7 @@
 
         {#if activeQuestion && answerForm}
           <article class="border-divider mt-6 border-t pt-5">
-            <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
+            <p class="app-eyebrow">
               {data.session.answers.length + 1}
               of {data.session.questionIds.length} ·
               {data.session.questions.find((question) => question.id === activeQuestion.id)
@@ -344,9 +334,7 @@
                       : 'Select one answer'}
                   </legend>
                   {#each activeQuestion.options as option (option.id)}
-                    <label
-                      class="hover:bg-control-fill flex items-start gap-3 rounded-lg px-2 py-3 font-medium"
-                    >
+                    <AnswerOption>
                       {#if activeQuestion.type === 'multiple_choice'}
                         <input
                           {...answerForm.fields.answerIds.as('checkbox', option.id)}
@@ -360,18 +348,13 @@
                         />
                       {/if}
                       <span><InlineCode text={option.text} /></span>
-                    </label>
+                    </AnswerOption>
                   {/each}
                 </fieldset>
                 {#each [...(answerForm.fields.answerIds.issues() ?? []), ...(answerForm.fields.answerId.issues() ?? [])] as issue (issue.message)}
                   <span class="text-error-text" role="alert">{issue.message}</span>
                 {/each}
-                <button
-                  class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 rounded-lg px-4 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
-                  type="submit"
-                >
-                  Submit answer
-                </button>
+                <button class="btn app-button-primary" type="submit"> Submit answer </button>
               </form>
             {/key}
           </article>

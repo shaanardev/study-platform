@@ -3,7 +3,9 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
 
+  import AnswerOption from '#lib/components/answer-option.svelte';
   import InlineCode from '#lib/components/inline-code.svelte';
+  import PageHeading from '#lib/components/page-heading.svelte';
   import {
     DEFAULT_MOCK_DURATION_MINUTES,
     MILLISECONDS_PER_MINUTE,
@@ -103,25 +105,19 @@
 
 <main class="app-page px-4 pt-8 pb-20 sm:px-6">
   <div class="mx-auto w-full max-w-215">
-    <header class="my-8 max-w-175">
-      <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">Timed mock</p>
-      <h1 class="text-page-title-medium leading-page-title tracking-page-title mb-3 font-bold">
-        Mock exam
-      </h1>
+    <PageHeading eyebrow="Timed mock" title="Mock exam" class="my-8 max-w-175">
       <p class="text-body-muted m-0 leading-relaxed">
         Questions follow the imported exam blueprint. Your attempt stays tied to the exact pack
         version you started with.
       </p>
-    </header>
+    </PageHeading>
 
     {#if data.attempt?.status === 'in_progress'}
       <section
         class="border-card-border bg-panel-tint my-5 flex flex-col justify-between gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:p-6"
       >
         <div>
-          <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
-            Time remaining
-          </p>
+          <p class="app-eyebrow">Time remaining</p>
           <span class="sr-only">Time remaining:</span>
           <strong class="text-3xl tabular-nums">{remainingTime.formatted}</strong>
         </div>
@@ -140,7 +136,7 @@
 
     {#if data.attempt?.status !== 'in_progress'}
       {#if data.packs.length === 0}
-        <section class="card border-card-border my-5 rounded-2xl border bg-white p-4 sm:p-6">
+        <section class="card app-panel my-5 p-4 sm:p-6">
           <h2 class="mb-3 text-xl font-semibold">No exam packs are available yet</h2>
           <p>Import a pack from the exam pack library to start a mock exam.</p>
           <a
@@ -149,10 +145,7 @@
           >
         </section>
       {:else}
-        <section
-          class="card border-card-border my-5 rounded-2xl border bg-white p-4 sm:p-6"
-          aria-labelledby="setup-heading"
-        >
+        <section class="card app-panel my-5 p-4 sm:p-6" aria-labelledby="setup-heading">
           <h2 id="setup-heading" class="mb-5 text-xl font-semibold">Choose a mock exam</h2>
           <form
             class="grid gap-3 sm:grid-cols-2 sm:items-center"
@@ -186,10 +179,7 @@
               type="number"
               value={effectiveQuestionCount}
             />
-            <button
-              class="btn border-control-muted bg-control-fill text-brand hover:bg-panel-tint focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg border px-4 py-3 font-bold focus-visible:outline-3 focus-visible:outline-offset-3 sm:col-span-2"
-              type="submit"
-            >
+            <button class="btn app-button-secondary sm:col-span-2" type="submit">
               Check weighted coverage
             </button>
           </form>
@@ -247,7 +237,7 @@
               bind:value={durationMinutes}
             />
             <button
-              class="btn bg-brand hover:bg-brand-hover-deep focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3 disabled:cursor-not-allowed disabled:opacity-50"
+              class="btn app-button-primary disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!selectedPack || (selectedCoverage?.gaps.length ?? 1) > 0}
               type="submit"
             >
@@ -265,10 +255,7 @@
     {/if}
 
     {#if data.attempt}
-      <section
-        class="card border-card-border my-5 rounded-2xl border bg-white p-4 sm:p-6"
-        aria-label="Mock exam attempt"
-      >
+      <section class="card app-panel my-5 p-4 sm:p-6" aria-label="Mock exam attempt">
         {#if data.attempt.status === 'in_progress'}
           <p class="bg-panel-tint rounded-lg p-4">
             Correct answers and explanations will appear after you submit or the timer expires.
@@ -278,7 +265,7 @@
             class="feedback-border-width border-feedback-positive-border bg-feedback-positive-fill mb-6 rounded-lg p-4"
             role="status"
           >
-            <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
+            <p class="app-eyebrow">
               {data.attempt.status === 'expired' ? 'Time expired' : 'Submitted'}
               · {data.attempt.packId} v{data.attempt.packVersion}
             </p>
@@ -339,7 +326,7 @@
             id="mock-question-{question.id}"
             tabindex="-1"
           >
-            <p class="tracking-eyebrow text-brand-label mb-2 text-xs font-bold uppercase">
+            <p class="app-eyebrow">
               {index + 1}
               of {data.attempt.questions.length} · {question.domainId}
             </p>
@@ -358,9 +345,7 @@
                       : 'Select one answer'}
                   </legend>
                   {#each question.options as option (option.id)}
-                    <label
-                      class="has-checked:bg-panel-tint focus-within:outline-focus-gold flex items-start gap-3 rounded-md px-1 py-3 font-medium focus-within:outline-2"
-                    >
+                    <AnswerOption>
                       {#if question.type === 'multiple_choice'}
                         <input
                           {...answerForm.fields['answerIds'].as(
@@ -382,15 +367,10 @@
                         />
                       {/if}
                       <span><InlineCode text={option.text} /></span>
-                    </label>
+                    </AnswerOption>
                   {/each}
                 </fieldset>
-                <button
-                  class="btn border-control-muted bg-control-fill text-brand hover:bg-panel-tint focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg border px-4 py-3 font-bold focus-visible:outline-3 focus-visible:outline-offset-3"
-                  type="submit"
-                >
-                  Save answer
-                </button>
+                <button class="btn app-button-secondary" type="submit"> Save answer </button>
                 {#each answerForm.fields['answerIds'].issues() ?? [] as issue (issue.message)}
                   <p class="text-error-text" role="alert">{issue.message}</p>
                 {/each}
@@ -459,10 +439,7 @@
             {#if needsUnansweredConfirmation}
               <input {...submitMock.fields.confirmUnanswered.as('hidden', 'yes')} />
             {/if}
-            <button
-              class="btn bg-brand hover:bg-brand-hover-deep focus-visible:outline-focus-gold inline-flex min-h-12 items-center justify-center rounded-lg px-4 py-3 font-bold text-white focus-visible:outline-3 focus-visible:outline-offset-3"
-              type="submit"
-            >
+            <button class="btn app-button-primary" type="submit">
               {needsUnansweredConfirmation
                 ? 'Submit with unanswered questions'
                 : 'Submit mock exam'}

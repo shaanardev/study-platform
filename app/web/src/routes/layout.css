@@ -1,18 +1,17 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/forms' {
-  strategy: 'base';
-}
 @import '@skeletonlabs/skeleton';
 @import '@skeletonlabs/skeleton-svelte';
 @import '@skeletonlabs/skeleton/themes/crimson';
+
+@plugin '@tailwindcss/forms' {
+  strategy: 'base';
+}
 
 @theme {
   --color-app-canvas: var(--color-root-bg-light);
   --color-app-ink: var(--color-surface-950);
   --color-brand: var(--color-primary-500);
   --color-brand-hover: var(--color-primary-600);
-  --color-brand-hover-deep: var(--color-primary-700);
-  --color-brand-hover-progress: var(--color-primary-700);
   --color-brand-label: var(--color-primary-700);
   --color-body-muted: var(--color-surface-600);
   --color-meta-muted: var(--color-surface-700);
@@ -31,14 +30,9 @@
   --color-mock-muted: var(--color-surface-600);
   --color-focus-gold: var(--color-warning-500);
   --text-page-title-large: clamp(2.2rem, 6vw, 3.3rem);
-  --text-page-title-medium: clamp(2.2rem, 6vw, 3.3rem);
   --text-section-heading: 1.35rem;
   --spacing-answer-control: 1.1rem;
   --breakpoint-progress: 561px;
-}
-
-@theme inline {
-  --color-focus-amber: var(--color-focus-gold);
 }
 
 :root {
@@ -53,6 +47,157 @@
 }
 
 @utility app-control-focus {
+  &:focus-visible {
+    outline: 3px solid var(--color-focus-gold);
+    outline-offset: 2px;
+  }
+}
+
+@utility app-page-heading {
+  max-width: 55rem;
+}
+
+@utility app-page-title {
+  margin-bottom: 0.75rem;
+  font-size: var(--text-page-title-large);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+@utility app-section-title {
+  font-size: var(--text-section-heading);
+  font-weight: 600;
+}
+
+@utility app-eyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--color-brand-label);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+@utility app-panel {
+  border: 1px solid var(--color-card-border);
+  border-radius: 1rem;
+  background-color: white;
+}
+
+@utility app-panel-soft {
+  border: 1px solid var(--color-card-border);
+  border-radius: 1rem;
+  background-color: var(--color-surface-50);
+}
+
+@utility app-panel-retired {
+  border-color: var(--color-error-300);
+  background-color: var(--color-error-50-950);
+}
+
+@utility app-button-primary {
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background-color: var(--color-brand);
+  color: white;
+  font-weight: 700;
+  padding-inline: 1rem;
+
+  &:hover {
+    background-color: var(--color-brand-hover);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--color-focus-gold);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+@utility app-button-secondary {
+  min-height: 2.75rem;
+  border: 1px solid var(--color-control-muted);
+  border-radius: 0.625rem;
+  background-color: var(--color-control-fill);
+  color: var(--color-brand);
+  font-weight: 700;
+  padding-inline: 1rem;
+
+  &:hover {
+    background-color: var(--color-panel-tint);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--color-focus-gold);
+    outline-offset: 3px;
+  }
+}
+
+@utility app-answer-option {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.5rem;
+  border-radius: 0.625rem;
+  font-weight: 500;
+  gap: 0.75rem;
+
+  &:hover,
+  &:has(:checked) {
+    background-color: var(--color-panel-tint);
+  }
+
+  &:focus-within {
+    outline: 2px solid var(--color-focus-gold);
+    outline-offset: 2px;
+  }
+}
+
+@utility app-accordion-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-weight: 700;
+  gap: 1rem;
+  text-align: left;
+
+  &:focus-visible {
+    outline: 3px solid var(--color-focus-gold);
+    outline-offset: 2px;
+  }
+}
+
+@utility app-nav-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  border-radius: 0.625rem;
+  color: var(--color-brand);
+  font-weight: 600;
+  padding-inline: 0.75rem;
+  text-underline-offset: 0.25rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &[aria-current='page'] {
+    background-color: var(--color-panel-tint);
+  }
+
   &:focus-visible {
     outline: 3px solid var(--color-focus-gold);
     outline-offset: 2px;
@@ -75,26 +220,14 @@
   }
 
   code {
-    overflow-wrap: anywhere;
     border-radius: 0.25rem;
     background-color: var(--color-panel-tint);
     color: var(--color-app-ink);
     font-family: var(--font-mono);
     font-size: 0.9em;
+    overflow-wrap: anywhere;
     padding-inline: 0.25em;
   }
-}
-
-@utility tracking-eyebrow {
-  letter-spacing: 0.09em;
-}
-
-@utility tracking-page-title {
-  letter-spacing: -0.045em;
-}
-
-@utility leading-page-title {
-  line-height: 1.05;
 }
 
 @utility content-width-home {

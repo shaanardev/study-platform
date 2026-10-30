@@ -21,10 +21,7 @@
   <div class="mx-auto flex w-full max-w-240 flex-wrap gap-1 py-2">
     {#each navigationItems as item (item.path)}
       <a
-        class={[
-          'text-brand focus-visible:outline-focus-gold inline-flex min-h-11 items-center rounded-lg px-3 font-semibold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2',
-          page.url.pathname === resolve(item.path) ? 'bg-panel-tint' : '',
-        ]}
+        class="app-nav-link"
         href={resolve(item.path)}
         aria-current={page.url.pathname === resolve(item.path) ? 'page' : undefined}>{item.label}</a
       >

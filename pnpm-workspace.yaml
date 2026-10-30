@@ -7,4 +7,14 @@ allowBuilds:
   esbuild: true
   unrs-resolver: false
 
+overrides:
+  'stylelint-config-idiomatic-order>stylelint-order': 8.1.2
+
+packageExtensions:
+  stylelint@17.16.0:
+    # Stylelint 17's TS config loader needs compiler APIs removed in TypeScript 7.
+    # Keep this compatibility compiler scoped to Stylelint; workspace packages retain their TS versions.
+    dependencies:
+      typescript: 6.0.3
+
 virtualStoreType: global

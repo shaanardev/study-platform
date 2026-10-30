@@ -1,6 +1,9 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
 
+  import PageHeading from '#lib/components/page-heading.svelte';
+  import SectionHeading from '#lib/components/section-heading.svelte';
+
   import {
     getImportedPacks,
     importPacks,
@@ -29,32 +32,25 @@
 
 <main class="app-page">
   <div class="content-width-home mx-auto py-8 sm:py-14 sm:pb-20">
-    <header class="mb-10 max-w-165">
-      <p class="tracking-eyebrow text-brand mb-2 text-xs font-bold uppercase">
-        Local study library
-      </p>
-      <h1 class="text-page-title-large leading-page-title tracking-page-title mb-3 font-bold">
-        Exam pack library
-      </h1>
-      <p class="measure-reading text-surface-600-400 mb-0 text-base/relaxed sm:text-lg">
+    <PageHeading eyebrow="Local study library" title="Exam pack library" class="mb-10 max-w-165">
+      <p class="measure-reading text-body-muted mb-0 text-base/relaxed sm:text-lg">
         Browse question packs stored on this device. Packs are imported only when you choose to
         import them.
       </p>
-    </header>
+    </PageHeading>
 
     <section
-      class="card border-surface-200-800 bg-surface-50-950 mb-12 flex flex-col items-start justify-between gap-6 rounded-2xl border p-6 sm:flex-row sm:items-center"
+      class="card app-panel-soft mb-12 flex flex-col items-start justify-between gap-6 p-6 sm:flex-row sm:items-center"
       aria-labelledby="import-heading"
     >
       <div>
-        <p class="tracking-eyebrow text-brand mb-2 text-xs font-bold uppercase">Local import</p>
+        <p class="app-eyebrow">Local import</p>
         <h2 id="import-heading" class="mb-2 text-xl font-semibold tracking-tight">
           Add exam packs
         </h2>
-        <p class="text-surface-600-400 mb-2">
+        <p class="text-body-muted mb-2">
           Place versioned JSON packs in
-          <code class="bg-surface-200-800 inline-code-size rounded-sm px-1 py-0.5"
-            >packs/incoming/</code
+          <code class="bg-panel-tint inline-code-size rounded-sm px-1 py-0.5">packs/incoming/</code
           >, then import them here. This reads pack files and sources stored alongside them. It does
           not approve or read any other folder.
         </p>
@@ -64,33 +60,25 @@
         >
       </div>
       <form {...importPacks} class="w-full sm:w-auto">
-        <button
-          class="btn bg-brand hover:bg-brand-hover focus-visible:outline-focus-gold min-h-11 w-full rounded-lg px-4 font-bold whitespace-nowrap text-white focus-visible:outline-3 focus-visible:outline-offset-3 sm:min-w-52"
-          type="submit"
-        >
+        <button class="btn app-button-primary w-full whitespace-nowrap sm:min-w-52" type="submit">
           Import packs
         </button>
       </form>
     </section>
 
-    <section
-      class="card border-surface-200-800 bg-surface-50-950 mb-6 rounded-2xl border p-6"
-      aria-labelledby="approved-import-heading"
-    >
-      <p class="tracking-eyebrow text-brand mb-2 text-xs font-bold uppercase">
-        Optional local file access
-      </p>
+    <section class="card app-panel-soft mb-6 p-6" aria-labelledby="approved-import-heading">
+      <p class="app-eyebrow">Optional local file access</p>
       <h2 id="approved-import-heading" class="mb-2 text-xl font-semibold tracking-tight">
         Import packs that cite files in another folder
       </h2>
-      <p class="text-surface-600-400 mb-4 max-w-180">
+      <p class="text-body-muted mb-4 max-w-180">
         Use this when a new pack has absolute file citations outside its pack folder. The app reads
         only cited files beneath the folder you approve. Their text excerpts are saved locally with
         the imported pack, and the approved folder is recorded with that pack. Ordinary import does
         not approve or read this folder.
       </p>
       <form {...importPacksWithApprovedCitations} class="grid min-w-0 gap-3 sm:max-w-160">
-        <label class="text-surface-600-400 block min-w-0 text-sm">
+        <label class="text-body-muted block min-w-0 text-sm">
           Local folder for importing cited files
           <input
             {...importPacksWithApprovedCitations.fields.approvedSourceRoot.as('text')}
@@ -102,7 +90,7 @@
             <span class="text-error-text mt-1 block" role="alert">{issue.message}</span>
           {/each}
         </label>
-        <label class="text-surface-600-400 flex min-w-0 items-start gap-2 text-sm">
+        <label class="text-body-muted flex min-w-0 items-start gap-2 text-sm">
           <input
             {...importPacksWithApprovedCitations.fields.approveLocalSourceRoot.as('checkbox')}
             class="checkbox app-control-focus mt-1"
@@ -112,7 +100,7 @@
           >
         </label>
         <button
-          class="btn bg-control-fill hover:bg-panel-tint text-brand focus-visible:outline-focus-gold min-h-11 w-full min-w-0 justify-self-start rounded-lg border px-4 font-bold whitespace-normal focus-visible:outline-3 focus-visible:outline-offset-3 sm:w-auto"
+          class="btn app-button-secondary w-full min-w-0 justify-self-start whitespace-normal sm:w-auto"
           type="submit"
         >
           Import with approved citations
@@ -120,17 +108,12 @@
       </form>
     </section>
 
-    <section
-      class="card border-surface-200-800 bg-surface-50-950 mb-12 rounded-2xl border p-6"
-      aria-labelledby="citation-heading"
-    >
-      <p class="tracking-eyebrow text-brand mb-2 text-xs font-bold uppercase">
-        Optional local file access
-      </p>
+    <section class="card app-panel-soft mb-12 p-6" aria-labelledby="citation-heading">
+      <p class="app-eyebrow">Optional local file access</p>
       <h2 id="citation-heading" class="mb-2 text-xl font-semibold tracking-tight">
         Refresh citations from another folder
       </h2>
-      <p class="text-surface-600-400 mb-4 max-w-180">
+      <p class="text-body-muted mb-4 max-w-180">
         If an imported pack cites files outside its pack folder, choose and approve the folder that
         contains them. The app reads cited files beneath that folder for matching imported pack
         versions; their text excerpts are saved locally with the pack. The approved folder is
@@ -138,7 +121,7 @@
         new pack that needs these files, use the approved import form above.
       </p>
       <form {...refreshPackCitations} class="grid min-w-0 gap-3 sm:max-w-160">
-        <label class="text-surface-600-400 block min-w-0 text-sm">
+        <label class="text-body-muted block min-w-0 text-sm">
           Local folder for refreshing existing pack citations
           <input
             {...refreshPackCitations.fields.approvedSourceRoot.as('text')}
@@ -150,7 +133,7 @@
             <span class="text-error-text mt-1 block" role="alert">{issue.message}</span>
           {/each}
         </label>
-        <label class="text-surface-600-400 flex min-w-0 items-start gap-2 text-sm">
+        <label class="text-body-muted flex min-w-0 items-start gap-2 text-sm">
           <input
             {...refreshPackCitations.fields.approveLocalSourceRoot.as('checkbox')}
             class="checkbox app-control-focus mt-1"
@@ -160,7 +143,7 @@
           >
         </label>
         <button
-          class="btn bg-control-fill hover:bg-panel-tint text-brand focus-visible:outline-focus-gold min-h-11 w-full min-w-0 justify-self-start rounded-lg border px-4 font-bold whitespace-normal focus-visible:outline-3 focus-visible:outline-offset-3 sm:w-auto"
+          class="btn app-button-secondary w-full min-w-0 justify-self-start whitespace-normal sm:w-auto"
           type="submit"
         >
           Refresh approved citations
@@ -169,11 +152,7 @@
     </section>
 
     {#if approvedImportResult}
-      <div
-        class="card border-surface-200-800 bg-surface-50-950 -mt-6 mb-10 rounded-2xl border px-4 py-3"
-        aria-live="polite"
-        role="status"
-      >
+      <div class="card app-panel-soft -mt-6 mb-10 px-4 py-3" aria-live="polite" role="status">
         {#if approvedImportResult.imported.length > 0}
           <p class="my-1">
             Imported {approvedImportResult.imported.length} pack version(s) with approved citation excerpts
@@ -208,11 +187,7 @@
     {/if}
 
     {#if importResult}
-      <div
-        class="card border-card-border -mt-6 mb-10 rounded-2xl border bg-white px-4 py-3"
-        aria-live="polite"
-        role="status"
-      >
+      <div class="card app-panel -mt-6 mb-10 px-4 py-3" aria-live="polite" role="status">
         {#if importResult.imported.length > 0}
           <p class="my-1">
             Imported {importResult.imported.length} pack version(s). Next, open Practice to start a quiz.
@@ -240,11 +215,7 @@
     {/if}
 
     {#if refreshResult}
-      <div
-        class="card border-card-border -mt-6 mb-10 rounded-2xl border bg-white px-4 py-3"
-        aria-live="polite"
-        role="status"
-      >
+      <div class="card app-panel -mt-6 mb-10 px-4 py-3" aria-live="polite" role="status">
         {#if refreshResult.refreshed.length > 0}
           <p class="my-1">
             Refreshed citation excerpts for {refreshResult.refreshed.length} imported pack version(s).
@@ -273,27 +244,24 @@
 
     <section aria-labelledby="catalog-heading">
       <div class="mb-4 flex items-center justify-between gap-4">
-        <div>
-          <p class="tracking-eyebrow text-brand mb-2 text-xs font-bold uppercase">
-            Your local catalog
-          </p>
-          <h2 id="catalog-heading" class="mb-0 text-xl font-semibold tracking-tight">
-            Imported exam packs
-          </h2>
-        </div>
-        <p class="text-surface-600-400 m-0 text-sm">
+        <SectionHeading
+          id="catalog-heading"
+          eyebrow="Your local catalog"
+          title="Imported exam packs"
+        />
+        <p class="text-body-muted m-0 text-sm">
           {packs.length}
           version{packs.length === 1 ? '' : 's'}
         </p>
       </div>
 
       {#if packs.length === 0}
-        <div class="card border-surface-200-800 bg-surface-50-950 rounded-2xl border p-8">
+        <div class="card app-panel-soft p-8">
           <h3 class="mb-2 text-lg font-semibold">No imported packs yet</h3>
           <p>
             The clearly labelled synthetic sample is ready in
             <code
-              class="bg-surface-200-800 inline-code-size rounded-sm px-1 py-0.5 break-all whitespace-normal"
+              class="bg-panel-tint inline-code-size rounded-sm px-1 py-0.5 break-all whitespace-normal"
               >packs/incoming/sample-learning-pack.json</code
             >. Choose <strong>Import packs</strong> above to add it to this catalog.
           </p>
@@ -305,9 +273,9 @@
       {:else}
         <div class="pack-card-grid grid gap-4">
           {#each packs as pack (`${pack.examId}:${pack.packId}:${pack.packVersion}`)}
-            <article class="card border-card-border rounded-2xl border bg-white p-5">
+            <article class="card app-panel p-5">
               <div class="mb-3 flex items-center justify-between gap-4">
-                <p class="tracking-eyebrow text-brand mb-0 text-xs font-bold uppercase">
+                <p class="app-eyebrow mb-0">
                   {pack.examTitle}
                   · exam {pack.examVersion}
                 </p>
@@ -316,13 +284,13 @@
                 {/if}
               </div>
               <h3 class="mb-1 text-xl font-semibold">{pack.packTitle}</h3>
-              <p class="text-surface-600-400 mb-2 text-sm">Pack version {pack.packVersion}</p>
-              <p class="text-surface-600-400 mb-2 text-sm">
+              <p class="text-body-muted mb-2 text-sm">Pack version {pack.packVersion}</p>
+              <p class="text-body-muted mb-2 text-sm">
                 {pack.questionCount}
                 questions · {pack.domainCount} domains
               </p>
               <ul
-                class="border-surface-200-800 mt-4 mb-0 list-none border-t p-0 pt-2"
+                class="border-card-border mt-4 mb-0 list-none border-t p-0 pt-2"
                 aria-label="Exam domains and weights"
               >
                 {#each pack.domains as domain (domain.id)}
