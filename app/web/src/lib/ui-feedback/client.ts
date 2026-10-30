@@ -1,6 +1,8 @@
 import * as Schema from 'effect/Schema';
 import { openDB } from 'idb';
-import type { DBSchema, IDBPDatabase, IDBPObjectStore } from 'idb';
+import type { DBSchema, IDBPDatabase as Database, IDBPObjectStore as ObjectStore } from 'idb';
+
+import { raceWithAbort } from '#lib/async.js';
 
 import { QueueItemSchema, ScreenshotSchema, SvelteMetadataSchema, ShortcutSchema } from './schema';
 import type {
@@ -243,35 +245,9 @@ export const captureViewport = async (signal?: AbortSignal): Promise<string> => 
 };
 
 // Screenshots stay in an in-memory cache and IndexedDB; localStorage holds only metadata.
-const waitForAbort = async <T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> => {
-  signal?.throwIfAborted();
-
-  if (!signal) {
-    return await promise;
-  }
-
-  const { promise: abortPromise, reject } = Promise.withResolvers<never>();
-
-  const onAbort = () => {
-    reject(signal.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
-  };
-
-  signal.addEventListener('abort', onAbort, { once: true });
-
-  if (signal.aborted) {
-    onAbort();
-  }
-
-  try {
-    return await Promise.race([promise, abortPromise]);
-  } finally {
-    signal.removeEventListener('abort', onAbort);
-  }
-};
-
 const openScreenshotDatabase = async (
   signal?: AbortSignal,
-): Promise<IDBPDatabase<ScreenshotDatabase>> => {
+): Promise<Database<ScreenshotDatabase>> => {
   signal?.throwIfAborted();
 
   const databasePromise = openDB<ScreenshotDatabase>('ui-feedback', 1, {
@@ -288,13 +264,13 @@ const openScreenshotDatabase = async (
     return database;
   });
 
-  return await waitForAbort(databasePromise, signal);
+  return await raceWithAbort(databasePromise, signal);
 };
 
 const screenshotRequest = async <Mode extends ScreenshotMode, Result>(
   mode: Mode,
   operation: (
-    store: IDBPObjectStore<ScreenshotDatabase, ['screenshots'], 'screenshots', Mode>,
+    store: ObjectStore<ScreenshotDatabase, ['screenshots'], 'screenshots', Mode>,
   ) => Promise<Result> | Result,
   signal?: AbortSignal,
 ): Promise<Awaited<Result>> => {
@@ -304,38 +280,27 @@ const screenshotRequest = async <Mode extends ScreenshotMode, Result>(
     signal?.throwIfAborted();
     const transaction = database.transaction('screenshots', mode);
 
-    const onAbort = () => {
+    const abortTransaction = () => {
       try {
         transaction.abort();
-      } catch {
-        // The transaction has already completed or aborted.
+      } catch (error) {
+        console.debug(
+          'Could not abort the feedback screenshot transaction after it completed.',
+          error,
+        );
       }
     };
 
-    signal?.addEventListener('abort', onAbort, { once: true });
+    signal?.addEventListener('abort', abortTransaction, { once: true });
 
     try {
-      if (signal?.aborted === true) {
-        onAbort();
-        signal.throwIfAborted();
-      }
-
       const resultPromise = Promise.resolve(operation(transaction.store));
-      const transactionPromise = transaction.done;
 
-      const [result] = await waitForAbort(Promise.all([resultPromise, transactionPromise]), signal);
+      const [result] = await raceWithAbort(Promise.all([resultPromise, transaction.done]), signal);
 
       return result;
-    } catch (error) {
-      try {
-        transaction.abort();
-      } catch {
-        // The transaction has already completed or aborted.
-      }
-
-      throw error;
     } finally {
-      signal?.removeEventListener('abort', onAbort);
+      signal?.removeEventListener('abort', abortTransaction);
     }
   } finally {
     database.close();
