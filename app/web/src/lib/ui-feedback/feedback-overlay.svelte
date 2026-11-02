@@ -614,10 +614,12 @@
                     : item.result.status}</span
                 >
               </div>
-              {#if 'files' in item.result && item.result.files}
-                <p class="text-body-muted my-1 text-xs break-all">
-                  Saved: {item.result.files.feedbackPath} · {item.result.files.screenshotPath}
-                </p>
+              {#if item.result.status === DeliveryStatus.Delivered || item.result.status === DeliveryStatus.Choose || item.result.status === DeliveryStatus.Failed}
+                {#if item.result.files}
+                  <p class="text-body-muted my-1 text-xs break-all">
+                    Saved: {item.result.files.feedbackPath} · {item.result.files.screenshotPath}
+                  </p>
+                {/if}
               {/if}
               {#if item.result.status === DeliveryStatus.Choose}
                 <label class="my-1 block text-xs font-semibold" for={`session-${item.feedback.id}`}
@@ -638,7 +640,7 @@
                     >{/each}
                 </select>
               {/if}
-              {#if 'message' in item.result && item.result.message}
+              {#if item.result.status !== QueueStatus.Queued}
                 <p class="text-body-muted my-1 text-xs">{item.result.message}</p>
               {/if}
               <div class="mt-2 flex flex-wrap justify-end gap-2">

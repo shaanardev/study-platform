@@ -94,6 +94,10 @@ const FileErrorSchema = Schema.Struct({ code: Schema.Literals(['ENOENT', 'EEXIST
 
 type Agent = typeof AgentSchema.Type;
 
+type AgentSelection =
+  | { kind: 'selected'; agent: Agent }
+  | { kind: 'choose'; result: Extract<DeliveryResult, { status: DeliveryStatus.Choose }> };
+
 type Pane = typeof PaneSchema.Type;
 
 type FileErrorCode = (typeof FileErrorSchema.Type)['code'];
@@ -491,7 +495,7 @@ const selectAgent = async (
   command: Command,
   files: Files,
   signal?: AbortSignal,
-): Promise<Agent | Extract<DeliveryResult, { status: DeliveryStatus.Choose }>> => {
+): Promise<AgentSelection> => {
   const current = await matchingAgents(root, command, signal);
   const agents = current.length ? current : await startAgent(root, command, signal);
   let selected: Agent | undefined;
@@ -503,7 +507,7 @@ const selectAgent = async (
   }
 
   if (selected) {
-    return selected;
+    return { agent: selected, kind: 'selected' };
   }
 
   if (agents.length === 0) {
@@ -511,15 +515,18 @@ const selectAgent = async (
   }
 
   return {
-    files,
-    message: 'Choose a Codex agent in this worktree to receive the feedback.',
-    sessions: agents.map((agent) => {
-      const id = agentId(agent);
-      const title = agent.terminal_title?.trim();
+    kind: 'choose',
+    result: {
+      files,
+      message: 'Choose a Codex agent in this worktree to receive the feedback.',
+      sessions: agents.map((agent) => {
+        const id = agentId(agent);
+        const title = agent.terminal_title?.trim();
 
-      return { id, label: title === undefined || title.length === 0 ? id : title };
-    }),
-    status: DeliveryStatus.Choose,
+        return { id, label: title === undefined || title.length === 0 ? id : title };
+      }),
+      status: DeliveryStatus.Choose,
+    },
   };
 };
 
@@ -586,16 +593,17 @@ const deliver = async (input: Submission, options: SubmitOptions = {}): Promise<
     const target = await selectAgent(submission, root, command, files, signal);
     signal.throwIfAborted();
 
-    if ('status' in target) {
-      return target;
+    if (target.kind === 'choose') {
+      return target.result;
     }
 
-    const agentStatus = target.agent_status ?? AgentStatus.Unknown;
+    const { agent } = target;
+    const agentStatus = agent.agent_status ?? AgentStatus.Unknown;
 
     if (
       agentStatus === AgentStatus.Blocked ||
       agentStatus === AgentStatus.Unknown ||
-      target.interactive_ready === false
+      agent.interactive_ready === false
     ) {
       throw new Error('The selected Codex agent is not ready to receive feedback.');
     }
@@ -604,7 +612,7 @@ const deliver = async (input: Submission, options: SubmitOptions = {}): Promise<
     signal.throwIfAborted();
     await writeFile(
       paths.dispatch,
-      JSON.stringify({ agent: agentId(target), attemptedAt: new Date().toISOString() }),
+      JSON.stringify({ agent: agentId(agent), attemptedAt: new Date().toISOString() }),
       { flag: 'wx', mode: 0o600 },
     );
     signal.throwIfAborted();
@@ -615,7 +623,7 @@ const deliver = async (input: Submission, options: SubmitOptions = {}): Promise<
         [
           'agent',
           'prompt',
-          agentId(target),
+          agentId(agent),
           promptFor(submission, files, paths.receipt),
           '--wait',
           '--timeout',

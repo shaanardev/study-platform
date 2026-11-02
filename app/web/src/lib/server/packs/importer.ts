@@ -21,6 +21,7 @@ export interface ImportOptions {
   folder?: string;
   approvedSourceRoot?: string;
   refreshOnly?: boolean;
+  signal?: AbortSignal;
 }
 
 const defaultFolder = workspacePath('packs/incoming');
@@ -42,7 +43,9 @@ interface ResolvedSource {
   source: PackSource;
 }
 
-type SourceResolution = ResolvedSource | { error: string };
+type SourceResolution =
+  | { kind: 'resolved'; source: ResolvedSource }
+  | { kind: 'error'; error: string };
 
 type FileImportResult =
   | { kind: 'error'; error: string }
@@ -57,9 +60,61 @@ interface PreparedPackImport {
   sourceAssets: ImportedSourceAsset[];
 }
 
-type PackPreparationResult = { error: string } | { prepared: PreparedPackImport };
+type PackPreparationResult =
+  | { kind: 'prepared'; prepared: PreparedPackImport }
+  | { kind: 'error'; error: string };
 
 const importPreparationBatchSize = 8;
+
+type CitationCandidate = { kind: 'candidate'; path: string } | { kind: 'error'; message: string };
+
+const resolveCitationCandidate = (
+  source: PackSource,
+  filePath: string,
+  approvedSourceRoot: string | undefined,
+): CitationCandidate => {
+  if (!source.path.startsWith('file:')) {
+    const candidate = path.resolve(path.dirname(filePath), source.path);
+
+    return isWithin(path.dirname(filePath), candidate)
+      ? { kind: 'candidate', path: candidate }
+      : { kind: 'error', message: `source path "${source.path}" escapes the pack folder` };
+  }
+
+  if (approvedSourceRoot === undefined) {
+    return {
+      kind: 'error',
+      message: `absolute local citation "${source.path}" requires an explicitly approved local source root`,
+    };
+  }
+
+  const url = URL.parse(source.path);
+
+  if (url === null) {
+    return {
+      kind: 'error',
+      message: `absolute local citation "${source.path}" is not a valid local file URL`,
+    };
+  }
+
+  let candidate: string;
+
+  try {
+    candidate = fileURLToPath(url);
+  } catch {
+    return {
+      kind: 'error',
+      message: `absolute local citation "${source.path}" is not a valid local file URL`,
+    };
+  }
+
+  return isWithin(approvedSourceRoot, path.resolve(candidate))
+    ? { kind: 'candidate', path: candidate }
+    : {
+        kind: 'error',
+        message: `absolute local citation "${source.path}" is outside the approved local source root`,
+      };
+};
 
 const resolveCitation = async (
   source: PackSource,
@@ -67,51 +122,20 @@ const resolveCitation = async (
   filePath: string,
   packDirectory: string,
   approvedSourceRoot: string | undefined,
+  signal?: AbortSignal,
 ): Promise<SourceResolution> => {
-  let candidate: string;
+  const resolution = resolveCitationCandidate(source, filePath, approvedSourceRoot);
 
-  if (source.path.startsWith('file:')) {
-    if (approvedSourceRoot === undefined) {
-      return {
-        error: `absolute local citation "${source.path}" requires an explicitly approved local source root`,
-      };
-    }
-
-    try {
-      const url = new URL(source.path);
-
-      if (
-        url.protocol !== 'file:' ||
-        url.hostname !== '' ||
-        !url.pathname.startsWith('/') ||
-        url.search ||
-        url.hash
-      ) {
-        throw new Error('unsupported file URL');
-      }
-
-      candidate = fileURLToPath(url);
-    } catch {
-      return { error: `absolute local citation "${source.path}" is not a valid local file URL` };
-    }
-
-    if (!isWithin(approvedSourceRoot, path.resolve(candidate))) {
-      return {
-        error: `absolute local citation "${source.path}" is outside the approved local source root`,
-      };
-    }
-  } else {
-    candidate = path.resolve(path.dirname(filePath), source.path);
-
-    if (!isWithin(path.dirname(filePath), candidate)) {
-      return { error: `source path "${source.path}" escapes the pack folder` };
-    }
+  if (resolution.kind === 'error') {
+    return { error: resolution.message, kind: 'error' };
   }
 
   try {
-    const actualPath = await realpath(candidate);
+    const actualPath = await realpath(resolution.path);
+    signal?.throwIfAborted();
     const allowedRoot = source.path.startsWith('file:') ? approvedSourceRoot : packDirectory;
     const actualPathInfo = await stat(actualPath);
+    signal?.throwIfAborted();
 
     if (
       allowedRoot === undefined ||
@@ -124,12 +148,21 @@ const resolveCitation = async (
 
       return {
         error: `${source.path.startsWith('file:') ? 'absolute local citation' : 'source path'} "${source.path}" ${reason}`,
+        kind: 'error',
       };
     }
 
-    return { filePath: actualPath, questionId, source };
+    return {
+      kind: 'resolved',
+      source: { filePath: actualPath, questionId, source },
+    };
   } catch {
-    return { error: `source path "${source.path}" does not resolve to a local file` };
+    signal?.throwIfAborted();
+
+    return {
+      error: `source path "${source.path}" does not resolve to a local file`,
+      kind: 'error',
+    };
   }
 };
 
@@ -138,35 +171,45 @@ const resolveRequestedSources = async (
   filePath: string,
   packDirectory: string,
   approvedSourceRoot: string | undefined,
-): Promise<{ error: string } | { sources: ResolvedSource[] }> => {
+  signal?: AbortSignal,
+): Promise<{ kind: 'sources'; sources: ResolvedSource[] } | { kind: 'error'; error: string }> => {
+  signal?.throwIfAborted();
+
   const resolutions = await Promise.all(
     requests.map(
       async ({ questionId, source }) =>
-        await resolveCitation(source, questionId, filePath, packDirectory, approvedSourceRoot),
+        await resolveCitation(
+          source,
+          questionId,
+          filePath,
+          packDirectory,
+          approvedSourceRoot,
+          signal,
+        ),
     ),
   );
 
-  const firstError = resolutions.find((resolution) => 'error' in resolution);
+  const firstError = resolutions.find((resolution) => resolution.kind === 'error');
 
-  if (firstError !== undefined && 'error' in firstError) {
+  if (firstError !== undefined) {
     return firstError;
   }
 
-  const sources: ResolvedSource[] = [];
-
-  sources.push(
-    ...resolutions.filter((resolution): resolution is ResolvedSource => !('error' in resolution)),
+  const sources = resolutions.flatMap((resolution) =>
+    resolution.kind === 'resolved' ? [resolution.source] : [],
   );
 
-  return { sources };
+  return { kind: 'sources', sources };
 };
 
 const resolvePackSources = async (
   pack: ExamPack,
   filePath: string,
   approvedSourceRoot: string | undefined,
-): Promise<{ error: string } | { sources: ResolvedSource[] }> => {
+  signal?: AbortSignal,
+): Promise<{ kind: 'sources'; sources: ResolvedSource[] } | { kind: 'error'; error: string }> => {
   const packDirectory = await realpath(path.dirname(filePath));
+  signal?.throwIfAborted();
 
   const requestedSources = pack.questions.flatMap((question) =>
     question.sources.map((source) => ({ questionId: question.id, source })),
@@ -177,6 +220,7 @@ const resolvePackSources = async (
     filePath,
     packDirectory,
     approvedSourceRoot,
+    signal,
   );
 };
 
@@ -184,28 +228,38 @@ const preparePackFile = async (
   entryName: string,
   filePath: string,
   approvedSourceRoot: string | undefined,
+  signal?: AbortSignal,
 ): Promise<PackPreparationResult> => {
   let input: unknown;
 
   try {
     // SAFETY: JSON.parse returns untrusted input; validateExamPack narrows it below.
-    input = JSON.parse(await readFile(filePath, 'utf-8')) as unknown;
+    input = JSON.parse(await readFile(filePath, { encoding: 'utf-8', signal })) as unknown;
   } catch (error) {
+    signal?.throwIfAborted();
     const reason = error instanceof Error ? error.message : 'unknown error';
 
-    return { error: `${entryName}: could not read valid JSON (${reason}).` };
+    return { error: `${entryName}: could not read valid JSON (${reason}).`, kind: 'error' };
   }
 
+  signal?.throwIfAborted();
   const validation = validateExamPack(input);
 
   if (!validation.valid) {
-    return { error: `${entryName}: ${validation.errors.join(' ')}` };
+    return { error: `${entryName}: ${validation.errors.join(' ')}`, kind: 'error' };
   }
 
-  const resolution = await resolvePackSources(validation.pack, filePath, approvedSourceRoot);
+  const resolution = await resolvePackSources(
+    validation.pack,
+    filePath,
+    approvedSourceRoot,
+    signal,
+  );
 
-  if ('error' in resolution) {
-    return { error: `${entryName}: ${resolution.error}.` };
+  signal?.throwIfAborted();
+
+  if (resolution.kind === 'error') {
+    return { error: `${entryName}: ${resolution.error}.`, kind: 'error' };
   }
 
   let sourceAssets: ImportedSourceAsset[];
@@ -213,20 +267,22 @@ const preparePackFile = async (
   try {
     sourceAssets = await Promise.all(
       resolution.sources.map(async ({ questionId, source, filePath: sourcePath }) => ({
-        excerpt: await readFile(sourcePath, 'utf-8'),
+        excerpt: await readFile(sourcePath, { encoding: 'utf-8', signal }),
         questionId,
         source,
       })),
     );
   } catch (error) {
+    signal?.throwIfAborted();
     const reason = error instanceof Error ? error.message : 'unknown file error';
 
-    return { error: `${entryName}: could not read source files (${reason}).` };
+    return { error: `${entryName}: could not read source files (${reason}).`, kind: 'error' };
   }
 
   const packKey = `${validation.pack.exam.id}/${validation.pack.pack.id}@${validation.pack.pack.version}`;
 
   return {
+    kind: 'prepared',
     prepared: { entryName, pack: validation.pack, packKey, sourceAssets },
   };
 };
@@ -235,7 +291,9 @@ const storePreparedPack = async (
   prepared: PreparedPackImport,
   approvedSourceRoot: string | undefined,
   refreshOnly: boolean,
+  signal?: AbortSignal,
 ): Promise<FileImportResult> => {
+  signal?.throwIfAborted();
   const { entryName, pack, packKey, sourceAssets } = prepared;
 
   if (refreshOnly) {
@@ -251,6 +309,7 @@ const storePreparedPack = async (
 
       return refreshed ? { kind: 'refreshed', packKey } : { kind: 'unchanged', packKey };
     } catch (error) {
+      signal?.throwIfAborted();
       const reason = error instanceof Error ? error.message : 'unknown database error';
 
       return {
@@ -265,6 +324,7 @@ const storePreparedPack = async (
 
     return { kind: 'imported', packKey };
   } catch (error) {
+    signal?.throwIfAborted();
     const message = error instanceof Error ? error.message : 'unknown database error';
 
     if (!message.includes('UNIQUE constraint failed')) {
@@ -278,6 +338,8 @@ const storePreparedPack = async (
 
       return refreshed ? { kind: 'refreshed', packKey } : { kind: 'unchanged', packKey };
     } catch (refreshError) {
+      signal?.throwIfAborted();
+
       const reason =
         refreshError instanceof Error ? refreshError.message : 'unknown database error';
 
@@ -289,13 +351,18 @@ const storePreparedPack = async (
   }
 };
 
-const getApprovedSourceRoot = async (value: string | undefined): Promise<string | undefined> => {
+const getApprovedSourceRoot = async (
+  value: string | undefined,
+  signal?: AbortSignal,
+): Promise<string | undefined> => {
   if (value === undefined || value.trim().length === 0) {
     return undefined;
   }
 
   const sourceRoot = await realpath(path.resolve(value));
+  signal?.throwIfAborted();
   const sourceRootInfo = await stat(sourceRoot);
+  signal?.throwIfAborted();
 
   if (!sourceRootInfo.isDirectory()) {
     throw new Error('not a directory');
@@ -304,8 +371,9 @@ const getApprovedSourceRoot = async (value: string | undefined): Promise<string 
   return sourceRoot;
 };
 
-const getPackFiles = async (folder: string): Promise<Dirent[]> => {
+const getPackFiles = async (folder: string, signal?: AbortSignal): Promise<Dirent[]> => {
   const entries = await readdir(folder, { withFileTypes: true });
+  signal?.throwIfAborted();
 
   return entries
     .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
@@ -318,8 +386,10 @@ const importPackFilesInBatches = async (
   approvedSourceRoot: string | undefined,
   refreshOnly: boolean,
   result: ImportResult,
+  signal?: AbortSignal,
 ): Promise<void> => {
   for (let offset = 0; offset < files.length; offset += importPreparationBatchSize) {
+    signal?.throwIfAborted();
     const batch = files.slice(offset, offset + importPreparationBatchSize);
 
     // Keep only one bounded batch of source files in memory at a time.
@@ -327,20 +397,34 @@ const importPackFilesInBatches = async (
     const preparations = await Promise.all(
       batch.map(
         async (entry) =>
-          await preparePackFile(entry.name, path.join(folder, entry.name), approvedSourceRoot),
+          await preparePackFile(
+            entry.name,
+            path.join(folder, entry.name),
+            approvedSourceRoot,
+            signal,
+          ),
       ),
     );
 
     // Keep SQLite writes serial so duplicate pack versions refresh in filename order.
+    // Cancellation is observed between pack writes; an active database transaction finishes.
+    signal?.throwIfAborted();
+
     // oxlint-disable-next-line no-await-in-loop
     const importResults = await preparations.reduce<Promise<FileImportResult[]>>(
       async (pending, preparation) => {
         const results = await pending;
+        signal?.throwIfAborted();
 
         const importResult: FileImportResult =
-          'error' in preparation
+          preparation.kind === 'error'
             ? { error: preparation.error, kind: 'error' }
-            : await storePreparedPack(preparation.prepared, approvedSourceRoot, refreshOnly);
+            : await storePreparedPack(
+                preparation.prepared,
+                approvedSourceRoot,
+                refreshOnly,
+                signal,
+              );
 
         results.push(importResult);
 
@@ -366,6 +450,7 @@ const importPackFilesInBatches = async (
 };
 
 export const importPacksFromFolder = async (options: ImportOptions = {}): Promise<ImportResult> => {
+  options.signal?.throwIfAborted();
   const folder = path.resolve(options.folder ?? defaultFolder);
   const imported: string[] = [];
   const refreshed: string[] = [];
@@ -374,8 +459,10 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
   let approvedSourceRoot: string | undefined;
 
   try {
-    approvedSourceRoot = await getApprovedSourceRoot(options.approvedSourceRoot);
+    approvedSourceRoot = await getApprovedSourceRoot(options.approvedSourceRoot, options.signal);
   } catch {
+    options.signal?.throwIfAborted();
+
     return {
       errors: [
         `Approved local source root is not a readable directory: ${options.approvedSourceRoot}`,
@@ -389,8 +476,10 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
   let files: Dirent[];
 
   try {
-    files = await getPackFiles(folder);
+    files = await getPackFiles(folder, options.signal);
   } catch {
+    options.signal?.throwIfAborted();
+
     return {
       errors: [`Import folder does not exist or cannot be read: ${folder}`],
       imported,
@@ -403,12 +492,14 @@ export const importPacksFromFolder = async (options: ImportOptions = {}): Promis
     errors.push(`No .json exam packs found in ${folder}.`);
   }
 
-  await importPackFilesInBatches(files, folder, approvedSourceRoot, options.refreshOnly ?? false, {
-    errors,
-    imported,
-    refreshed,
-    unchanged,
-  });
+  await importPackFilesInBatches(
+    files,
+    folder,
+    approvedSourceRoot,
+    options.refreshOnly ?? false,
+    { errors, imported, refreshed, unchanged },
+    options.signal,
+  );
 
   return { errors, imported, refreshed, unchanged };
 };

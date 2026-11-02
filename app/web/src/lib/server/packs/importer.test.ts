@@ -48,6 +48,16 @@ describe('pack imports', () => {
     await mockSamplePackFolder(incoming);
   });
 
+  it('propagates an already-aborted request signal', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      importPacksFromFolder({ folder: incoming, signal: controller.signal }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(listImportedPacks()).resolves.toStrictEqual([]);
+  });
+
   it('imports a pack and exposes its metadata in the pack index', async () => {
     const result = await importPacksFromFolder({ folder: incoming });
 

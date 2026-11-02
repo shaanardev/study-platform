@@ -1,4 +1,4 @@
-import { form, query } from '$app/server';
+import { form, getRequestEvent, query } from '$app/server';
 import { invalid } from '@sveltejs/kit';
 import * as Schema from 'effect/Schema';
 
@@ -13,7 +13,7 @@ const CitationRefreshSchema = Schema.Struct({
 export const getImportedPacks = query(listImportedPacks);
 
 export const importPacks = form(Schema.toStandardSchemaV1(Schema.Struct({})), async () => {
-  const result = await importPacksFromFolder();
+  const result = await importPacksFromFolder({ signal: getRequestEvent().request.signal });
 
   return {
     importResult: {
@@ -38,7 +38,10 @@ export const importPacksWithApprovedCitations = form(
       );
     }
 
-    const result = await importPacksFromFolder({ approvedSourceRoot: sourceRoot });
+    const result = await importPacksFromFolder({
+      approvedSourceRoot: sourceRoot,
+      signal: getRequestEvent().request.signal,
+    });
 
     return {
       approvedImportResult: {
@@ -68,6 +71,7 @@ export const refreshPackCitations = form(
     const result = await importPacksFromFolder({
       approvedSourceRoot: sourceRoot,
       refreshOnly: true,
+      signal: getRequestEvent().request.signal,
     });
 
     return {
